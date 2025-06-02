@@ -40,6 +40,25 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Large media files
-public/uploads/
-public/images/
+# Large media files (keep folders but ignore large files)
+public/uploads/*.jpg
+public/uploads/*.jpeg
+public/uploads/*.png
+public/uploads/*.webp
+public/uploads/*/*.jpg
+public/uploads/*/*.jpeg
+public/uploads/*/*.png
+public/uploads/*/*.webp
+public/images/*.jpg
+public/images/*.jpeg
+public/images/*.png
+public/images/*.webp
+public/images/*/*.jpg
+public/images/*/*.jpeg
+public/images/*/*.png
+public/images/*/*.webp
+
+# Keep placeholder and small images
+!public/images/template-*.jpg
+!public/images/testimonial*.jpg
+!public/images/bg_couple.jpg
