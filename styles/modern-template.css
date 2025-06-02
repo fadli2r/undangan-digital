@@ -1,0 +1,262 @@
+/*==========================================
+  Custom Fonts & Reset Dasar
+==========================================*/
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+:root {
+  --primary-color: #000;
+  --primary-hover: #333;
+  --text-color: #333;
+  --bg-light: #f8f9fa;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --gradient-hero: linear-gradient(var(--bg-overlay), var(--bg-overlay));
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-color);
+  line-height: 1.6;
+  background-color: white;
+}
+
+/*==========================================
+  Utility Classes
+==========================================*/
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+/*==========================
+  Hero Section (#hero)
+==========================*/
+/* 
+  Untuk menggunakan gaya ini, tambahkan id="hero" 
+  di elemen <section> Hero pada ModernTemplate
+*/
+#hero {
+  /* Gabungkan gradient custom (misal: --gradient-hero) dengan background lokal */
+  background: var(--gradient-hero),
+              url('/images/bg_couple.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+}
+
+
+/*==========================
+  Section Styles
+==========================*/
+section {
+  padding: 5rem 1rem;
+}
+
+section:nth-child(even) {
+  background-color: var(--bg-light);
+}
+
+/*==========================
+  Headings (h1–h6)
+==========================*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 1.5rem;
+}
+
+/*==========================
+  Buttons
+==========================*/
+button,
+.btn {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button:hover,
+.btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+}
+
+/*==========================
+  Profile / Mempelai Images
+==========================*/
+.profile-img {
+  width: 16rem;
+  height: 16rem;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Selain .profile-img, di ModernTemplate: 
+   gunakan class .rounded-full dan .shadow-xl
+   sehingga .profile-img bisa ditambah di <Image> 
+   misalnya: className="profile-img"
+*/
+
+/*==========================
+  Countdown Timer Grid
+==========================*/
+.countdown-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.countdown-item {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.countdown-number {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+/*==========================
+  Gallery Grid
+==========================*/
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  transition: transform 0.3s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.03);
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*==========================
+  Form Elements (RSVP, Gift Confirmation)
+==========================*/
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/*==========================
+  Digital Gift Cards
+==========================*/
+.gift-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.gift-card:hover {
+  transform: translateY(-5px);
+}
+
+/*==========================
+  Footer
+==========================*/
+footer {
+  background-color: var(--bg-light);
+  padding: 5rem 1rem;
+  text-align: center;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.social-links a {
+  color: #666;
+  font-size: 1.5rem;
+  transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+  color: var(--primary-color);
+}
+
+/*==========================
+  Responsive Design
+==========================*/
+@media (max-width: 768px) {
+  section {
+    padding: 3rem 1rem;
+  }
+
+  .countdown-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-section {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
