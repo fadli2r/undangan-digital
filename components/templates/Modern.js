@@ -1,7 +1,8 @@
 // components/ModernTemplate.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import TwoColumnLayout from './TwoColumnLayout';
 
 import GiftConfirmation from './GiftConfirmation';
 import MusicPlayer from './MusicPlayer';
@@ -17,118 +18,100 @@ import Gallery from './Gallery';
 export default function ModernTemplate({ data }) {
   const [showHero, setShowHero] = useState(false);
 
-  // Variants animasi untuk setiap section
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  // URL background untuk splash/full-screen sebelum masuk undangan
+  const bgImageUrl = '/images/bg_couple.jpg';
+ useEffect(() => {
+    // simpan nilai overflow semula (untuk cleanup)
+    const previousOverflow = document.body.style.overflow;
+    // set overflow hidden
+    document.body.style.overflow = 'hidden';
 
-  // URL background untuk landing/hero
-const bgImageUrl = '/images/bg_couple.jpg';
-
-  const handleOpenInvitation = () => {
-    setShowHero(true);
-  };
-
-  // Jika belum diklik, hanya tampilkan landing cover full-screen
+    // saat komponen diunmount (atau saat berpindah halaman), kembalikan overflow semula
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+  // Jika belum diklik, tampilkan layar pembuka full-screen
   if (!showHero) {
     return (
       <section
-    className="relative w-full h-screen bg-cover bg-center"
-    style={{ backgroundImage: "url('/images/bg_couple.jpg')" }}
-  >
-    {/* Overlay gelap */}
-    <div className="absolute inset-0 bg-black opacity-50"></div>
+        className="relative w-full h-screen bg-cover bg-center"
+        style={{ backgroundImage: `url(${bgImageUrl})` }}
+      >
+        {/* Overlay gelap */}
+        <div className="absolute inset-0 bg-black opacity-50"></div>
 
-    {/* Konten di tengah layar */}
-    <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
-      <h1 className="text-4xl md:text-6xl font-playfair text-white mb-6">
-        The Wedding of
-      </h1>
-      <h2 className="text-5xl md:text-7xl font-playfair text-white mb-8">
-        {data.mempelai.pria} &amp; {data.mempelai.wanita}
-      </h2>
-      <button onClick={handleOpenInvitation} className="btn px-8 py-3">
-        Buka Undangan
-      </button>
-    </div>
-  </section>
+        {/* Konten di tengah layar */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+          <h1 className="text-4xl md:text-6xl font-playfair text-white mb-6">
+            The Wedding of
+          </h1>
+          <h2 className="text-5xl md:text-7xl font-playfair text-white mb-8">
+            {data.mempelai.pria} &amp; {data.mempelai.wanita}
+          </h2>
+          <button
+            onClick={() => setShowHero(true)}
+            className="btn px-8 py-3"
+          >
+            Buka Undangan
+          </button>
+        </div>
+      </section>
     );
   }
 
+  // Jika sudah diklik (“Buka Undangan”), masuk ke layout dua kolom
+  const leftBg = bgImageUrl; // gambar background kolom kiri
+  const leftTitle = `${data.mempelai.pria} & ${data.mempelai.wanita}`;
+
   return (
-    <div className="font-sans relative bg-white text-gray-800">
-      {/* =========================================
-          1. Hero Section (dengan QR Code)
-      ========================================= */}
+    <TwoColumnLayout leftBackgroundUrl={leftBg} leftTitle={leftTitle}>
+      {/* ───────────────────────────────────────────────
+          Hero Section (dengan QR Code pada kolom kanan)
+      ─────────────────────────────────────────────── */}
       <motion.section
         id="hero"
-        className="landing-cover"
-        style={{
-          backgroundImage: bgImageUrl ? `url(${bgImageUrl})` : 'none',
-        }}
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { duration: 0.8 } },
-        }}
+        className="relative w-full h-screen bg-cover bg-center"
+        style={{ backgroundImage: `url(${bgImageUrl})` }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: { duration: 0.8 } }}
       >
-        <div className="bg-overlay"></div>
-        <div className="content px-4 w-full max-w-2xl mx-auto">
-          <motion.h1
-            className="text-4xl md:text-6xl font-playfair text-white mb-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.3 } }}
-          >
+        <div className="absolute inset-0 bg-black/25"></div>
+        <div className="relative z-10 px-6 py-16 text-center">
+          <h1 className="text-6xl font-playfair text-white">
             The Wedding of
-          </motion.h1>
-          <motion.h2
-            className="text-5xl md:text-7xl font-playfair text-white mb-6"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-          >
+          </h1>
+          <h2 className="mt-4 text-6xl font-playfair text-white">
             {data.mempelai.pria} &amp; {data.mempelai.wanita}
-          </motion.h2>
-          <motion.p
-            className="text-xl text-white mb-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.7 } }}
-          >
+          </h2>
+          <p className="mt-6 text-xl text-white">
             {new Date(data.acara_utama.tanggal).toLocaleDateString('id-ID', {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
               year: 'numeric',
             })}
-          </motion.p>
-          <motion.div
-            className="mt-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.9 } }}
-          >
-            <h3 className="text-2xl text-white mb-2">Kepada Yth,</h3>
+          </p>
+
+          <div className="mt-8">
+            <h3 className="text-2xl text-white">Kepada Yth,</h3>
             {data.components?.QRCode}
-            <h4 className="text-xl text-white mb-6">{data.tambahan?.guestName || 'Nama Tamu'}</h4>
-          </motion.div>
+            <h4 className="mt-2 text-xl text-white">
+              {data.tambahan?.guestName || 'Nama Tamu'}
+            </h4>
+          </div>
 
-          
-
-          {data.slug && data.tambahan?.guestName && (
-            <motion.div
-              className="mt-8 flex justify-center"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 1.3 } }}
-            >
-              <QRCodeGuest slug={data.slug} guestName={data.tambahan.guestName} />
-            </motion.div>
+          {(data.slug && data.tambahan?.guestName) && (
+            <div className="mt-6 flex justify-center">
+              <QRCodeGuest
+                slug={data.slug}
+                guestName={data.tambahan.guestName}
+              />
+            </div>
           )}
+
           {data.tambahan?.qr_code_url && (
-            <motion.div
-              className="mt-8 flex justify-center"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 1.1 } }}
-            >
+            <div className="mt-6 flex justify-center">
               <Image
                 src={data.tambahan.qr_code_url}
                 alt="QR Code Undangan"
@@ -136,47 +119,53 @@ const bgImageUrl = '/images/bg_couple.jpg';
                 height={150}
                 className="rounded-lg shadow-lg"
               />
-            </motion.div>
+            </div>
           )}
         </div>
       </motion.section>
 
-      {/* =========================================
-          2. Couple Section (“We Found Love”)
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Couple Section (“We Found Love”)
+      ─────────────────────────────────────────────── */}
       <motion.section
         className="py-16 flex flex-col items-center text-center"
-        variants={fadeInUp}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-2xl mx-auto px-4">
           <h2 className="text-4xl font-playfair mb-8">We Found Love</h2>
           <p className="text-gray-600 italic mb-16">
-            "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda (kebesaran Allah) bagi kaum yang berpikir."
+            "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan‐pasangan untukmu …"
             <br />
-            <span className="block mt-2">(QS. Ar-Rum Ayat 21)</span>
+            <span className="block mt-2">(QS. Ar‐Rum Ayat 21)</span>
           </p>
         </div>
       </motion.section>
 
-      {/* =========================================
-          3. Bride & Groom
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Bride & Groom
+      ─────────────────────────────────────────────── */}
       <motion.section
-        className="py-16 bg-gray-50 flex flex-col items-center"
-        variants={fadeInUp}
+        className="py-16 flex flex-col items-center"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 justify-center">
           <motion.div
             className="text-center"
             initial="hidden"
             whileInView="visible"
-            variants={fadeInUp}
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
@@ -206,7 +195,7 @@ const bgImageUrl = '/images/bg_couple.jpg';
             className="text-center"
             initial="hidden"
             whileInView="visible"
-            variants={fadeInUp}
+            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
@@ -234,15 +223,18 @@ const bgImageUrl = '/images/bg_couple.jpg';
         </div>
       </motion.section>
 
-      {/* =========================================
-          4. Save The Date (Countdown + AddToCalendar)
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Save The Date (Countdown + AddToCalendar)
+      ─────────────────────────────────────────────── */}
       <motion.section
         className="py-16 flex flex-col items-center text-center"
-        variants={fadeInUp}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-2xl mx-auto px-4">
           <h2 className="text-4xl font-playfair mb-12">Save The Date</h2>
@@ -263,15 +255,18 @@ const bgImageUrl = '/images/bg_couple.jpg';
         </div>
       </motion.section>
 
-      {/* =========================================
-          5. Events (Akad & Resepsi)
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Events (Akad & Resepsi)
+      ─────────────────────────────────────────────── */}
       <motion.section
-        className="py-16 bg-gray-50 flex flex-col items-center"
-        variants={fadeInUp}
+        className="py-16 flex flex-col items-center"
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-12 justify-center">
           {data.acara?.[0] && (
@@ -279,7 +274,7 @@ const bgImageUrl = '/images/bg_couple.jpg';
               className="text-center"
               initial="hidden"
               whileInView="visible"
-              variants={fadeInUp}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
@@ -310,7 +305,7 @@ const bgImageUrl = '/images/bg_couple.jpg';
               className="text-center"
               initial="hidden"
               whileInView="visible"
-              variants={fadeInUp}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
@@ -339,32 +334,37 @@ const bgImageUrl = '/images/bg_couple.jpg';
         </div>
       </motion.section>
 
-      {/* =========================================
-          6. Love Story (menggunakan OurStory component)
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Love Story (OurStory)
+      ─────────────────────────────────────────────── */}
       {data.our_story && (
         <motion.section
           className="py-16 flex flex-col items-center text-center"
-          variants={fadeInUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
         >
           <OurStory data={data.our_story} />
         </motion.section>
       )}
 
-
-      {/* =========================================
-          8. Gallery
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Gallery
+      ─────────────────────────────────────────────── */}
       {data.galeri && data.galeri.length > 0 && (
         <motion.section
           className="py-16 flex flex-col items-center text-center"
-          variants={fadeInUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
         >
           <div className="w-full max-w-6xl mx-auto px-4">
             <h2 className="text-4xl font-playfair mb-8">Wedding Gallery</h2>
@@ -373,32 +373,38 @@ const bgImageUrl = '/images/bg_couple.jpg';
         </motion.section>
       )}
 
-      {/* =========================================
-          9. Live Streaming
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Live Streaming
+      ─────────────────────────────────────────────── */}
       {data.tambahan?.live_streaming && (
         <motion.section
           className="py-16 bg-gray-50"
-          variants={fadeInUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
         >
           <LiveStreaming data={data.tambahan.live_streaming} />
         </motion.section>
       )}
 
-      {/* =========================================
-          10. Wedding Gift
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Wedding Gift & Konfirmasi
+      ─────────────────────────────────────────────── */}
       {data.gift?.enabled && (
         <>
           <motion.section
-            className="py-16 bg-gray-50 flex flex-col items-center text-center"
-            variants={fadeInUp}
+            className="py-16 flex flex-col items-center text-center"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
           >
             <div className="w-full max-w-4xl mx-auto px-4">
               <h2 className="text-4xl font-playfair mb-8">Wedding Gift</h2>
@@ -416,9 +422,7 @@ const bgImageUrl = '/images/bg_couple.jpg';
                     <h3 className="text-2xl font-playfair mb-4">{account.bank}</h3>
                     <p className="text-xl mb-4">{account.nomor}</p>
                     <p className="mb-4">a.n. {account.atas_nama}</p>
-                    <button className="btn">
-                      Salin
-                    </button>
+                    <button className="btn">Salin</button>
                   </div>
                 ))}
               </div>
@@ -427,15 +431,18 @@ const bgImageUrl = '/images/bg_couple.jpg';
 
           <motion.section
             className="py-16 flex flex-col items-center text-center"
-            variants={fadeInUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
           >
             <div className="w-full max-w-2xl mx-auto px-4">
               <h2 className="text-4xl font-playfair mb-8">Konfirmasi Hadiah</h2>
               <p className="text-gray-600 mb-8">
-                Jika Anda telah mengirimkan hadiah, silakan konfirmasi melalui form di bawah ini
+                Jika Anda telah mengirimkan hadiah, silakan konfirmasi:
               </p>
               <GiftConfirmation slug={data.slug} />
             </div>
@@ -443,57 +450,44 @@ const bgImageUrl = '/images/bg_couple.jpg';
         </>
       )}
 
-      {/* =========================================
-          10.1. Gift Confirmation
-      ========================================= */}
-      {data.gift?.enabled && (
-        <motion.section
-          className="py-16 flex flex-col items-center text-center"
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          <div className="w-full max-w-2xl mx-auto px-4">
-            <h2 className="text-4xl font-playfair mb-8">Konfirmasi Hadiah</h2>
-            <p className="text-gray-600 mb-8">
-              Jika Anda telah mengirimkan hadiah, silakan konfirmasi melalui form di bawah ini
-            </p>
-            <GiftConfirmation slug={data.slug} />
-          </div>
-        </motion.section>
-      )}
-
-      {/* =========================================
-          11. RSVP (Doa & Ucapan)
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          RSVP (Doa & Ucapan)
+      ─────────────────────────────────────────────── */}
       <motion.section
         className="py-16 flex flex-col items-center text-center"
-        variants={fadeInUp}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-2xl mx-auto px-4">
           <h2 className="text-4xl font-playfair mb-8">Doa & Ucapan</h2>
-          <p className="text-gray-600 mb-12">Berikan ucapan harapan dan doa kepada kedua mempelai</p>
+          <p className="text-gray-600 mb-12">
+            Berikan ucapan dan doa Anda untuk kedua mempelai
+          </p>
           <RSVPForm slug={data.slug} />
         </div>
       </motion.section>
 
-      {/* =========================================
-          12. Footer
-      ========================================= */}
+      {/* ───────────────────────────────────────────────
+          Footer
+      ─────────────────────────────────────────────── */}
       <motion.footer
         className="py-16 bg-gray-50 flex flex-col items-center text-center"
-        variants={fadeInUp}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
       >
         <div className="w-full max-w-2xl mx-auto px-4">
           <p className="text-gray-600 mb-8">
-            Merupakan suatu kebahagiaan dan kehormatan bagi kami, apabila Bapak/Ibu/Saudara/i, berkenan hadir dan memberikan doa restu kepada kami
+            Merupakan suatu kebahagiaan apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu
           </p>
           <h3 className="text-2xl font-playfair mb-8">Kami Yang Berbahagia,</h3>
           <h4 className="text-3xl font-playfair mb-8">
@@ -526,6 +520,6 @@ const bgImageUrl = '/images/bg_couple.jpg';
           </p>
         </div>
       </motion.footer>
-    </div>
+    </TwoColumnLayout>
   );
 }

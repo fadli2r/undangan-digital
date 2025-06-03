@@ -12,19 +12,16 @@
   --gradient-hero: linear-gradient(var(--bg-overlay), var(--bg-overlay));
 }
 
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+
+
+
 
 body {
   font-family: 'Poppins', sans-serif;
   color: var(--text-color);
   line-height: 1.6;
   background-color: white;
+
 }
 
 /*==========================================

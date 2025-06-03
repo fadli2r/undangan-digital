@@ -223,7 +223,6 @@ export default function UndanganDetail({ undangan }) {
       
 
       {/* Render Template */}
-      <div className={namaTamu ? "pt-12" : ""}>
         <TemplateComponent data={templateData} />
         {/* Add to Calendar Button */}
         {undangan.acara_utama && (
@@ -233,7 +232,6 @@ export default function UndanganDetail({ undangan }) {
         )}
         {/* Live Streaming Section */}
         {/* Our Story Section */}
-      </div>
     </>
   );
 }
