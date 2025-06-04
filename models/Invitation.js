@@ -59,6 +59,8 @@ const InvitationSchema = new mongoose.Schema({
     },
     maps_url: { type: String, default: "" },
     protokol: { type: String, default: "" },
+    instagram_pria: { type: String, default: "" },
+    instagram_wanita: { type: String, default: "" },
     musik: {
       enabled: { type: Boolean, default: false },
       url: { type: String, default: "" },      // URL to audio file or YouTube/Spotify

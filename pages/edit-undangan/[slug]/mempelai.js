@@ -14,6 +14,8 @@ export default function Mempelai() {
     foto_wanita: "",
     orangtua_pria: "",
     orangtua_wanita: "",
+    instagram_pria: "",
+    instagram_wanita: "",
   });
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -37,6 +39,8 @@ export default function Mempelai() {
           foto_wanita: res.undangan?.mempelai?.foto_wanita || "",
           orangtua_pria: res.undangan?.mempelai?.orangtua_pria || "",
           orangtua_wanita: res.undangan?.mempelai?.orangtua_wanita || "",
+          instagram_pria: res.undangan?.tambahan?.instagram_pria || "",
+          instagram_wanita: res.undangan?.tambahan?.instagram_wanita || "",
         });
         setLoading(false);
       });
@@ -97,7 +101,23 @@ export default function Mempelai() {
     e.preventDefault();
     setLoading(true); setSuccess(""); setError("");
     
-    const updateData = { slug, field: { mempelai: form } };
+    const updateData = { 
+      slug, 
+      field: { 
+        mempelai: {
+          pria: form.pria,
+          wanita: form.wanita,
+          foto_pria: form.foto_pria,
+          foto_wanita: form.foto_wanita,
+          orangtua_pria: form.orangtua_pria,
+          orangtua_wanita: form.orangtua_wanita,
+        },
+        tambahan: {
+          instagram_pria: form.instagram_pria,
+          instagram_wanita: form.instagram_wanita,
+        }
+      } 
+    };
     console.log('Sending update:', updateData);  // Debug log
     
     try {
@@ -223,6 +243,26 @@ export default function Mempelai() {
               <p className="text-sm text-gray-600 mt-1">Preview foto wanita</p>
             </div>
           )}
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Instagram Pria</label>
+          <input
+            name="instagram_pria"
+            className="w-full border p-2 rounded"
+            value={form.instagram_pria}
+            onChange={handleChange}
+            placeholder="Contoh: https://instagram.com/username"
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Instagram Wanita</label>
+          <input
+            name="instagram_wanita"
+            className="w-full border p-2 rounded"
+            value={form.instagram_wanita}
+            onChange={handleChange}
+            placeholder="Contoh: https://instagram.com/username"
+          />
         </div>
         {success && <div className="text-green-600">{success}</div>}
         {error && <div className="text-red-600">{error}</div>}

@@ -14,10 +14,25 @@ export default async function handler(req, res) {
     const current = await Invitation.findOne({ slug });
     console.log('Current document:', current);  // Debug log
 
+    // Handle nested field updates
+    const updateFields = {};
+    
+    // Flatten the field object for MongoDB update
+    Object.keys(field).forEach(key => {
+      if (typeof field[key] === 'object' && field[key] !== null && !Array.isArray(field[key])) {
+        // Handle nested objects like mempelai and tambahan
+        Object.keys(field[key]).forEach(nestedKey => {
+          updateFields[`${key}.${nestedKey}`] = field[key][nestedKey];
+        });
+      } else {
+        updateFields[key] = field[key];
+      }
+    });
+
     const updated = await Invitation.findOneAndUpdate(
       { slug },
       { 
-        $set: field,
+        $set: updateFields,
         $currentDate: { updatedAt: true }
       },
       { new: true }

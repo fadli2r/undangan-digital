@@ -9,6 +9,7 @@ import MusicPlayer from './MusicPlayer';
 import CountdownTimer from './CountdownTimer';
 import Maps from './Maps';
 import RSVPForm from './RSVPForm';
+import WeddingWishes from './WeddingWishes';
 import OurStory from './OurStory';
 import AddToCalendar from './AddToCalendar';
 import QRCodeGuest from './QRCodeGuest';
@@ -122,6 +123,24 @@ export default function ModernTemplate({ data }) {
             </div>
           )}
         </div>
+        {/* ↓ Scroll Icon ↓ */}
+  <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-8 h-8 text-white animate-bounce"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  </div>
+  {/* ↑ Scroll Icon ↑ */}
       </motion.section>
 
       {/* ───────────────────────────────────────────────
@@ -451,7 +470,29 @@ export default function ModernTemplate({ data }) {
       )}
 
       {/* ───────────────────────────────────────────────
-          RSVP (Doa & Ucapan)
+          Wedding Wishes (Ucapan & Harapan)
+      ─────────────────────────────────────────────── */}
+      <motion.section
+        className="py-16 flex flex-col items-center text-center bg-gray-50"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+      >
+        <div className="w-full max-w-4xl mx-auto px-4">
+          <h2 className="text-4xl font-playfair mb-8">Ucapan & Harapan</h2>
+          <p className="text-gray-600 mb-12">
+            Berikan ucapan dan harapan terbaik Anda untuk kedua mempelai
+          </p>
+          <WeddingWishes slug={data.slug} />
+        </div>
+      </motion.section>
+
+      {/* ───────────────────────────────────────────────
+          RSVP (Konfirmasi Kehadiran)
       ─────────────────────────────────────────────── */}
       <motion.section
         className="py-16 flex flex-col items-center text-center"
@@ -464,9 +505,9 @@ export default function ModernTemplate({ data }) {
         }}
       >
         <div className="w-full max-w-2xl mx-auto px-4">
-          <h2 className="text-4xl font-playfair mb-8">Doa & Ucapan</h2>
+          <h2 className="text-4xl font-playfair mb-8">Konfirmasi Kehadiran</h2>
           <p className="text-gray-600 mb-12">
-            Berikan ucapan dan doa Anda untuk kedua mempelai
+            Mohon konfirmasi kehadiran Anda
           </p>
           <RSVPForm slug={data.slug} />
         </div>
