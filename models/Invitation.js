@@ -25,6 +25,7 @@ const InvitationSchema = new mongoose.Schema({
   // Data utama
   user_email: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
+  custom_slug: { type: String, default: "" }, // Custom slug yang bisa diatur user
   template: { type: String, required: true },
 
   // Data mempelai
@@ -59,8 +60,6 @@ const InvitationSchema = new mongoose.Schema({
     },
     maps_url: { type: String, default: "" },
     protokol: { type: String, default: "" },
-    instagram_pria: { type: String, default: "" },
-    instagram_wanita: { type: String, default: "" },
     musik: {
       enabled: { type: Boolean, default: false },
       url: { type: String, default: "" },      // URL to audio file or YouTube/Spotify
@@ -70,7 +69,9 @@ const InvitationSchema = new mongoose.Schema({
     live_streaming: {
       enabled: { type: Boolean, default: false },
       youtube_url: { type: String, default: "" }
-    }
+    },
+    instagram_pria: { type: String, default: "" },
+    instagram_wanita: { type: String, default: "" }
   },
   
   // Our Story section
@@ -110,6 +111,26 @@ const InvitationSchema = new mongoose.Schema({
       pesan: String,
       waktu: { type: Date, default: Date.now }
     }]
+  },
+
+  // Privacy settings
+  privacy: {
+    isPasswordProtected: {
+      type: Boolean,
+      default: false
+    },
+    password: {
+      type: String,
+      default: ''
+    },
+    hideGuestbook: {
+      type: Boolean,
+      default: false
+    },
+    hideRSVP: {
+      type: Boolean,
+      default: false
+    }
   },
 
   // RSVP & Guestbook

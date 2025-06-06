@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import TwoColumnLayout from './TwoColumnLayout';
+import PasswordProtection from '../PasswordProtection';
 
 import GiftConfirmation from './GiftConfirmation';
 import MusicPlayer from './MusicPlayer';
@@ -18,9 +19,20 @@ import Gallery from './Gallery';
 
 export default function ModernTemplate({ data }) {
   const [showHero, setShowHero] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!data.privacy?.isPasswordProtected);
 
   // URL background untuk splash/full-screen sebelum masuk undangan
   const bgImageUrl = '/images/bg_couple.jpg';
+
+  // If password protection is enabled and not authenticated, show password screen
+  if (!isAuthenticated) {
+    return (
+      <PasswordProtection 
+        onPasswordCorrect={() => setIsAuthenticated(true)}
+        backgroundImage={data.mempelai.foto_pria || bgImageUrl}
+      />
+    );
+  }
  useEffect(() => {
     // simpan nilai overflow semula (untuk cleanup)
     const previousOverflow = document.body.style.overflow;
@@ -472,46 +484,50 @@ export default function ModernTemplate({ data }) {
       {/* ───────────────────────────────────────────────
           Wedding Wishes (Ucapan & Harapan)
       ─────────────────────────────────────────────── */}
-      <motion.section
-        className="py-16 flex flex-col items-center text-center bg-gray-50"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0 },
-        }}
-      >
-        <div className="w-full max-w-4xl mx-auto px-4">
-          <h2 className="text-4xl font-playfair mb-8">Ucapan & Harapan</h2>
-          <p className="text-gray-600 mb-12">
-            Berikan ucapan dan harapan terbaik Anda untuk kedua mempelai
-          </p>
-          <WeddingWishes slug={data.slug} />
-        </div>
-      </motion.section>
+      {!data.privacy?.hideGuestbook && (
+        <motion.section
+          className="py-16 flex flex-col items-center text-center bg-gray-50"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+        >
+          <div className="w-full max-w-4xl mx-auto px-4">
+            <h2 className="text-4xl font-playfair mb-8">Ucapan & Harapan</h2>
+            <p className="text-gray-600 mb-12">
+              Berikan ucapan dan harapan terbaik Anda untuk kedua mempelai
+            </p>
+            <WeddingWishes slug={data.slug} />
+          </div>
+        </motion.section>
+      )}
 
       {/* ───────────────────────────────────────────────
           RSVP (Konfirmasi Kehadiran)
       ─────────────────────────────────────────────── */}
-      <motion.section
-        className="py-16 flex flex-col items-center text-center"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0 },
-        }}
-      >
-        <div className="w-full max-w-2xl mx-auto px-4">
-          <h2 className="text-4xl font-playfair mb-8">Konfirmasi Kehadiran</h2>
-          <p className="text-gray-600 mb-12">
-            Mohon konfirmasi kehadiran Anda
-          </p>
-          <RSVPForm slug={data.slug} />
-        </div>
-      </motion.section>
+      {!data.privacy?.hideRSVP && (
+        <motion.section
+          className="py-16 flex flex-col items-center text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            visible: { opacity: 1, y: 0 },
+          }}
+        >
+          <div className="w-full max-w-2xl mx-auto px-4">
+            <h2 className="text-4xl font-playfair mb-8">Konfirmasi Kehadiran</h2>
+            <p className="text-gray-600 mb-12">
+              Mohon konfirmasi kehadiran Anda
+            </p>
+            <RSVPForm slug={data.slug} />
+          </div>
+        </motion.section>
+      )}
 
       {/* ───────────────────────────────────────────────
           Footer

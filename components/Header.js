@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Header() {
+  const { data: session, status } = useSession();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
       <nav className="max-w-6xl mx-auto px-4 py-4">
@@ -33,18 +35,41 @@ export default function Header() {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/login" 
-              className="text-gray-700 hover:text-blue-600 transition-colors"
-            >
-              Masuk
-            </Link>
-            <Link 
-              href="/buat-undangan" 
-              className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
-            >
-              Buat Undangan
-            </Link>
+            {status === 'loading' ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : session ? (
+              <>
+                <Link 
+                  href="/dashboard" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  <span className="mr-2">
+                    Halo, {session.user?.name || session.user?.email}
+                  </span>
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="text-red-600 hover:text-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="text-gray-700 hover:text-blue-600 transition-colors"
+                >
+                  Masuk
+                </Link>
+                <Link 
+                  href="/buat-undangan" 
+                  className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
+                >
+                  Buat Undangan
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -82,18 +107,41 @@ export default function Header() {
               Kontak
             </Link>
             <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
-              <Link 
-                href="/login" 
-                className="text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                Masuk
-              </Link>
-              <Link 
-                href="/buat-undangan" 
-                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors text-center"
-              >
-                Buat Undangan
-              </Link>
+              {status === 'loading' ? (
+                <div className="text-gray-500">Loading...</div>
+              ) : session ? (
+                <>
+                  <Link 
+                    href="/dashboard" 
+                    className="text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <span className="text-sm">
+                      Halo, {session.user?.name || session.user?.email}
+                    </span>
+                  </Link>
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="text-red-600 hover:text-red-700 transition-colors text-left"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    href="/login" 
+                    className="text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    Masuk
+                  </Link>
+                  <Link 
+                    href="/buat-undangan" 
+                    className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors text-center"
+                  >
+                    Buat Undangan
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

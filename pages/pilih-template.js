@@ -14,33 +14,32 @@ export default function PilihTemplate() {
   }, []);
 
   useEffect(() => {
-    if (!mounted) return; // <-- pastikan hanya jalan di client
+    if (!mounted) return;
     if (status === "loading") return;
 
-    // --- CEK LOGIN GOOGLE/NextAuth ---
+    // Check Google/NextAuth login
     if (session?.user?.email) {
       setUser(session.user);
       return;
     }
 
-    // --- CEK LOGIN MANUAL ---
-    const userLS = window.localStorage.getItem("user");
-    if (userLS) {
-      setUser(JSON.parse(userLS));
-    } else {
-      // JANGAN REDIRECT KECUALI mounted SUDAH TRUE DAN userLS BENAR2 KOSONG
+    // Check manual login
+    try {
+      const userLS = window.localStorage.getItem("user");
+      if (userLS) {
+        const userData = JSON.parse(userLS);
+        setUser(userData);
+      } else {
+        router.replace("/login");
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
       router.replace("/login");
     }
   }, [mounted, status, session, router]);
 
   if (!mounted) return null;
   if (!user) return <div className="p-10">Loading...</div>;
-
-  // RESTRICT BY PAID (OPSIONAL)
-  // if (user.status_pembayaran !== "paid") {
-  //   router.replace("/dashboard");
-  //   return null;
-  // }
 
   return (
     <div className="max-w-4xl mx-auto mt-12 p-6">

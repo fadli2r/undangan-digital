@@ -14,6 +14,7 @@ export default function BuatUndangan() {
     waktu: "",
     lokasi: "",
     alamat: "",
+    custom_slug: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,29 +29,46 @@ export default function BuatUndangan() {
       let email = session?.user?.email;
       let userData = null;
 
-      if (email) {
-        const res = await fetch(`/api/user-info?email=${email}`);
-        const data = await res.json();
-        userData = data.user;
-      } else if (typeof window !== "undefined") {
-        const userLS = window.localStorage.getItem("user");
-        if (userLS) {
-          const userObj = JSON.parse(userLS);
-          email = userObj.email;
-          userData = userObj;
+      try {
+        if (email) {
+          const res = await fetch(`/api/user-info?email=${email}`);
+          if (res.ok) {
+            const data = await res.json();
+            userData = data.user;
+          }
+        } else if (typeof window !== "undefined") {
+          const userLS = window.localStorage.getItem("user");
+          if (userLS) {
+            const userObj = JSON.parse(userLS);
+            email = userObj.email;
+            userData = userObj;
+          }
         }
-      }
 
-      if (!email) {
-        router.replace("/login");
-        return;
+        if (!email) {
+          router.replace("/login");
+          return;
+        }
+        
+        // Check user data
+        if (!userData) {
+          console.log("No user data found, redirecting to login");
+          router.replace("/login");
+          return;
+        }
+        
+        // Check user status and quota
+        if (userData.quota < 1) {
+          console.log("User has no quota left");
+          router.replace("/dashboard");
+          return;
+        }
+        setUser(userData);
+        setChecking(false);
+      } catch (error) {
+        console.error("Error checking user status:", error);
+        setChecking(false);
       }
-      if (!userData || userData.status_pembayaran !== "paid") {
-        router.replace("/dashboard");
-        return;
-      }
-      setUser(userData);
-      setChecking(false);
     };
     cekStatusUser();
   }, [session, status, router]);
@@ -78,6 +96,26 @@ export default function BuatUndangan() {
       return;
     }
 
+    // Validasi custom slug jika diisi
+    if (form.custom_slug) {
+      const slugPattern = /^[a-zA-Z0-9-]+$/;
+      if (!slugPattern.test(form.custom_slug)) {
+        setError("Link custom hanya boleh berisi huruf, angka, dan tanda hubung (-)");
+        setLoading(false);
+        return;
+      }
+      if (form.custom_slug.length < 3) {
+        setError("Link custom minimal 3 karakter");
+        setLoading(false);
+        return;
+      }
+      if (form.custom_slug.length > 50) {
+        setError("Link custom maksimal 50 karakter");
+        setLoading(false);
+        return;
+      }
+    }
+
     let email = session?.user?.email;
     if (!email && typeof window !== "undefined") {
       const userLS = window.localStorage.getItem("user");
@@ -101,6 +139,7 @@ export default function BuatUndangan() {
       const invitationData = {
         template,
         user_email: email,
+        custom_slug: form.custom_slug || undefined,
         mempelai: {
           pria: form.nama_pria,
           wanita: form.nama_wanita
@@ -151,6 +190,28 @@ export default function BuatUndangan() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input name="nama_pria" placeholder="Nama Mempelai Pria" className="w-full p-2 border rounded" value={form.nama_pria} onChange={handleChange} required />
         <input name="nama_wanita" placeholder="Nama Mempelai Wanita" className="w-full p-2 border rounded" value={form.nama_wanita} onChange={handleChange} required />
+        
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Link Custom (Opsional)
+          </label>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-500 mr-2">undangan/</span>
+            <input 
+              name="custom_slug" 
+              placeholder="nikahanku" 
+              className="flex-1 p-2 border rounded" 
+              value={form.custom_slug} 
+              onChange={handleChange}
+              pattern="[a-zA-Z0-9-]+"
+              title="Hanya huruf, angka, dan tanda hubung (-)"
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            Kosongkan untuk menggunakan link otomatis berdasarkan nama mempelai
+          </p>
+        </div>
+
         <input name="tanggal" type="date" className="w-full p-2 border rounded" value={form.tanggal} onChange={handleChange} required />
         <input name="waktu" placeholder="Waktu (misal 10:00 - 13:00)" className="w-full p-2 border rounded" value={form.waktu} onChange={handleChange} required />
         <input name="lokasi" placeholder="Lokasi Acara" className="w-full p-2 border rounded" value={form.lokasi} onChange={handleChange} required />

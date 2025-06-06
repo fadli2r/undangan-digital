@@ -7,7 +7,7 @@ export const templateList = [
     name: "Classic Elegant",
         component: ClassicTemplate, // <-- ini penting!
 
-    thumbnail: "/images/template-classic.jpg",
+    thumbnail: "/images/bg_couple.jpg",
     description: "Tampilan formal dan elegan.",
   },
   {
@@ -15,7 +15,7 @@ export const templateList = [
     name: "Modern Simple",
         component: ModernTemplate,
 
-    thumbnail: "/images/template-modern.jpg",
+    thumbnail: "/images/bg_couple.jpg",
     description: "Clean & modern.",
   },
 ];

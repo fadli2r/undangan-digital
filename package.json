@@ -9,19 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "axios": "^1.9.0",
+    "bcryptjs": "^3.0.2",
+    "chart.js": "^4.4.9",
+    "exceljs": "^4.4.0",
     "formidable": "^3.5.4",
     "framer-motion": "^12.15.0",
     "html5-qrcode": "^2.3.8",
+    "jsonwebtoken": "^9.0.2",
     "jsqr": "^1.4.0",
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "next": "15.3.2",
     "next-auth": "^4.24.11",
+    "puppeteer": "^24.10.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {

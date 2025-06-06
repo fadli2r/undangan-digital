@@ -13,9 +13,11 @@ import AddToCalendar from './AddToCalendar';
 import QRCodeGuest from './QRCodeGuest';
 import LiveStreaming from './LiveStreaming';
 import Gallery from './Gallery';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function ClassicTemplate({ data }) {
   const [showHero, setShowHero] = useState(false);
+  const { language, changeLanguage, t } = useLanguage();
 
   // URL background untuk splash/full-screen sebelum masuk undangan
   const bgImageUrl = '/images/bg_couple.jpg';
@@ -37,9 +39,19 @@ export default function ClassicTemplate({ data }) {
           background: 'linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(' + bgImageUrl + ')'
         }}
       >
+        {/* Language Toggle */}
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            onClick={() => changeLanguage(language === 'id' ? 'en' : 'id')}
+            className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full hover:bg-white/30 transition-colors"
+          >
+            {language === 'id' ? 'English' : 'Bahasa'}
+          </button>
+        </div>
+
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
           <h1 className="text-4xl md:text-6xl font-serif text-white mb-6 font-bold">
-            The Wedding of
+            {language === 'id' ? 'Undangan Pernikahan' : 'The Wedding of'}
           </h1>
           <h2 className="text-5xl md:text-7xl font-serif text-white mb-8 font-bold">
             {data.mempelai.pria} & {data.mempelai.wanita}
@@ -48,7 +60,7 @@ export default function ClassicTemplate({ data }) {
             onClick={() => setShowHero(true)}
             className="bg-white text-gray-800 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
           >
-            Buka Undangan
+            {language === 'id' ? 'Buka Undangan' : 'Open Invitation'}
           </button>
         </div>
       </section>
@@ -65,6 +77,16 @@ export default function ClassicTemplate({ data }) {
         {/* Music Player */}
         <MusicPlayer musik={data.tambahan?.musik} />
 
+        {/* Language Toggle - Fixed Position */}
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => changeLanguage(language === 'id' ? 'en' : 'id')}
+            className="bg-white/20 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-full hover:bg-white/30 transition-colors shadow-lg"
+          >
+            {language === 'id' ? 'English' : 'Bahasa'}
+          </button>
+        </div>
+
         {/* Hero Section */}
         <motion.section
           id="hero"
@@ -76,13 +98,13 @@ export default function ClassicTemplate({ data }) {
           <div className="absolute inset-0 bg-black/25"></div>
           <div className="relative z-10 px-6 py-16 text-center">
             <h1 className="text-6xl font-serif text-white">
-              The Wedding of
+              {language === 'id' ? 'Undangan Pernikahan' : 'The Wedding of'}
             </h1>
             <h2 className="mt-4 text-6xl font-serif text-white">
               {data.mempelai.pria} &amp; {data.mempelai.wanita}
             </h2>
             <p className="mt-6 text-xl text-white">
-              {new Date(data.acara_utama.tanggal).toLocaleDateString('id-ID', {
+              {new Date(data.acara_utama.tanggal).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
@@ -91,10 +113,12 @@ export default function ClassicTemplate({ data }) {
             </p>
 
             <div className="mt-8">
-              <h3 className="text-2xl text-white">Kepada Yth,</h3>
+              <h3 className="text-2xl text-white">
+                {language === 'id' ? 'Kepada Yth,' : 'Dear,'}
+              </h3>
               {data.components?.QRCode}
               <h4 className="mt-2 text-xl text-white">
-                {data.tambahan?.guestName || 'Nama Tamu'}
+                {data.tambahan?.guestName || (language === 'id' ? 'Nama Tamu' : 'Guest Name')}
               </h4>
             </div>
 
@@ -133,11 +157,23 @@ export default function ClassicTemplate({ data }) {
           }}
         >
           <div className="w-full max-w-2xl mx-auto px-4">
-            <h2 className="text-4xl font-serif mb-8">We Found Love</h2>
+            <h2 className="text-4xl font-serif mb-8">
+              {language === 'id' ? 'Kami Menemukan Cinta' : 'We Found Love'}
+            </h2>
             <p className="text-gray-600 italic mb-16">
-              "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan‐pasangan untukmu …"
-              <br />
-              <span className="block mt-2">(QS. Ar‐Rum Ayat 21)</span>
+              {language === 'id' ? (
+                <>
+                  "Dan di antara tanda-tanda (kebesaran)-Nya ialah Dia menciptakan pasangan‐pasangan untukmu …"
+                  <br />
+                  <span className="block mt-2">(QS. Ar‐Rum Ayat 21)</span>
+                </>
+              ) : (
+                <>
+                  "And among His Signs is that He created for you mates from among yourselves..."
+                  <br />
+                  <span className="block mt-2">(Quran 30:21)</span>
+                </>
+              )}
             </p>
           </div>
         </motion.section>
@@ -170,7 +206,9 @@ export default function ClassicTemplate({ data }) {
                 className="w-64 h-64 object-cover rounded-full mx-auto mb-6 border-4 border-blue-500"
               />
               <h3 className="text-3xl font-serif mb-4">{data.mempelai.wanita}</h3>
-              <p className="text-gray-600 mb-2">Putri Pertama Dari</p>
+              <p className="text-gray-600 mb-2">
+                {language === 'id' ? 'Putri Pertama Dari' : 'First Daughter of'}
+              </p>
               <p className="mb-4">{data.mempelai.orangtua_wanita}</p>
               {data.tambahan?.instagram_wanita && (
                 <a
@@ -200,7 +238,9 @@ export default function ClassicTemplate({ data }) {
                 className="w-64 h-64 object-cover rounded-full mx-auto mb-6 border-4 border-blue-500"
               />
               <h3 className="text-3xl font-serif mb-4">{data.mempelai.pria}</h3>
-              <p className="text-gray-600 mb-2">Putra Pertama Dari</p>
+              <p className="text-gray-600 mb-2">
+                {language === 'id' ? 'Putra Pertama Dari' : 'First Son of'}
+              </p>
               <p className="mb-4">{data.mempelai.orangtua_pria}</p>
               {data.tambahan?.instagram_pria && (
                 <a
@@ -228,9 +268,11 @@ export default function ClassicTemplate({ data }) {
           }}
         >
           <div className="w-full max-w-2xl mx-auto px-4">
-            <h2 className="text-4xl font-serif mb-12">Save The Date</h2>
+            <h2 className="text-4xl font-serif mb-12">
+              {language === 'id' ? 'Simpan Tanggal' : 'Save The Date'}
+            </h2>
             <div className="countdown-container bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-2xl p-8">
-              <CountdownTimer targetDate={data.acara_utama.tanggal} />
+              <CountdownTimer targetDate={data.acara_utama.tanggal} language={language} />
             </div>
             {data.acara?.[0] && (
               <AddToCalendar
@@ -241,6 +283,7 @@ export default function ClassicTemplate({ data }) {
                   lokasi: data.acara[0].lokasi,
                   alamat: data.acara[0].alamat,
                 }}
+                language={language}
               />
             )}
           </div>
@@ -267,9 +310,11 @@ export default function ClassicTemplate({ data }) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <h3 className="text-3xl font-serif mb-6">{data.acara[0].nama}</h3>
+                <h3 className="text-3xl font-serif mb-6">
+                  {language === 'id' ? data.acara[0].nama : (data.acara[0].nama === 'Akad Nikah' ? 'Wedding Ceremony' : data.acara[0].nama)}
+                </h3>
                 <p className="text-xl mb-4">
-                  {new Date(data.acara[0].tanggal).toLocaleDateString('id-ID', {
+                  {new Date(data.acara[0].tanggal).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'long',
@@ -285,7 +330,7 @@ export default function ClassicTemplate({ data }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Google Maps
+                  {language === 'id' ? 'Buka Maps' : 'Open Maps'}
                 </a>
               </motion.div>
             )}
@@ -298,9 +343,11 @@ export default function ClassicTemplate({ data }) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <h3 className="text-3xl font-serif mb-6">{data.acara[1].nama}</h3>
+                <h3 className="text-3xl font-serif mb-6">
+                  {language === 'id' ? data.acara[1].nama : (data.acara[1].nama === 'Resepsi' ? 'Wedding Reception' : data.acara[1].nama)}
+                </h3>
                 <p className="text-xl mb-4">
-                  {new Date(data.acara[1].tanggal).toLocaleDateString('id-ID', {
+                  {new Date(data.acara[1].tanggal).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                     weekday: 'long',
                     day: 'numeric',
                     month: 'long',
@@ -316,7 +363,7 @@ export default function ClassicTemplate({ data }) {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Google Maps
+                  {language === 'id' ? 'Buka Maps' : 'Open Maps'}
                 </a>
               </motion.div>
             )}
@@ -352,7 +399,9 @@ export default function ClassicTemplate({ data }) {
             }}
           >
             <div className="w-full max-w-6xl mx-auto px-4">
-              <h2 className="text-4xl font-serif mb-8">Wedding Gallery</h2>
+              <h2 className="text-4xl font-serif mb-8">
+                {language === 'id' ? 'Galeri Pernikahan' : 'Wedding Gallery'}
+              </h2>
               <Gallery images={data.galeri} />
             </div>
           </motion.section>
@@ -370,7 +419,7 @@ export default function ClassicTemplate({ data }) {
               visible: { opacity: 1, y: 0 },
             }}
           >
-            <LiveStreaming data={data.tambahan.live_streaming} />
+            <LiveStreaming data={data.tambahan.live_streaming} language={language} />
           </motion.section>
         )}
 
@@ -388,7 +437,9 @@ export default function ClassicTemplate({ data }) {
               }}
             >
               <div className="w-full max-w-4xl mx-auto px-4">
-                <h2 className="text-4xl font-serif mb-8">Wedding Gift</h2>
+                <h2 className="text-4xl font-serif mb-8">
+                  {language === 'id' ? 'Hadiah Pernikahan' : 'Wedding Gift'}
+                </h2>
                 <p className="text-gray-600 mb-16">{data.gift.description}</p>
                 <div className="grid grid-cols-1 gap-8 justify-center">
                   {data.gift.bank_accounts?.map((account, idx) => (
@@ -403,7 +454,9 @@ export default function ClassicTemplate({ data }) {
                       <h3 className="text-2xl font-serif mb-4">{account.bank}</h3>
                       <p className="text-xl mb-4">{account.nomor}</p>
                       <p className="mb-4">a.n. {account.atas_nama}</p>
-                      <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-6 rounded-full">Salin</button>
+                      <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-6 rounded-full">
+                        {language === 'id' ? 'Salin' : 'Copy'}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -421,55 +474,74 @@ export default function ClassicTemplate({ data }) {
               }}
             >
               <div className="w-full max-w-2xl mx-auto px-4">
-                <h2 className="text-4xl font-serif mb-8">Konfirmasi Hadiah</h2>
+                <h2 className="text-4xl font-serif mb-8">
+                  {language === 'id' ? 'Konfirmasi Hadiah' : 'Gift Confirmation'}
+                </h2>
                 <p className="text-gray-600 mb-8">
-                  Jika Anda telah mengirimkan hadiah, silakan konfirmasi:
+                  {language === 'id' 
+                    ? 'Jika Anda telah mengirimkan hadiah, silakan konfirmasi:'
+                    : 'If you have sent a gift, please confirm:'
+                  }
                 </p>
-                <GiftConfirmation slug={data.slug} />
+                <GiftConfirmation slug={data.slug} language={language} />
               </div>
             </motion.section>
           </>
         )}
 
         {/* Wedding Wishes */}
-        <motion.section
-          className="py-16 flex flex-col items-center text-center"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <div className="w-full max-w-2xl mx-auto px-4">
-            <h2 className="text-4xl font-serif mb-8">Doa & Ucapan</h2>
-            <p className="text-gray-600 mb-12">
-              Berikan ucapan dan doa Anda untuk kedua mempelai
-            </p>
-            <WeddingWishes slug={data.slug} />
-          </div>
-        </motion.section>
+        {!data.hideGuestbook && (
+          <motion.section
+            className="py-16 flex flex-col items-center text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
+          >
+            <div className="w-full max-w-2xl mx-auto px-4">
+              <h2 className="text-4xl font-serif mb-8">
+                {language === 'id' ? 'Doa & Ucapan' : 'Prayers & Wishes'}
+              </h2>
+              <p className="text-gray-600 mb-12">
+                {language === 'id' 
+                  ? 'Berikan ucapan dan doa Anda untuk kedua mempelai'
+                  : 'Share your wishes and prayers for the couple'
+                }
+              </p>
+              <WeddingWishes slug={data.slug} language={language} />
+            </div>
+          </motion.section>
+        )}
 
         {/* RSVP */}
-        <motion.section
-          className="py-16 flex flex-col items-center text-center"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <div className="w-full max-w-2xl mx-auto px-4">
-            <h2 className="text-4xl font-serif mb-8">Doa & Ucapan</h2>
-            <p className="text-gray-600 mb-12">
-              Berikan ucapan dan doa Anda untuk kedua mempelai
-            </p>
-            <RSVPForm slug={data.slug} />
-          </div>
-        </motion.section>
+        {!data.hideRSVP && (
+          <motion.section
+            className="py-16 flex flex-col items-center text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
+          >
+            <div className="w-full max-w-2xl mx-auto px-4">
+              <h2 className="text-4xl font-serif mb-8">
+                {language === 'id' ? 'Konfirmasi Kehadiran' : 'RSVP'}
+              </h2>
+              <p className="text-gray-600 mb-12">
+                {language === 'id' 
+                  ? 'Mohon konfirmasi kehadiran Anda di acara pernikahan kami'
+                  : 'Please confirm your attendance at our wedding'
+                }
+              </p>
+              <RSVPForm slug={data.slug} language={language} />
+            </div>
+          </motion.section>
+        )}
 
         {/* Footer */}
         <motion.footer
@@ -484,9 +556,14 @@ export default function ClassicTemplate({ data }) {
         >
           <div className="w-full max-w-2xl mx-auto px-4">
             <p className="text-gray-600 mb-8">
-              Merupakan suatu kebahagiaan apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu
+              {language === 'id' 
+                ? 'Merupakan suatu kebahagiaan apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu'
+                : 'It would be our honor if you could attend and give us your blessings'
+              }
             </p>
-            <h3 className="text-2xl font-serif mb-8">Kami Yang Berbahagia,</h3>
+            <h3 className="text-2xl font-serif mb-8">
+              {language === 'id' ? 'Kami Yang Berbahagia,' : 'With Love,'}
+            </h3>
             <h4 className="text-3xl font-serif mb-8">
               {data.mempelai.pria} &amp; {data.mempelai.wanita}
             </h4>
@@ -513,7 +590,8 @@ export default function ClassicTemplate({ data }) {
               )}
             </div>
             <p className="text-gray-600">
-              © {new Date().getFullYear()} {data.tambahan?.credit}. All Rights Reserved.
+              © {new Date().getFullYear()} {data.tambahan?.credit}. 
+              {language === 'id' ? ' Semua Hak Dilindungi.' : ' All Rights Reserved.'}
             </p>
           </div>
         </motion.footer>
