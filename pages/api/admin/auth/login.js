@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
 import dbConnect from '../../../../lib/dbConnect';
 import Admin from '../../../../models/Admin';
+import jwt from 'jsonwebtoken';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   try {
     await dbConnect();
-    
+
     const { email, password } = req.body;
 
     // Validate input
@@ -17,69 +17,61 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Create initial admin if it doesn't exist
-    await Admin.createInitialAdmin();
-
-    // Find admin by email
-    const admin = await Admin.findOne({ email: email.toLowerCase(), isActive: true });
-    
+    // Find admin
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {
-      console.log(`Failed login attempt: ${email} - Admin not found`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // For initial setup, allow hardcoded password, otherwise use bcrypt comparison
-    let isValidPassword = false;
-    if (password === 'admin123' && admin.email === 'admin@undangandigital.com') {
-      isValidPassword = true;
-    } else {
-      isValidPassword = await admin.comparePassword(password);
+    // Check if admin is active
+    if (!admin.isActive) {
+      return res.status(401).json({ error: 'Account is inactive' });
     }
 
-    if (!isValidPassword) {
-      console.log(`Failed login attempt: ${email} - Invalid password`);
+    // Verify password
+    const isValid = await admin.comparePassword(password);
+    if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Generate JWT token
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-secret-key';
+    const token = jwt.sign(
+      { 
+        id: admin._id,
+        email: admin.email,
+        role: admin.role,
+        permissions: admin.permissions,
+        isAdmin: true
+      },
+      jwtSecret,
+      { expiresIn: '1d' }
+    );
 
     // Update last login
     admin.lastLogin = new Date();
     admin.loginHistory.push({
       timestamp: new Date(),
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+      ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
       userAgent: req.headers['user-agent']
     });
     await admin.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        sub: admin._id.toString(),
-        email: admin.email,
-        role: admin.role,
-        isAdmin: true,
-        permissions: admin.permissions
-      },
-      process.env.NEXTAUTH_SECRET || 'fallback-secret',
-      { expiresIn: '1d' }
-    );
-
-    console.log(`Successful admin login: ${email}`);
-
     // Return success with token and admin info
-    return res.status(200).json({
+    res.status(200).json({
+      success: true,
       token,
       admin: {
-        id: admin._id.toString(),
+        id: admin._id,
         name: admin.name,
         email: admin.email,
         role: admin.role,
-        permissions: admin.permissions,
-        lastLogin: admin.lastLogin
+        permissions: admin.permissions
       }
     });
 
   } catch (error) {
-    console.error('Admin Login Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }

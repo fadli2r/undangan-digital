@@ -1,5 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
 
 export default function KelolaTamu() {
   const router = useRouter();
@@ -64,7 +66,7 @@ export default function KelolaTamu() {
       setForm({ nama: "", kontak: "" });
       setEditIdx(-1);
       setSuccess("Tamu berhasil disimpan!");
-      setTimeout(() => setSuccess(""), 2000);
+      setTimeout(() => setSuccess(""), 3000);
     } else {
       setError("Gagal menyimpan data tamu.");
     }
@@ -92,80 +94,162 @@ export default function KelolaTamu() {
     setLoading(false);
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (!undangan) return <div className="p-8 text-center">Undangan tidak ditemukan.</div>;
+  if (loading) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (!undangan) {
+    return (
+      <UserLayout>
+        <div className="alert alert-warning">
+          <h4 className="alert-heading">Data Tidak Ditemukan</h4>
+          <p>Undangan tidak ditemukan.</p>
+        </div>
+      </UserLayout>
+    );
+  }
 
   return (
-    <div className="max-w-xl mx-auto mt-12 p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Kelola Tamu</h2>
-
-      {/* Form tambah/edit tamu */}
-      <form onSubmit={handleSubmit} className="space-y-3 mb-6">
-        <div>
-          <label className="block font-semibold mb-1">Nama Tamu</label>
-          <input
-            name="nama"
-            className="w-full border p-2 rounded"
-            value={form.nama}
-            onChange={handleChange}
-            required
-            placeholder="Nama tamu (wajib)"
-          />
+    <UserLayout>
+      <BackButton />
+      {/* Form Card */}
+      <div className="card mb-8">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">{editIdx >= 0 ? 'Edit Tamu' : 'Tambah Tamu'}</h2>
+          </div>
         </div>
-        <div>
-          <label className="block font-semibold mb-1">Kontak (opsional)</label>
-          <input
-            name="kontak"
-            className="w-full border p-2 rounded"
-            value={form.kontak}
-            onChange={handleChange}
-            placeholder="No WA, email, dsb"
-          />
+        <div className="card-body">
+          <form onSubmit={handleSubmit}>
+            <div className="row g-5">
+              <div className="col-md-6">
+                <label className="form-label required">Nama Tamu</label>
+                <input
+                  name="nama"
+                  className="form-control"
+                  value={form.nama}
+                  onChange={handleChange}
+                  required
+                  placeholder="Nama tamu (wajib)"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label">Kontak (opsional)</label>
+                <input
+                  name="kontak"
+                  className="form-control"
+                  value={form.kontak}
+                  onChange={handleChange}
+                  placeholder="No WA, email, dsb"
+                />
+              </div>
+            </div>
+
+            {success && (
+              <div className="alert alert-success mt-8">
+                <i className="ki-duotone ki-check-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {success}
+              </div>
+            )}
+
+            {error && (
+              <div className="alert alert-danger mt-8">
+                <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {error}
+              </div>
+            )}
+
+            <div className="text-center mt-8">
+              <button
+                type="submit"
+                className="btn btn-primary me-3"
+                disabled={loading}
+              >
+                {loading && (
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                )}
+                {editIdx >= 0 ? "Update Tamu" : "Tambah Tamu"}
+              </button>
+
+              {editIdx >= 0 && (
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => {
+                    setForm({ nama: "", kontak: "" });
+                    setEditIdx(-1);
+                  }}
+                >
+                  Batal Edit
+                </button>
+              )}
+            </div>
+          </form>
         </div>
-        {success && <div className="text-green-600">{success}</div>}
-        {error && <div className="text-red-600">{error}</div>}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-          disabled={loading}
-        >
-          {editIdx >= 0 ? "Update Tamu" : "Tambah Tamu"}
-        </button>
-        {editIdx >= 0 && (
-          <button
-            type="button"
-            className="ml-4 px-4 py-2 bg-gray-300 rounded"
-            onClick={() => {
-              setForm({ nama: "", kontak: "" });
-              setEditIdx(-1);
-            }}
-          >
-            Batal Edit
-          </button>
-        )}
-      </form>
+      </div>
 
-      {/* List tamu */}
-      <div className="mb-4">
-        <h3 className="font-bold mb-2">Daftar Tamu</h3>
-        {tamuList.length === 0 && <div className="text-gray-500">Belum ada tamu.</div>}
-        
-        <ul className="space-y-2">
-          {tamuList.map((tamu, idx) => {
-            // Format nama tamu ke slug/query (biar URL valid)
-            const encoded = encodeURIComponent(tamu.nama.trim().toLowerCase().replace(/\s+/g, "-"));
-            const urlBase = typeof window !== "undefined" ? window.location.origin : "";
-            const linkTamu = `${urlBase}/undangan/${slug}?tamu=${encoded}`;
-            // Format pesan WhatsApp dengan detail undangan
-            const mainAcara = undangan.acara?.[0] || {};
-            const tanggalAcara = mainAcara.tanggal ? new Date(mainAcara.tanggal).toLocaleDateString('id-ID', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }) : '';
+      {/* List Card */}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Daftar Tamu</h2>
+          </div>
+        </div>
+        <div className="card-body">
+          {tamuList.length === 0 ? (
+            <div className="text-center py-10">
+              <i className="ki-duotone ki-people fs-3x text-muted mb-3">
+                <span className="path1"></span>
+                <span className="path2"></span>
+                <span className="path3"></span>
+                <span className="path4"></span>
+                <span className="path5"></span>
+              </i>
+              <div className="text-muted fs-6">Belum ada tamu</div>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-row-dashed table-row-gray-300 gy-7">
+                <thead>
+                  <tr className="fw-bold fs-6 text-gray-800">
+                    <th>Nama</th>
+                    <th>Kontak</th>
+                    <th>Status</th>
+                    <th>Link</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tamuList.map((tamu, idx) => {
+                    // Format nama tamu ke slug/query
+                    const encoded = encodeURIComponent(tamu.nama.trim().toLowerCase().replace(/\s+/g, "-"));
+                    const urlBase = typeof window !== "undefined" ? window.location.origin : "";
+                    const linkTamu = `${urlBase}/undangan/${slug}?tamu=${encoded}`;
+                    
+                    // Format pesan WhatsApp
+                    const mainAcara = undangan.acara?.[0] || {};
+                    const tanggalAcara = mainAcara.tanggal ? new Date(mainAcara.tanggal).toLocaleDateString('id-ID', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    }) : '';
 
-            const pesanWA = encodeURIComponent(
+                    const pesanWA = encodeURIComponent(
 `Assalamu'alaikum Wr. Wb.
 
 Kepada Yth.
@@ -188,59 +272,101 @@ ${linkTamu}
 
 Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
 
-Wassalamu'alaikum Wr. Wb.`.replace(/^ +/gm, '')  // Remove leading spaces from each line
-             );
-            return (
-              <li key={idx} className="border rounded px-4 py-2 flex items-center justify-between">
-                <div>
-                  <div className="font-semibold flex items-center gap-2">
-                    {tamu.nama}
-                    {tamu.hadir && (
-                      <span className="text-green-600 text-xs font-semibold bg-green-100 rounded px-2 py-0.5">
-                        Sudah Check-in
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {tamu.kontak}
-                    {tamu.hadir && tamu.waktu_hadir && (
-                      <div className="text-green-600 text-xs">
-                        Hadir pada: {new Date(tamu.waktu_hadir).toLocaleString('id-ID')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {/* Tombol Copy Link */}
-                  <button
-                    className="text-blue-600 text-xs border rounded px-2 py-1"
-                    onClick={() => {
-                      navigator.clipboard.writeText(linkTamu);
-                      alert("Link undangan disalin!");
-                    }}
-                  >
-                    Copy Link
-                  </button>
-                  {/* Tombol Kirim WhatsApp */}
-                  {tamu.kontak && tamu.kontak.match(/^08\d{7,}$/) && (
-                    <a
-                      href={`https://wa.me/${"62" + tamu.kontak.slice(1)}?text=${pesanWA}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 text-xs border rounded px-2 py-1"
-                    >
-                      Kirim WA
-                    </a>
-                  )}
-                  <button className="text-blue-600" type="button" onClick={() => handleEdit(idx)}>Edit</button>
-                  <button className="text-red-600" type="button" onClick={() => handleDelete(idx)}>Hapus</button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+Wassalamu'alaikum Wr. Wb.`.replace(/^ +/gm, '')
+                    );
 
+                    return (
+                      <tr key={idx}>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <div className="symbol symbol-35px symbol-circle me-3">
+                              <div className="symbol-label bg-light-primary text-primary fs-6 fw-bold">
+                                {tamu.nama.charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+                            <div className="fw-bold">{tamu.nama}</div>
+                          </div>
+                        </td>
+                        <td>{tamu.kontak || "-"}</td>
+                        <td>
+                          {tamu.hadir ? (
+                            <div>
+                              <span className="badge badge-light-success">Sudah Check-in</span>
+                              <div className="text-muted fs-7 mt-1">
+                                {new Date(tamu.waktu_hadir).toLocaleString('id-ID')}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="badge badge-light-warning">Belum Check-in</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-light-primary"
+                              onClick={() => {
+                                navigator.clipboard.writeText(linkTamu);
+                                alert("Link undangan disalin!");
+                              }}
+                            >
+                              <i className="ki-duotone ki-copy fs-6">
+                                <span className="path1"></span>
+                                <span className="path2"></span>
+                              </i>
+                              Copy Link
+                            </button>
+                            {tamu.kontak && tamu.kontak.match(/^08\d{7,}$/) && (
+                              <a
+                                href={`https://wa.me/${"62" + tamu.kontak.slice(1)}?text=${pesanWA}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-light-success"
+                              >
+                                <i className="ki-duotone ki-whatsapp fs-6">
+                                  <span className="path1"></span>
+                                  <span className="path2"></span>
+                                </i>
+                                Kirim WA
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <button
+                              className="btn btn-sm btn-light-warning"
+                              onClick={() => handleEdit(idx)}
+                            >
+                              <i className="ki-duotone ki-pencil fs-6">
+                                <span className="path1"></span>
+                                <span className="path2"></span>
+                              </i>
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm btn-light-danger"
+                              onClick={() => handleDelete(idx)}
+                            >
+                              <i className="ki-duotone ki-trash fs-6">
+                                <span className="path1"></span>
+                                <span className="path2"></span>
+                                <span className="path3"></span>
+                                <span className="path4"></span>
+                                <span className="path5"></span>
+                              </i>
+                              Hapus
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </UserLayout>
   );
 }

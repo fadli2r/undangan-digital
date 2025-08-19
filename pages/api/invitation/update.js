@@ -1,48 +1,52 @@
 import dbConnect from "../../../lib/dbConnect";
 import Invitation from "../../../models/Invitation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-  const { slug, field } = req.body;
-  if (!slug || !field) return res.status(400).json({ message: "Data tidak lengkap" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
 
-  console.log('Updating invitation:', { slug, field });  // Debug log
-
-  await dbConnect();
   try {
-    // Get current document
-    const current = await Invitation.findOne({ slug });
-    console.log('Current document:', current);  // Debug log
-
-    // Handle nested field updates
-    const updateFields = {};
+    const session = await getServerSession(req, res, authOptions);
     
-    // Flatten the field object for MongoDB update
-    Object.keys(field).forEach(key => {
-      if (typeof field[key] === 'object' && field[key] !== null && !Array.isArray(field[key])) {
-        // Handle nested objects like mempelai and tambahan
-        Object.keys(field[key]).forEach(nestedKey => {
-          updateFields[`${key}.${nestedKey}`] = field[key][nestedKey];
-        });
-      } else {
-        updateFields[key] = field[key];
-      }
-    });
+    if (!session) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
-    const updated = await Invitation.findOneAndUpdate(
-      { slug },
+    await dbConnect();
+
+    const { slug, field } = req.body;
+
+    if (!slug || !field) {
+      return res.status(400).json({ message: 'Data tidak lengkap' });
+    }
+
+    // Find and update invitation
+    const invitation = await Invitation.findOneAndUpdate(
       { 
-        $set: updateFields,
-        $currentDate: { updatedAt: true }
+        slug,
+        user_email: session.user.email 
       },
+      { $set: field },
       { new: true }
     );
-    console.log('Updated document:', updated);  // Debug log
 
-    if (!updated) return res.status(404).json({ message: "Undangan tidak ditemukan" });
-    res.status(200).json({ success: true });
+    if (!invitation) {
+      return res.status(404).json({ message: 'Undangan tidak ditemukan' });
+    }
+
+    return res.status(200).json({
+      message: 'Data berhasil diupdate',
+      undangan: invitation
+    });
+
   } catch (error) {
-    console.error('Update error:', error);
-    res.status(500).json({ message: error.message || "Gagal update undangan" });
+    console.error('Error updating invitation:', error);
+    return res.status(500).json({ 
+      message: 'Terjadi kesalahan server',
+      error: 'INTERNAL_SERVER_ERROR'
+    });
   }
 }

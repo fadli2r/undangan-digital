@@ -12,14 +12,76 @@ export default async function handler(req, res) {
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email: 'admin@undangandigital.com' });
     if (existingAdmin) {
+      // Update permissions if they don't exist
+      if (!existingAdmin.permissions || existingAdmin.permissions.length === 0) {
+        const allPermissions = [
+          'dashboard.view',
+          'users.view',
+          'users.create',
+          'users.edit',
+          'users.delete',
+          'packages.view',
+          'packages.create',
+          'packages.edit',
+          'packages.delete',
+          'invitations.view',
+          'invitations.edit',
+          'invitations.delete',
+          'orders.view',
+          'orders.edit',
+          'settings.view',
+          'settings.edit',
+          'coupons.view',
+          'coupons.create',
+          'coupons.edit',
+          'coupons.delete'
+        ];
+        
+        existingAdmin.permissions = allPermissions;
+        await existingAdmin.save();
+        
+        return res.status(200).json({ 
+          message: 'Admin user permissions updated',
+          admin: {
+            email: existingAdmin.email,
+            role: existingAdmin.role,
+            permissions: existingAdmin.permissions
+          }
+        });
+      }
+      
       return res.status(200).json({ 
         message: 'Admin user already exists',
         admin: {
           email: existingAdmin.email,
-          role: existingAdmin.role
+          role: existingAdmin.role,
+          permissions: existingAdmin.permissions
         }
       });
     }
+
+    const allPermissions = [
+      'dashboard.view',
+      'users.view',
+      'users.create',
+      'users.edit',
+      'users.delete',
+      'packages.view',
+      'packages.create',
+      'packages.edit',
+      'packages.delete',
+      'invitations.view',
+      'invitations.edit',
+      'invitations.delete',
+      'orders.view',
+      'orders.edit',
+      'settings.view',
+      'settings.edit',
+      'coupons.view',
+      'coupons.create',
+      'coupons.edit',
+      'coupons.delete'
+    ];
 
     // Create initial admin
     const admin = await Admin.create({
@@ -27,7 +89,8 @@ export default async function handler(req, res) {
       email: 'admin@undangandigital.com',
       password: 'admin123',
       role: 'superadmin',
-      isActive: true
+      isActive: true,
+      permissions: allPermissions
     });
 
     return res.status(201).json({

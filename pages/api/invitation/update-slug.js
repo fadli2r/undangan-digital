@@ -1,83 +1,72 @@
 import dbConnect from "../../../lib/dbConnect";
 import Invitation from "../../../models/Invitation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-  
-  const { currentSlug, newSlug, user_email } = req.body;
-  
-  if (!currentSlug || !newSlug || !user_email) {
-    return res.status(400).json({ message: "Data tidak lengkap" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  await dbConnect();
-
   try {
-    // Validasi format slug baru
-    const cleanSlug = newSlug
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    const session = await getServerSession(req, res, authOptions);
     
-    // Validasi panjang slug
-    if (cleanSlug.length < 3) {
-      return res.status(400).json({ message: "Link custom minimal 3 karakter" });
-    }
-    
-    if (cleanSlug.length > 50) {
-      return res.status(400).json({ message: "Link custom maksimal 50 karakter" });
+    if (!session) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Cek apakah undangan dengan slug lama ada dan milik user ini
-    const currentInvitation = await Invitation.findOne({ 
-      slug: currentSlug, 
-      user_email 
-    });
-    
-    if (!currentInvitation) {
-      return res.status(404).json({ message: "Undangan tidak ditemukan" });
+    await dbConnect();
+
+    const { currentSlug, newSlug } = req.body;
+
+    if (!currentSlug || !newSlug) {
+      return res.status(400).json({ message: 'Data tidak lengkap' });
     }
 
-    // Jika slug tidak berubah, tidak perlu update
-    if (currentSlug === cleanSlug) {
-      return res.status(200).json({ 
-        success: true, 
-        slug: cleanSlug,
-        message: "Slug tidak berubah" 
+    // Validate new slug format
+    if (!/^[a-zA-Z0-9-]+$/.test(newSlug)) {
+      return res.status(400).json({ 
+        message: 'Format link tidak valid. Gunakan huruf, angka, dan tanda strip (-)'
       });
     }
 
-    // Cek apakah slug baru sudah digunakan
-    const existingInvitation = await Invitation.findOne({ slug: cleanSlug });
+    // Check if new slug already exists
+    const existingInvitation = await Invitation.findOne({ 
+      slug: newSlug,
+      _id: { $ne: currentSlug }
+    });
+
     if (existingInvitation) {
-      return res.status(400).json({ message: "Link custom sudah digunakan. Pilih yang lain." });
+      return res.status(400).json({ message: 'Link sudah digunakan' });
     }
 
-    // Update slug
-    const updated = await Invitation.findOneAndUpdate(
-      { slug: currentSlug, user_email },
+    // Find and update invitation
+    const invitation = await Invitation.findOneAndUpdate(
       { 
-        $set: { 
-          slug: cleanSlug,
-          custom_slug: newSlug // Simpan slug asli yang diinput user
-        },
-        $currentDate: { updatedAt: true }
+        slug: currentSlug,
+        user_email: session.user.email 
+      },
+      { 
+        custom_slug: newSlug,
+        slug: newSlug
       },
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ message: "Gagal mengupdate slug" });
+    if (!invitation) {
+      return res.status(404).json({ message: 'Undangan tidak ditemukan' });
     }
 
-    res.status(200).json({ 
-      success: true, 
-      slug: cleanSlug,
-      message: "Link berhasil diupdate" 
+    return res.status(200).json({
+      message: 'Link berhasil diupdate',
+      slug: invitation.slug
     });
 
   } catch (error) {
-    console.error('Update slug error:', error);
-    res.status(500).json({ message: error.message || "Gagal update link" });
+    console.error('Error updating slug:', error);
+    return res.status(500).json({ 
+      message: 'Terjadi kesalahan server',
+      error: 'INTERNAL_SERVER_ERROR'
+    });
   }
 }

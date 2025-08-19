@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import AdminLayout from '../../../../components/admin/Layout';
+import AdminLayoutJWT from '../../../../components/layouts/AdminLayoutJWT';
 
 export default function EditPackage() {
   const router = useRouter();
@@ -50,7 +50,17 @@ export default function EditPackage() {
   const fetchPackage = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/packages/${packageId}`);
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`/api/admin/packages/${packageId}-jwt`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch package');
       }
@@ -112,9 +122,15 @@ export default function EditPackage() {
       setSaving(true);
       setError(null);
 
-      const response = await fetch(`/api/admin/packages/${packageId}`, {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`/api/admin/packages/${packageId}-jwt`, {
         method: 'PUT',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(form)
@@ -135,16 +151,16 @@ export default function EditPackage() {
 
   if (loading) {
     return (
-      <AdminLayout>
+      <AdminLayoutJWT>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      </AdminLayout>
+      </AdminLayoutJWT>
     );
   }
 
   return (
-    <AdminLayout>
+    <AdminLayoutJWT>
       <div className="space-y-6">
         {/* Header */}
         <div className="sm:flex sm:items-center sm:justify-between">
@@ -535,6 +551,6 @@ export default function EditPackage() {
           </div>
         </form>
       </div>
-    </AdminLayout>
+    </AdminLayoutJWT>
   );
 }

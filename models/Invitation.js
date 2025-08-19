@@ -50,6 +50,8 @@ const InvitationSchema = new mongoose.Schema({
 
   // Galeri foto (array link/gambar)
   galeri: [String],         // Array of url gambar
+  main_photo: { type: String, default: "" },      // Foto utama
+  background_photo: { type: String, default: "" }, // Foto background
 
   // Informasi tambahan
   tambahan: {

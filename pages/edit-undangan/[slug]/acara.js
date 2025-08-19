@@ -1,5 +1,9 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
+import { showAlert, showToast } from "@/utils/sweetAlert";
 
 export default function Acara() {
   const router = useRouter();
@@ -16,7 +20,7 @@ export default function Acara() {
     lokasi: "",
     alamat: "",
   });
-  const [editIndex, setEditIndex] = useState(-1); // -1 = mode tambah baru
+  const [editIndex, setEditIndex] = useState(-1);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
@@ -27,9 +31,15 @@ export default function Acara() {
     fetch(`/api/invitation/detail?slug=${slug}`)
       .then(res => res.json())
       .then(res => {
-        setUndangan(res.undangan);
-        setAcaraList(res.undangan?.acara || []);
-        setAcaraUtama(res.undangan?.acara_utama || null);
+        if (res.undangan) {
+          setUndangan(res.undangan);
+          setAcaraList(res.undangan?.acara || []);
+          setAcaraUtama(res.undangan?.acara_utama || null);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error:', err);
         setLoading(false);
       });
   }, [slug]);
@@ -51,12 +61,9 @@ export default function Acara() {
   // Simpan acara baru / edit acara
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
+    showAlert.loading('Menyimpan...', 'Mohon tunggu sebentar');
 
     try {
-      // Validate and convert date
       const acaraData = {
         ...form,
         tanggal: new Date(form.tanggal).toISOString()
@@ -64,75 +71,82 @@ export default function Acara() {
 
       let newList = [...acaraList];
       if (editIndex >= 0) {
-        // Edit existing
         newList[editIndex] = acaraData;
       } else {
-        // Tambah baru
         newList.push(acaraData);
       }
-
-      const updates = {
-        acara: newList,
-        acara_utama: acaraUtama
-      };
 
       const res = await fetch("/api/invitation/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, field: updates }),
+        body: JSON.stringify({ slug, field: { acara: newList } }),
       });
 
       if (res.ok) {
-        const refreshRes = await fetch(`/api/invitation/detail?slug=${slug}`);
-        const refreshData = await refreshRes.json();
-        
-        setUndangan(refreshData.undangan);
-        setAcaraList(refreshData.undangan?.acara || []);
-        setAcaraUtama(refreshData.undangan?.acara_utama || null);
+        setAcaraList(newList);
         setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
         setEditIndex(-1);
-        setSuccess("Acara berhasil disimpan!");
-        setTimeout(() => setSuccess(""), 2000);
+        showAlert.success('Berhasil!', 'Acara berhasil disimpan');
       } else {
-        setError(`Gagal menyimpan acara: ${res.statusText || 'Coba lagi'}`);
+        showAlert.error('Gagal!', 'Gagal menyimpan acara');
       }
     } catch (error) {
       console.error('Update error:', error);
-      setError("Gagal menyimpan acara: " + error.message);
-    } finally {
-      setLoading(false);
+      showAlert.error('Error!', 'Gagal menyimpan acara: ' + error.message);
     }
   };
 
-  // Edit salah satu acara
+  // Edit acara
   const handleEdit = (idx) => {
-    setForm(acaraList[idx]);
+    const acara = acaraList[idx];
+    setForm({
+      ...acara,
+      tanggal: acara.tanggal ? new Date(acara.tanggal).toISOString().split('T')[0] : ""
+    });
     setEditIndex(idx);
   };
 
   // Hapus acara
   const handleDelete = async (idx) => {
-    if (!window.confirm("Yakin ingin menghapus acara ini?")) return;
-    const newList = acaraList.filter((_, i) => i !== idx);
-    setLoading(true);
-    const res = await fetch("/api/invitation/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, field: { acara: newList } }),
-    });
-    setLoading(false);
-    if (res.ok) {
-      setAcaraList(newList);
-      setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
-      setEditIndex(-1);
-    }
+    showAlert.confirm(
+      'Hapus Acara',
+      'Apakah Anda yakin ingin menghapus acara ini?',
+      'Ya, Hapus',
+      'Batal',
+      async (result) => {
+        if (result.isConfirmed) {
+          showAlert.loading('Menghapus...', 'Mohon tunggu sebentar');
+          const newList = acaraList.filter((_, i) => i !== idx);
+          
+          try {
+            const res = await fetch("/api/invitation/update", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ slug, field: { acara: newList } }),
+            });
+            
+            if (res.ok) {
+              setAcaraList(newList);
+              setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
+              setEditIndex(-1);
+              showAlert.success('Berhasil!', 'Acara berhasil dihapus');
+            } else {
+              showAlert.error('Gagal!', 'Gagal menghapus acara');
+            }
+          } catch (error) {
+            console.error('Delete error:', error);
+            showAlert.error('Error!', 'Gagal menghapus acara: ' + error.message);
+          }
+        }
+      }
+    );
   };
 
   // Set acara utama
   const handleSetUtama = async (acara) => {
+    showAlert.loading('Menyimpan...', 'Mohon tunggu sebentar');
+    
     try {
-      setLoading(true);
-      setError("");
       const res = await fetch("/api/invitation/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,156 +158,269 @@ export default function Acara() {
 
       if (res.ok) {
         setAcaraUtama(acara);
-        setSuccess("Acara utama berhasil diperbarui!");
-        setTimeout(() => setSuccess(""), 2000);
+        showAlert.success('Berhasil!', 'Acara utama berhasil diperbarui');
       } else {
-        setError("Gagal mengatur acara utama");
+        showAlert.error('Gagal!', 'Gagal mengatur acara utama');
       }
     } catch (err) {
-      setError("Gagal mengatur acara utama: " + err.message);
-    } finally {
-      setLoading(false);
+      console.error('Update error:', err);
+      showAlert.error('Error!', 'Gagal mengatur acara utama: ' + err.message);
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (!undangan) return <div className="p-8 text-center">Undangan tidak ditemukan.</div>;
+  if (loading) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (!undangan) {
+    return (
+      <UserLayout>
+        <div className="alert alert-info">
+          <h4 className="alert-heading">Undangan Tidak Ditemukan</h4>
+          <p>Data undangan yang Anda cari tidak ditemukan atau Anda tidak memiliki akses.</p>
+          <Link href="/edit-undangan" className="btn btn-primary">
+            Kembali ke Daftar Undangan
+          </Link>
+        </div>
+      </UserLayout>
+    );
+  }
 
   return (
-    <div className="max-w-xl mx-auto mt-12 p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Informasi Acara</h2>
-
-      {/* Form tambah/edit acara */}
-      <form onSubmit={handleSubmit} className="space-y-3 mb-6">
-        <div>
-          <label className="block font-semibold mb-1">Nama Acara</label>
-          <input
-            name="nama"
-            className="w-full border p-2 rounded"
-            value={form.nama}
-            onChange={handleChange}
-            required
-            placeholder="Contoh: Akad, Resepsi"
-          />
+    <UserLayout>
+      <BackButton />
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Informasi Acara</h2>
+          </div>
         </div>
-        <div>
-          <label className="block font-semibold mb-1">Tanggal</label>
-          <input
-            name="tanggal"
-            type="date"
-            className="w-full border p-2 rounded"
-            value={form.tanggal}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Waktu</label>
-          <input
-            name="waktu"
-            className="w-full border p-2 rounded"
-            value={form.waktu}
-            onChange={handleChange}
-            required
-            placeholder="Contoh: 10:00"
-          />
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Lokasi</label>
-          <input
-            name="lokasi"
-            className="w-full border p-2 rounded"
-            value={form.lokasi}
-            onChange={handleChange}
-            required
-            placeholder="Contoh: Masjid Al-Falah"
-          />
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Alamat Lengkap</label>
-          <textarea
-            name="alamat"
-            className="w-full border p-2 rounded"
-            value={form.alamat}
-            onChange={handleChange}
-            required
-            placeholder="Contoh: Jl. Masjid No.1, Jakarta"
-          />
-        </div>
-        {success && <div className="text-green-600">{success}</div>}
-        {error && <div className="text-red-600">{error}</div>}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-          disabled={loading}
-        >
-          {editIndex >= 0 ? "Update Acara" : "Tambah Acara"}
-        </button>
-        {editIndex >= 0 && (
-          <button
-            type="button"
-            className="ml-4 px-4 py-2 bg-gray-300 rounded"
-            onClick={() => {
-              setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
-              setEditIndex(-1);
-            }}
-          >
-            Batal Edit
-          </button>
-        )}
-      </form>
-
-      {/* List acara */}
-      <div className="mb-4">
-        <h3 className="font-bold mb-2">Daftar Acara</h3>
-        {acaraList.length === 0 && <div className="text-gray-500">Belum ada acara.</div>}
-        <ul className="space-y-2">
-          {acaraList.map((ac, i) => (
-            <li key={i} className="border rounded px-4 py-2 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="font-semibold">{ac.nama}</div>
-                  {acaraUtama && acaraUtama.tanggal === ac.tanggal && (
-                    <span className="text-xs bg-blue-100 text-blue-600 rounded px-2 py-0.5">
-                      Acara Utama
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-500">{formatDate(ac.tanggal)} {ac.waktu}</div>
-                <div className="text-xs text-gray-600">{ac.lokasi}, {ac.alamat}</div>
+        <div className="card-body">
+          {/* Form tambah/edit acara */}
+          <form onSubmit={handleSubmit} className="mb-8">
+            <div className="row g-5">
+              <div className="col-md-6">
+                <label className="form-label required">Nama Acara</label>
+                <input
+                  name="nama"
+                  className="form-control"
+                  value={form.nama}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contoh: Akad, Resepsi"
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button"
-                  className="text-blue-600"
-                  onClick={() => handleEdit(i)}
-                >
-                  Edit
-                </button>
-                <button 
-                  type="button"
-                  className="text-red-600"
-                  onClick={() => handleDelete(i)}
-                >
-                  Hapus
-                </button>
+              <div className="col-md-6">
+                <label className="form-label required">Tanggal</label>
+                <input
+                  name="tanggal"
+                  type="date"
+                  className="form-control"
+                  value={form.tanggal}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label required">Waktu</label>
+                <input
+                  name="waktu"
+                  className="form-control"
+                  value={form.waktu}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contoh: 10:00"
+                />
+              </div>
+              <div className="col-md-6">
+                <label className="form-label required">Lokasi</label>
+                <input
+                  name="lokasi"
+                  className="form-control"
+                  value={form.lokasi}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contoh: Masjid Al-Falah"
+                />
+              </div>
+              <div className="col-12">
+                <label className="form-label required">Alamat Lengkap</label>
+                <textarea
+                  name="alamat"
+                  className="form-control"
+                  value={form.alamat}
+                  onChange={handleChange}
+                  required
+                  placeholder="Contoh: Jl. Masjid No.1, Jakarta"
+                  rows="3"
+                />
+              </div>
+            </div>
+
+            {success && (
+              <div className="alert alert-success mt-4">
+                <i className="ki-duotone ki-check-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {success}
+              </div>
+            )}
+            
+            {error && (
+              <div className="alert alert-danger mt-4">
+                <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {error}
+              </div>
+            )}
+
+            <div className="mt-5">
+              <button
+                type="submit"
+                className="btn btn-primary me-3"
+                disabled={loading}
+              >
+                {loading && (
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                )}
+                {editIndex >= 0 ? "Update Acara" : "Tambah Acara"}
+              </button>
+              
+              {editIndex >= 0 && (
                 <button
                   type="button"
-                  className={`ml-4 px-2 py-1 rounded text-sm ${
-                    acaraUtama && acaraUtama.tanggal === ac.tanggal 
-                      ? 'bg-gray-300' 
-                      : 'bg-green-200 hover:bg-green-300'
-                  }`}
-                  onClick={() => handleSetUtama(ac)}
-                  disabled={loading || (acaraUtama && acaraUtama.tanggal === ac.tanggal)}
+                  className="btn btn-light"
+                  onClick={() => {
+                    setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
+                    setEditIndex(-1);
+                  }}
                 >
-                  {acaraUtama && acaraUtama.tanggal === ac.tanggal ? 'Utama' : 'Jadikan Utama'}
+                  Batal Edit
                 </button>
+              )}
+            </div>
+          </form>
+
+          {/* List acara */}
+          <div className="separator separator-dashed my-8"></div>
+
+          <div className="mb-4">
+            <h3 className="card-title align-items-start flex-column mb-4">
+              <span className="fw-bold mb-2">Daftar Acara</span>
+              <span className="text-muted fw-semibold fs-7">
+                Total {acaraList.length} acara
+              </span>
+            </h3>
+
+            {acaraList.length === 0 && (
+              <div className="alert alert-primary d-flex align-items-center p-5">
+                <i className="ki-duotone ki-information-5 fs-2hx text-primary me-4">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                  <span className="path3"></span>
+                </i>
+                <div className="d-flex flex-column">
+                  <h4 className="mb-1 text-primary">Belum Ada Acara</h4>
+                  <span>Silakan tambahkan acara menggunakan form di atas</span>
+                </div>
               </div>
-            </li>
-          ))}
-        </ul>
+            )}
+
+            {acaraList.map((ac, i) => (
+              <div key={i} className="card card-flush shadow-sm mb-5">
+                <div className="card-body py-5">
+                  <div className="d-flex flex-column flex-md-row align-items-md-center">
+                    <div className="flex-grow-1">
+                      <div className="d-flex align-items-center mb-2">
+                        <span className="fs-3 fw-bold text-gray-900 me-3">{ac.nama}</span>
+                        {acaraUtama && acaraUtama.tanggal === ac.tanggal && (
+                          <span className="badge badge-light-primary">Acara Utama</span>
+                        )}
+                      </div>
+                      <div className="d-flex flex-wrap">
+                        <div className="border border-dashed border-gray-300 rounded min-w-125px py-3 px-4 me-3 mb-3">
+                          <div className="fs-6 text-gray-800 fw-bold">{formatDate(ac.tanggal)}</div>
+                          <div className="fw-semibold text-gray-500">{ac.waktu}</div>
+                        </div>
+                        <div className="border border-dashed border-gray-300 rounded py-3 px-4 mb-3 flex-grow-1">
+                          <div className="fs-6 text-gray-800 fw-bold">{ac.lokasi}</div>
+                          <div className="fw-semibold text-gray-500">{ac.alamat}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="d-flex gap-2 mt-3 mt-md-0">
+                      <button 
+                        type="button"
+                        className="btn btn-icon btn-light-primary btn-sm"
+                        onClick={() => handleEdit(i)}
+                        title="Edit"
+                      >
+                        <i className="ki-duotone ki-pencil fs-2">
+                          <span className="path1"></span>
+                          <span className="path2"></span>
+                        </i>
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-icon btn-light-danger btn-sm"
+                        onClick={() => handleDelete(i)}
+                        title="Hapus"
+                      >
+                        <i className="ki-duotone ki-trash fs-2">
+                          <span className="path1"></span>
+                          <span className="path2"></span>
+                          <span className="path3"></span>
+                          <span className="path4"></span>
+                          <span className="path5"></span>
+                        </i>
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${
+                          acaraUtama && acaraUtama.tanggal === ac.tanggal 
+                            ? 'btn-secondary' 
+                            : 'btn-light-success'
+                        }`}
+                        onClick={() => handleSetUtama(ac)}
+                        disabled={loading || (acaraUtama && acaraUtama.tanggal === ac.tanggal)}
+                      >
+                        {acaraUtama && acaraUtama.tanggal === ac.tanggal ? (
+                          <>
+                            <i className="ki-duotone ki-check fs-2 me-2">
+                              <span className="path1"></span>
+                              <span className="path2"></span>
+                            </i>
+                            Acara Utama
+                          </>
+                        ) : (
+                          <>
+                            <i className="ki-duotone ki-star fs-2 me-2">
+                              <span className="path1"></span>
+                              <span className="path2"></span>
+                            </i>
+                            Jadikan Utama
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </UserLayout>
   );
 }

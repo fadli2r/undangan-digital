@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
 
 export default function EditTambahan() {
   const router = useRouter();
@@ -70,6 +71,7 @@ export default function EditTambahan() {
 
       if (res.ok) {
         setSuccess("Berhasil menyimpan perubahan!");
+        setTimeout(() => setSuccess(""), 3000);
       } else {
         const data = await res.json();
         setError(data.message || "Gagal menyimpan perubahan");
@@ -123,218 +125,276 @@ export default function EditTambahan() {
   if (!slug) return null;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6 flex items-center gap-2">
-        <Link href={`/edit-undangan/${slug}`} className="text-blue-500">
-          ← Kembali
-        </Link>
-        <h1 className="text-2xl font-bold">Edit Informasi Tambahan</h1>
-      </div>
+    <UserLayout>
+      <BackButton />
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Informasi Tambahan</h2>
+          </div>
+        </div>
+        <div className="card-body">
+          <form onSubmit={handleSubmit}>
+            <div className="row g-5">
+              {/* Live Streaming Section */}
+              <div className="col-12">
+                <div className="card card-flush shadow-sm">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Live Streaming</h3>
+                  </div>
+                  <div className="card-body">
+                    <div className="mb-5">
+                      <label className="form-check form-check-custom form-check-solid">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="live_streaming.enabled"
+                          checked={form.tambahan.live_streaming.enabled}
+                          onChange={handleChange}
+                        />
+                        <span className="form-check-label fw-semibold">
+                          Aktifkan Live Streaming
+                        </span>
+                      </label>
+                    </div>
+                    {form.tambahan.live_streaming.enabled && (
+                      <div>
+                        <label className="form-label required">Link YouTube Live</label>
+                        <input
+                          type="url"
+                          name="live_streaming.youtube_url"
+                          value={form.tambahan.live_streaming.youtube_url}
+                          onChange={handleChange}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          className="form-control"
+                        />
+                        <div className="form-text">
+                          Masukkan link YouTube Live atau Video
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Live Streaming Section */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Live Streaming</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="live_streaming.enabled"
-                  checked={form.tambahan.live_streaming.enabled}
-                  onChange={handleChange}
-                />
-                <span>Aktifkan Live Streaming</span>
-              </label>
+              {/* Musik Background */}
+              <div className="col-12">
+                <div className="card card-flush shadow-sm">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Musik Background</h3>
+                  </div>
+                  <div className="card-body">
+                    <div className="mb-5">
+                      <label className="form-check form-check-custom form-check-solid">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          name="musik.enabled"
+                          checked={form.tambahan.musik.enabled}
+                          onChange={handleChange}
+                        />
+                        <span className="form-check-label fw-semibold">
+                          Aktifkan Musik
+                        </span>
+                      </label>
+                    </div>
+                    {form.tambahan.musik.enabled && (
+                      <>
+                        <div className="mb-5">
+                          <label className="form-label required">URL Musik</label>
+                          <input
+                            type="url"
+                            name="musik.url"
+                            value={form.tambahan.musik.url}
+                            onChange={handleChange}
+                            placeholder="URL file musik atau YouTube"
+                            className="form-control"
+                          />
+                        </div>
+                        <div className="mb-5">
+                          <label className="form-label">Tipe</label>
+                          <select
+                            name="musik.type"
+                            value={form.tambahan.musik.type}
+                            onChange={handleChange}
+                            className="form-select"
+                          >
+                            <option value="file">File Audio</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="spotify">Spotify</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="form-check form-check-custom form-check-solid">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              name="musik.autoplay"
+                              checked={form.tambahan.musik.autoplay}
+                              onChange={handleChange}
+                            />
+                            <span className="form-check-label fw-semibold">
+                              Autoplay
+                            </span>
+                          </label>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Catatan */}
+              <div className="col-md-6">
+                <div className="card card-flush shadow-sm h-100">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Catatan Tambahan</h3>
+                  </div>
+                  <div className="card-body">
+                    <textarea
+                      name="catatan"
+                      value={form.tambahan.catatan}
+                      onChange={handleChange}
+                      placeholder="Catatan tambahan untuk tamu..."
+                      className="form-control"
+                      rows={5}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dress Code */}
+              <div className="col-md-6">
+                <div className="card card-flush shadow-sm h-100">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Dress Code</h3>
+                  </div>
+                  <div className="card-body">
+                    <div className="row g-5">
+                      <div className="col-6">
+                        <label className="form-label">Warna Baju</label>
+                        <input
+                          type="color"
+                          name="dresscode.baju"
+                          value={form.tambahan.dresscode.baju}
+                          onChange={(e) => {
+                            setForm(prev => ({
+                              ...prev,
+                              tambahan: {
+                                ...prev.tambahan,
+                                dresscode: {
+                                  ...prev.tambahan.dresscode,
+                                  baju: e.target.value
+                                }
+                              }
+                            }));
+                          }}
+                          className="form-control form-control-color w-100 h-50px"
+                        />
+                      </div>
+                      <div className="col-6">
+                        <label className="form-label">Warna Celana/Rok</label>
+                        <input
+                          type="color"
+                          name="dresscode.celana"
+                          value={form.tambahan.dresscode.celana}
+                          onChange={(e) => {
+                            setForm(prev => ({
+                              ...prev,
+                              tambahan: {
+                                ...prev.tambahan,
+                                dresscode: {
+                                  ...prev.tambahan.dresscode,
+                                  celana: e.target.value
+                                }
+                              }
+                            }));
+                          }}
+                          className="form-control form-control-color w-100 h-50px"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Maps URL */}
+              <div className="col-12">
+                <div className="card card-flush shadow-sm">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Google Maps Embed</h3>
+                  </div>
+                  <div className="card-body">
+                    <textarea
+                      name="maps_url"
+                      value={form.tambahan.maps_url}
+                      onChange={handleChange}
+                      placeholder="Paste iframe embed code dari Google Maps di sini..."
+                      className="form-control"
+                      rows={4}
+                    />
+                    <div className="form-text">
+                      Untuk mendapatkan embed code: Buka Google Maps → Pilih lokasi → Share → Embed a map → Copy HTML
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Protokol */}
+              <div className="col-12">
+                <div className="card card-flush shadow-sm">
+                  <div className="card-header">
+                    <h3 className="card-title fw-bold">Protokol Kesehatan</h3>
+                  </div>
+                  <div className="card-body">
+                    <textarea
+                      name="protokol"
+                      value={form.tambahan.protokol}
+                      onChange={handleChange}
+                      placeholder="Protokol kesehatan yang harus dipatuhi..."
+                      className="form-control"
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            {form.tambahan.live_streaming.enabled && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Link YouTube Live
-                </label>
-                <input
-                  type="url"
-                  name="live_streaming.youtube_url"
-                  value={form.tambahan.live_streaming.youtube_url}
-                  onChange={handleChange}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full p-2 border rounded"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Masukkan link YouTube Live atau Video
-                </p>
+
+            {success && (
+              <div className="alert alert-success mt-8">
+                <i className="ki-duotone ki-check-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {success}
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Musik Background */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Musik Background</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="musik.enabled"
-                  checked={form.tambahan.musik.enabled}
-                  onChange={handleChange}
-                />
-                <span>Aktifkan Musik</span>
-              </label>
-            </div>
-            {form.tambahan.musik.enabled && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    URL Musik
-                  </label>
-                  <input
-                    type="url"
-                    name="musik.url"
-                    value={form.tambahan.musik.url}
-                    onChange={handleChange}
-                    placeholder="URL file musik atau YouTube"
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Tipe
-                  </label>
-                  <select
-                    name="musik.type"
-                    value={form.tambahan.musik.type}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="file">File Audio</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="spotify">Spotify</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="musik.autoplay"
-                      checked={form.tambahan.musik.autoplay}
-                      onChange={handleChange}
-                    />
-                    <span>Autoplay</span>
-                  </label>
-                </div>
-              </>
+            {error && (
+              <div className="alert alert-danger mt-8">
+                <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {error}
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* Catatan */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Catatan Tambahan</h3>
-          <textarea
-            name="catatan"
-            value={form.tambahan.catatan}
-            onChange={handleChange}
-            placeholder="Catatan tambahan untuk tamu..."
-            className="w-full p-2 border rounded h-32"
-          />
-        </div>
-
-        {/* Dress Code */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Dress Code</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Warna Baju
-              </label>
-              <input
-                type="color"
-                name="dresscode.baju"
-                value={form.tambahan.dresscode.baju}
-                onChange={(e) => {
-                  setForm(prev => ({
-                    ...prev,
-                    tambahan: {
-                      ...prev.tambahan,
-                      dresscode: {
-                        ...prev.tambahan.dresscode,
-                        baju: e.target.value
-                      }
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded h-12"
-              />
+            <div className="text-center mt-8">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary"
+              >
+                {loading && (
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                )}
+                {loading ? "Menyimpan..." : "Simpan"}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Warna Celana/Rok
-              </label>
-              <input
-                type="color"
-                name="dresscode.celana"
-                value={form.tambahan.dresscode.celana}
-                onChange={(e) => {
-                  setForm(prev => ({
-                    ...prev,
-                    tambahan: {
-                      ...prev.tambahan,
-                      dresscode: {
-                        ...prev.tambahan.dresscode,
-                        celana: e.target.value
-                      }
-                    }
-                  }));
-                }}
-                className="w-full p-2 border rounded h-12"
-              />
-            </div>
-          </div>
+          </form>
         </div>
-
-        {/* Maps URL */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Google Maps Embed</h3>
-          <textarea
-            name="maps_url"
-            value={form.tambahan.maps_url}
-            onChange={handleChange}
-            placeholder="Paste iframe embed code dari Google Maps di sini..."
-            className="w-full p-2 border rounded h-32"
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            Untuk mendapatkan embed code: Buka Google Maps → Pilih lokasi → Share → Embed a map → Copy HTML
-          </p>
-        </div>
-
-        {/* Protokol */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Protokol Kesehatan</h3>
-          <textarea
-            name="protokol"
-            value={form.tambahan.protokol}
-            onChange={handleChange}
-            placeholder="Protokol kesehatan yang harus dipatuhi..."
-            className="w-full p-2 border rounded h-32"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-          >
-            {loading ? "Menyimpan..." : "Simpan"}
-          </button>
-        </div>
-
-        {success && <div className="text-green-600">{success}</div>}
-        {error && <div className="text-red-600">{error}</div>}
-      </form>
-    </div>
+      </div>
+    </UserLayout>
   );
 }

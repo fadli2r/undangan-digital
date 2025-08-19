@@ -1,173 +1,144 @@
 import dbConnect from '../../../../../lib/dbConnect';
-import adminAuth from '../../../../../middleware/adminAuth';
 import Package from '../../../../../models/Package';
-import ActivityLog from '../../../../../models/ActivityLog';
+import adminAuth from '../../../../../middleware/adminAuth';
 
 export default async function handler(req, res) {
   await dbConnect();
 
-  // Apply admin authentication middleware
-  await new Promise((resolve, reject) => {
-    adminAuth(['packages.view'])(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
+  // Verify admin authentication
+  const authMiddleware = adminAuth();
+  
+  // Create a promise to handle middleware
+  const authResult = await new Promise((resolve, reject) => {
+    authMiddleware(req, res, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(true);
       }
-      return resolve(result);
     });
+  }).catch(() => {
+    return res.status(401).json({ error: 'Unauthorized' });
   });
 
+  if (!authResult) return;
+
   const { packageId } = req.query;
+  const { method } = req;
 
-  switch (req.method) {
+  switch (method) {
     case 'GET':
-      return await getPackage(req, res, packageId);
-    case 'PUT':
-      return await updatePackage(req, res, packageId);
-    case 'DELETE':
-      return await deletePackage(req, res, packageId);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
-  }
-}
-
-async function getPackage(req, res, packageId) {
-  try {
-    const pkg = await Package.findById(packageId);
-    if (!pkg) {
-      return res.status(404).json({ error: 'Package not found' });
-    }
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'package.view',
-      target: pkg._id,
-      targetModel: 'Package',
-      details: { packageName: pkg.name },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-
-    return res.status(200).json({ package: pkg });
-
-  } catch (error) {
-    console.error('Get Package Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-async function updatePackage(req, res, packageId) {
-  try {
-    // Check permissions
-    if (!req.admin.permissions.includes('packages.edit')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    const pkg = await Package.findById(packageId);
-    if (!pkg) {
-      return res.status(404).json({ error: 'Package not found' });
-    }
-
-    const {
-      name,
-      description,
-      price,
-      originalPrice,
-      duration,
-      features,
-      limits,
-      metadata,
-      isActive,
-      isPopular,
-      isFeatured,
-      sortOrder
-    } = req.body;
-
-    // Store old values for logging
-    const oldValues = {
-      name: pkg.name,
-      price: pkg.price,
-      isActive: pkg.isActive
-    };
-
-    // Update fields
-    if (name !== undefined) pkg.name = name;
-    if (description !== undefined) pkg.description = description;
-    if (price !== undefined) pkg.price = price;
-    if (originalPrice !== undefined) pkg.originalPrice = originalPrice;
-    if (duration !== undefined) pkg.duration = duration;
-    if (features !== undefined) pkg.features = features;
-    if (limits !== undefined) pkg.limits = limits;
-    if (metadata !== undefined) pkg.metadata = metadata;
-    if (isActive !== undefined) pkg.isActive = isActive;
-    if (isPopular !== undefined) pkg.isPopular = isPopular;
-    if (isFeatured !== undefined) pkg.isFeatured = isFeatured;
-    if (sortOrder !== undefined) pkg.sortOrder = sortOrder;
-
-    await pkg.save();
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'package.update',
-      target: pkg._id,
-      targetModel: 'Package',
-      details: {
-        packageName: pkg.name,
-        changes: {
-          name: oldValues.name !== pkg.name ? { from: oldValues.name, to: pkg.name } : undefined,
-          price: oldValues.price !== pkg.price ? { from: oldValues.price, to: pkg.price } : undefined,
-          isActive: oldValues.isActive !== pkg.isActive ? { from: oldValues.isActive, to: pkg.isActive } : undefined
+      try {
+        const pkg = await Package.findById(packageId);
+        if (!pkg) {
+          return res.status(404).json({ error: 'Paket tidak ditemukan' });
         }
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
 
-    return res.status(200).json({ package: pkg });
+        res.status(200).json({ package: pkg });
+      } catch (error) {
+        console.error('Error fetching package:', error);
+        res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data paket' });
+      }
+      break;
 
-  } catch (error) {
-    console.error('Update Package Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
+    case 'PUT':
+      try {
+        const {
+          name,
+          description,
+          price,
+          originalPrice,
+          duration,
+          features,
+          limits,
+          metadata,
+          isActive,
+          isPopular,
+          isFeatured,
+          sortOrder
+        } = req.body;
 
-async function deletePackage(req, res, packageId) {
-  try {
-    // Check permissions
-    if (!req.admin.permissions.includes('packages.delete')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
+        // Validate required fields
+        if (!name || !description || !price || !duration) {
+          return res.status(400).json({
+            error: 'Nama, deskripsi, harga, dan durasi wajib diisi'
+          });
+        }
 
-    const pkg = await Package.findById(packageId);
-    if (!pkg) {
-      return res.status(404).json({ error: 'Package not found' });
-    }
+        // Validate duration
+        if (!duration.value || !duration.unit) {
+          return res.status(400).json({
+            error: 'Durasi harus memiliki nilai dan unit'
+          });
+        }
 
-    // TODO: Check if package is being used by any active subscriptions
-    // For now, we'll allow deletion but in production you might want to prevent this
+        // Validate price
+        if (price <= 0) {
+          return res.status(400).json({
+            error: 'Harga harus lebih dari 0'
+          });
+        }
 
-    await Package.findByIdAndDelete(packageId);
+        const updatedPackage = await Package.findByIdAndUpdate(
+          packageId,
+          {
+            name,
+            description,
+            price: parseFloat(price),
+            originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+            duration,
+            features: features || [],
+            limits: limits || {},
+            metadata: metadata || {},
+            isActive: isActive !== false,
+            isPopular: isPopular || false,
+            isFeatured: isFeatured || false,
+            sortOrder: sortOrder || 0
+          },
+          { new: true, runValidators: true }
+        );
 
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'package.delete',
-      details: {
-        packageName: pkg.name,
-        packagePrice: pkg.price
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
+        if (!updatedPackage) {
+          return res.status(404).json({ error: 'Paket tidak ditemukan' });
+        }
 
-    return res.status(200).json({ message: 'Package deleted successfully' });
+        res.status(200).json({
+          message: 'Paket berhasil diperbarui',
+          package: updatedPackage
+        });
+      } catch (error) {
+        console.error('Error updating package:', error);
+        if (error.name === 'ValidationError') {
+          const errors = Object.values(error.errors).map(err => err.message);
+          return res.status(400).json({ error: errors.join(', ') });
+        }
+        res.status(500).json({ error: 'Terjadi kesalahan saat memperbarui paket' });
+      }
+      break;
 
-  } catch (error) {
-    console.error('Delete Package Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    case 'DELETE':
+      try {
+        const pkg = await Package.findById(packageId);
+        if (!pkg) {
+          return res.status(404).json({ error: 'Paket tidak ditemukan' });
+        }
+
+        // TODO: Check if package is being used by any active subscriptions
+        // For now, we'll allow deletion but in production you might want to prevent this
+
+        await Package.findByIdAndDelete(packageId);
+
+        res.status(200).json({
+          message: 'Paket berhasil dihapus'
+        });
+      } catch (error) {
+        console.error('Error deleting package:', error);
+        res.status(500).json({ error: 'Terjadi kesalahan saat menghapus paket' });
+      }
+      break;
+
+    default:
+      res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
+      res.status(405).json({ error: `Method ${method} tidak diizinkan` });
   }
 }

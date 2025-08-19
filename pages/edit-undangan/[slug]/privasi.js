@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { motion } from 'framer-motion';
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
 
 export default function PrivacySettings() {
   const router = useRouter();
@@ -84,160 +85,147 @@ export default function PrivacySettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="bg-white rounded-2xl shadow-xl p-8"
-        >
+    <UserLayout>
+      <BackButton />
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Pengaturan Privasi</h2>
+          </div>
+        </div>
+        <div className="card-body">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              Pengaturan Privasi
-            </h1>
-            <p className="text-gray-600">
+            <p className="text-muted fs-6">
               Kelola privasi dan keamanan undangan Anda
             </p>
           </div>
 
           {message && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6"
-            >
+            <div className="alert alert-success mb-8">
+              <i className="ki-duotone ki-check-circle fs-2 me-2">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
               {message}
-            </motion.div>
+            </div>
           )}
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6"
-            >
+            <div className="alert alert-danger mb-8">
+              <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
               {error}
-            </motion.div>
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit}>
             {/* Password Protection */}
-            <div className="border border-gray-200 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Proteksi Password
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Lindungi undangan dengan password untuk akses terbatas
-                  </p>
+            <div className="card card-flush shadow-sm mb-8">
+              <div className="card-body">
+                <div className="d-flex align-items-center justify-content-between mb-5">
+                  <div className="flex-grow-1">
+                    <h3 className="fs-4 fw-bold text-gray-900 mb-1">
+                      Proteksi Password
+                    </h3>
+                    <p className="text-muted fs-6 mb-0">
+                      Lindungi undangan dengan password untuk akses terbatas
+                    </p>
+                  </div>
+                  <div className="form-check form-switch form-check-custom form-check-solid">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={settings.isPasswordProtected}
+                      onChange={(e) => handleInputChange('isPasswordProtected', e.target.checked)}
+                    />
+                  </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.isPasswordProtected}
-                    onChange={(e) => handleInputChange('isPasswordProtected', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
 
-              {settings.isPasswordProtected && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4"
-                >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Masukkan password untuk undangan"
-                    required={settings.isPasswordProtected}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Password akan diminta sebelum tamu dapat melihat undangan
-                  </p>
-                </motion.div>
-              )}
+                {settings.isPasswordProtected && (
+                  <div className="mt-5">
+                    <label className="form-label required">Password</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={settings.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="Masukkan password untuk undangan"
+                      required={settings.isPasswordProtected}
+                    />
+                    <div className="form-text">
+                      Password akan diminta sebelum tamu dapat melihat undangan
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Hide Guestbook */}
-            <div className="border border-gray-200 rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Sembunyikan Buku Tamu
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Sembunyikan section ucapan dan doa dari tamu
-                  </p>
+            <div className="card card-flush shadow-sm mb-8">
+              <div className="card-body">
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="flex-grow-1">
+                    <h3 className="fs-4 fw-bold text-gray-900 mb-1">
+                      Sembunyikan Buku Tamu
+                    </h3>
+                    <p className="text-muted fs-6 mb-0">
+                      Sembunyikan section ucapan dan doa dari tamu
+                    </p>
+                  </div>
+                  <div className="form-check form-switch form-check-custom form-check-solid">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={settings.hideGuestbook}
+                      onChange={(e) => handleInputChange('hideGuestbook', e.target.checked)}
+                    />
+                  </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.hideGuestbook}
-                    onChange={(e) => handleInputChange('hideGuestbook', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
               </div>
             </div>
 
             {/* Hide RSVP */}
-            <div className="border border-gray-200 rounded-xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Sembunyikan RSVP
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Sembunyikan form konfirmasi kehadiran
-                  </p>
+            <div className="card card-flush shadow-sm mb-8">
+              <div className="card-body">
+                <div className="d-flex align-items-center justify-content-between">
+                  <div className="flex-grow-1">
+                    <h3 className="fs-4 fw-bold text-gray-900 mb-1">
+                      Sembunyikan RSVP
+                    </h3>
+                    <p className="text-muted fs-6 mb-0">
+                      Sembunyikan form konfirmasi kehadiran
+                    </p>
+                  </div>
+                  <div className="form-check form-switch form-check-custom form-check-solid">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={settings.hideRSVP}
+                      onChange={(e) => handleInputChange('hideRSVP', e.target.checked)}
+                    />
+                  </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.hideRSVP}
-                    onChange={(e) => handleInputChange('hideRSVP', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end pt-6">
+            <div className="text-center">
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary"
               >
-                {loading ? (
-                  <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Menyimpan...
-                  </div>
-                ) : (
-                  'Simpan Pengaturan'
+                {loading && (
+                  <span className="spinner-border spinner-border-sm me-2"></span>
                 )}
+                {loading ? 'Menyimpan...' : 'Simpan Pengaturan'}
               </button>
             </div>
           </form>
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </UserLayout>
   );
 }

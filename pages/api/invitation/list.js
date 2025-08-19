@@ -1,36 +1,66 @@
 import dbConnect from "../../../lib/dbConnect";
 import Invitation from "../../../models/Invitation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).end();
-  
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
   try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).json({ message: "Email diperlukan" });
+    const session = await getServerSession(req, res, authOptions);
+    
+    if (!session) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     await dbConnect();
-    
-    // Get all invitations for the user, sorted by creation date
-    const invitations = await Invitation.find({ 
-      user_email: email 
-    }).sort({ 
-      createdAt: -1 
-    }).select({
-      slug: 1,
-      template: 1,
-      mempelai: 1,
-      acara_utama: 1,
-      createdAt: 1,
-      views: 1
+
+    // Get status filter from query params
+    const { status } = req.query;
+
+    // Build query
+    const query = { user_email: session.user.email };
+    if (status && status !== 'Semua') {
+      query.status = status;
+    }
+
+    // Get invitations
+    const invitations = await Invitation.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Transform data
+    const transformedInvitations = invitations.map(inv => {
+      const groomBride = `${inv.mempelai?.pria || ''} & ${inv.mempelai?.wanita || ''}`.trim();
+      const status = inv.isExpired ? 'Selesai' : (inv.mempelai?.pria ? 'Aktif' : 'Draft');
+      
+      return {
+        id: inv._id.toString(),
+        slug: inv.slug,
+        nama: groomBride || 'Untitled',
+        template: inv.template,
+        tanggalDibuat: inv.createdAt,
+        tanggalAcara: inv.acara_utama?.tanggal,
+        status,
+        pengunjung: inv.views || 0,
+        rsvp: (inv.rsvp || []).length,
+        ucapan: (inv.ucapan || []).length,
+        thumbnail: `/templates/${inv.template.toLowerCase()}.jpg`
+      };
     });
 
-    console.log(`Found ${invitations.length} invitations for ${email}`);
-    
-    res.status(200).json({ invitations });
+    return res.status(200).json({
+      invitations: transformedInvitations,
+      total: transformedInvitations.length
+    });
+
   } catch (error) {
-    console.error("Error fetching invitations:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error('Error fetching invitations:', error);
+    return res.status(500).json({ 
+      message: 'Terjadi kesalahan server',
+      error: 'INTERNAL_SERVER_ERROR'
+    });
   }
 }

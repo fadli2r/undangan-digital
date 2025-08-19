@@ -1,191 +1,88 @@
+import { getSession } from 'next-auth/react';
 import dbConnect from '../../../../../lib/dbConnect';
-import adminAuth from '../../../../../middleware/adminAuth';
 import User from '../../../../../models/User';
-import ActivityLog from '../../../../../models/ActivityLog';
-import Invitation from '../../../../../models/Invitation';
+import adminAuth from '../../../../../middleware/adminAuth';
 
 export default async function handler(req, res) {
-  await dbConnect();
-
-  // Apply admin authentication middleware
-  await new Promise((resolve, reject) => {
-    adminAuth(['users.view'])(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
-
+  const session = await getSession({ req });
   const { userId } = req.query;
 
-  switch (req.method) {
-    case 'GET':
-      return await getUser(req, res, userId);
-    case 'PUT':
-      return await updateUser(req, res, userId);
-    case 'DELETE':
-      return await deleteUser(req, res, userId);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
+  // Check admin authentication
+  const authResult = await adminAuth(req, res);
+  if (!authResult.success) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
-}
 
-async function getUser(req, res, userId) {
-  try {
-    // Get user details
-    const user = await User.findById(userId).select('-password');
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+  await dbConnect();
 
-    // Get user's invitations
-    const invitations = await Invitation.find({ user: userId })
-      .select('slug mempelai status createdAt')
-      .sort({ createdAt: -1 });
+  if (req.method === 'GET') {
+    try {
+      const user = await User.findById(userId)
+        .select('-password')
+        .populate('currentPackage.packageId')
+        .populate('invitations')
+        .populate('purchases.packageId');
 
-    // Get activity logs for this user
-    const activityLogs = await ActivityLog.find({
-      $or: [
-        { actor: userId, actorModel: 'User' },
-        { target: userId, targetModel: 'User' }
-      ]
-    })
-    .sort({ createdAt: -1 })
-    .limit(20);
-
-    // Log admin's view activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'user.view',
-      target: userId,
-      targetModel: 'User',
-      details: { userEmail: user.email },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-
-    return res.status(200).json({
-      user,
-      invitations,
-      activityLogs
-    });
-
-  } catch (error) {
-    console.error('Get User Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-async function updateUser(req, res, userId) {
-  try {
-    // Check permissions
-    if (!req.admin.permissions.includes('users.edit')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    const { name, email, status, quota } = req.body;
-
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Check if email is being changed and if it's already in use
-    if (email && email.toLowerCase() !== user.email) {
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
-      if (existingUser) {
-        return res.status(400).json({ error: 'Email already in use' });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
       }
-      user.email = email.toLowerCase();
+
+      return res.status(200).json({ user });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch user details' });
     }
+  } else if (req.method === 'PUT') {
+    try {
+      const { name, email, phone, isActive } = req.body;
 
-    // Update fields
-    if (name) user.name = name;
-    if (status) user.status = status;
-    if (quota !== undefined) user.quota = quota;
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
 
-    await user.save();
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'user.update',
-      target: userId,
-      targetModel: 'User',
-      details: {
-        updates: {
-          name: name !== user.name ? name : undefined,
-          email: email !== user.email ? email : undefined,
-          status: status !== user.status ? status : undefined,
-          quota: quota !== user.quota ? quota : undefined
+      // Check email uniqueness if email is being changed
+      if (email !== user.email) {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+          return res.status(400).json({ error: 'Email already registered' });
         }
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
+      }
 
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user.toObject();
-    return res.status(200).json({ user: userWithoutPassword });
+      // Update user
+      user.name = name || user.name;
+      user.email = email || user.email;
+      user.phone = phone || user.phone;
+      if (typeof isActive === 'boolean') {
+        user.isActive = isActive;
+      }
 
-  } catch (error) {
-    console.error('Update User Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
+      await user.save();
 
-async function deleteUser(req, res, userId) {
-  try {
-    // Check permissions
-    if (!req.admin.permissions.includes('users.delete')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+      // Remove password from response
+      const userResponse = user.toObject();
+      delete userResponse.password;
+
+      return res.status(200).json({ user: userResponse });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to update user' });
     }
+  } else if (req.method === 'DELETE') {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
 
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      // Instead of deleting, we'll just deactivate the user
+      user.isActive = false;
+      await user.save();
+
+      return res.status(200).json({ message: 'User deactivated successfully' });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to deactivate user' });
     }
-
-    // Check if user has active invitations
-    const activeInvitations = await Invitation.countDocuments({
-      user: userId,
-      status: 'active'
-    });
-
-    if (activeInvitations > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete user with active invitations. Deactivate or delete invitations first.'
-      });
-    }
-
-    // Delete user's invitations
-    await Invitation.deleteMany({ user: userId });
-
-    // Delete user
-    await User.findByIdAndDelete(userId);
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'user.delete',
-      details: {
-        userEmail: user.email,
-        userName: user.name
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-
-    return res.status(200).json({ message: 'User deleted successfully' });
-
-  } catch (error) {
-    console.error('Delete User Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } else {
+    res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 }

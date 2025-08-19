@@ -1,5 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
 
 export default function EditOurStory() {
   const router = useRouter();
@@ -80,20 +82,20 @@ export default function EditOurStory() {
     try {
       const uploadedUrl = await uploadFile();
 
-    const res = await fetch("/api/invitation/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        slug,
-        field: {
-          our_story: {
-            main_photo: uploadedUrl,
-            title,
-            stories
+      const res = await fetch("/api/invitation/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          field: {
+            our_story: {
+              main_photo: uploadedUrl,
+              title,
+              stories
+            }
           }
-        }
-      }),
-    });
+        }),
+      });
       if (res.ok) {
         setMessage("Our Story berhasil disimpan.");
       } else {
@@ -106,80 +108,141 @@ export default function EditOurStory() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-10">
-      <h2 className="text-2xl font-bold mb-6">Edit Our Story</h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block font-semibold mb-1">Judul</label>
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="w-full border p-2 rounded"
-            required
-          />
+    <UserLayout>
+      <BackButton />
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Edit Our Story</h2>
+          </div>
         </div>
-        <div>
-          <label className="block font-semibold mb-1">Foto Utama</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full"
-          />
-          {mainPhotoUrl && (
-            <img src={mainPhotoUrl} alt="Preview Foto Utama" className="mt-4 max-h-48 object-cover rounded" />
-          )}
-        </div>
-        <div>
-          <label className="block font-semibold mb-2">Cerita</label>
-          {stories.map((story, index) => (
-            <div key={index} className="mb-4 border p-4 rounded relative">
-              <button
-                type="button"
-                onClick={() => removeStory(index)}
-                className="absolute top-2 right-2 text-red-600 font-bold"
-                title="Hapus cerita"
-              >
-                &times;
-              </button>
+        <div className="card-body">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-8">
+              <label className="form-label required">Judul</label>
               <input
                 type="text"
-                placeholder="Judul cerita"
-                value={story.heading}
-                onChange={e => handleStoryChange(index, "heading", e.target.value)}
-                className="w-full border p-2 rounded mb-2"
-                required
-              />
-              <textarea
-                placeholder="Isi cerita"
-                value={story.content}
-                onChange={e => handleStoryChange(index, "content", e.target.value)}
-                className="w-full border p-2 rounded"
-                rows={4}
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="form-control"
+                placeholder="Contoh: Kisah Cinta Kami"
                 required
               />
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={addStory}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Tambah Cerita
-          </button>
+
+            <div className="mb-8">
+              <label className="form-label">Foto Utama</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="form-control mb-3"
+              />
+              {mainPhotoUrl && (
+                <div className="text-center">
+                  <img 
+                    src={mainPhotoUrl} 
+                    alt="Preview Foto Utama" 
+                    className="rounded w-300px h-200px object-fit-cover border"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="mb-8">
+              <div className="d-flex justify-content-between align-items-center mb-5">
+                <label className="form-label fw-bold">Cerita</label>
+                <button
+                  type="button"
+                  onClick={addStory}
+                  className="btn btn-light-primary btn-sm"
+                >
+                  <i className="ki-duotone ki-plus fs-2">
+                    <span className="path1"></span>
+                    <span className="path2"></span>
+                  </i>
+                  Tambah Cerita
+                </button>
+              </div>
+
+              {stories.map((story, index) => (
+                <div key={index} className="card card-flush shadow-sm mb-5">
+                  <div className="card-header">
+                    <div className="card-title">
+                      <h4 className="fw-bold">Cerita {index + 1}</h4>
+                    </div>
+                    <div className="card-toolbar">
+                      {stories.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeStory(index)}
+                          className="btn btn-icon btn-light-danger btn-sm"
+                          title="Hapus cerita"
+                        >
+                          <i className="ki-duotone ki-trash fs-2">
+                            <span className="path1"></span>
+                            <span className="path2"></span>
+                            <span className="path3"></span>
+                            <span className="path4"></span>
+                            <span className="path5"></span>
+                          </i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="card-body">
+                    <div className="mb-5">
+                      <label className="form-label required">Judul Cerita</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: Pertemuan Pertama"
+                        value={story.heading}
+                        onChange={e => handleStoryChange(index, "heading", e.target.value)}
+                        className="form-control"
+                        required
+                      />
+                    </div>
+                    <div className="mb-5">
+                      <label className="form-label required">Isi Cerita</label>
+                      <textarea
+                        placeholder="Ceritakan momen spesial Anda..."
+                        value={story.content}
+                        onChange={e => handleStoryChange(index, "content", e.target.value)}
+                        className="form-control"
+                        rows={4}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {message && (
+              <div className={`alert ${message.includes('berhasil') ? 'alert-success' : 'alert-danger'} mb-8`}>
+                <i className={`ki-duotone ${message.includes('berhasil') ? 'ki-check-circle' : 'ki-cross-circle'} fs-2 me-2`}>
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                {message}
+              </div>
+            )}
+
+            <div className="text-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary"
+              >
+                {loading && (
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                )}
+                {loading ? "Menyimpan..." : "Simpan Our Story"}
+              </button>
+            </div>
+          </form>
         </div>
-        <div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-600 text-white px-6 py-2 rounded"
-          >
-            {loading ? "Menyimpan..." : "Simpan Our Story"}
-          </button>
-        </div>
-        {message && <div className="mt-4 text-center text-blue-600">{message}</div>}
-      </form>
-    </div>
+      </div>
+    </UserLayout>
   );
 }

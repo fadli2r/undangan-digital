@@ -12,6 +12,60 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
     CredentialsProvider({
+      id: 'user-credentials',
+      name: 'User Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        try {
+          console.log('User login attempt:', credentials.email);
+          
+          // Add timeout to database operations
+          const { withTimeout } = await import("../../../lib/dbConnect");
+          
+          await withTimeout(dbConnect(), 10000);
+          
+          const user = await withTimeout(
+            User.findOne({ 
+              email: credentials.email.toLowerCase(),
+              isActive: true,
+              isOAuthUser: false
+            }),
+            5000
+          );
+          
+          if (!user) {
+            console.log(`Failed login attempt: ${credentials.email} - User not found`);
+            return null;
+          }
+
+          // Compare password
+          const isValidPassword = await user.comparePassword(credentials.password);
+
+          if (!isValidPassword) {
+            console.log(`Failed login attempt: ${credentials.email} - Invalid password`);
+            return null;
+          }
+
+          console.log(`Successful user login: ${credentials.email}`);
+          
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            isAdmin: false,
+            isOAuthUser: false
+          };
+        } catch (error) {
+          console.error('Error in user authorization:', error);
+          return null;
+        }
+      }
+    }),
+    CredentialsProvider({
+      id: 'admin-credentials',
       name: 'Admin Credentials',
       credentials: {
         email: { label: "Email", type: "email" },
@@ -19,19 +73,67 @@ export default NextAuth({
       },
       async authorize(credentials) {
         try {
-          await dbConnect();
-          const admin = await Admin.findOne({ email: credentials.email });
+          console.log('Admin login attempt:', credentials.email);
           
-          if (admin && await admin.comparePassword(credentials.password)) {
-            return {
-              id: admin._id,
-              email: admin.email,
-              name: admin.name,
-              isAdmin: true,
-              role: admin.role
-            };
+          // Add timeout to database operations
+          const { withTimeout } = await import("../../../lib/dbConnect");
+          
+          await withTimeout(dbConnect(), 10000);
+          
+          // Create initial admin if it doesn't exist
+          await withTimeout(Admin.createInitialAdmin(), 5000);
+          
+          const admin = await withTimeout(
+            Admin.findOne({ 
+              email: credentials.email.toLowerCase(), 
+              isActive: true 
+            }),
+            5000
+          );
+          
+          if (!admin) {
+            console.log(`Failed login attempt: ${credentials.email} - Admin not found`);
+            return null;
           }
-          return null;
+
+          // For initial setup, allow hardcoded password, otherwise use bcrypt comparison
+          let isValidPassword = false;
+          if (credentials.password === 'admin123' && admin.email === 'admin@undangandigital.com') {
+            isValidPassword = true;
+            console.log('Using default admin credentials');
+          } else {
+            isValidPassword = await admin.comparePassword(credentials.password);
+          }
+
+          if (!isValidPassword) {
+            console.log(`Failed login attempt: ${credentials.email} - Invalid password`);
+            return null;
+          }
+
+          // Update last login (with timeout)
+          try {
+            admin.lastLogin = new Date();
+            admin.loginHistory.push({
+              timestamp: new Date(),
+              ip: '127.0.0.1',
+              userAgent: 'NextAuth'
+            });
+            await withTimeout(admin.save(), 3000);
+          } catch (saveError) {
+            console.warn('Failed to update admin login history:', saveError);
+            // Don't fail login if we can't update history
+          }
+
+          console.log(`Successful admin login: ${credentials.email}`);
+          
+          return {
+            id: admin._id.toString(),
+            email: admin.email,
+            name: admin.name,
+            isAdmin: true,
+            role: admin.role,
+            permissions: admin.permissions
+          };
         } catch (error) {
           console.error('Error in admin authorization:', error);
           return null;
@@ -50,28 +152,27 @@ export default NextAuth({
             // Check if user exists
             let dbUser = await User.findOne({ email: user.email });
             
-            // If not, create new user with free status
+            // If not, create new user with OAuth flag
             if (!dbUser) {
               dbUser = await User.create({
                 email: user.email,
                 name: user.name,
-                paket: "free",
-                quota: 1,
-                status_pembayaran: "free"
+                isOAuthUser: true
               });
-              console.log("New user created:", user.email);
+              console.log("New OAuth user created:", user.email);
             } else {
+              // Update existing user to mark as OAuth user if not already
+              if (!dbUser.isOAuthUser) {
+                dbUser.isOAuthUser = true;
+                await dbUser.save();
+              }
               console.log("Existing user found:", user.email);
             }
           };
 
-          // Execute with timeout
-          await Promise.race([
-            dbOperation(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database timeout')), 5000)
-            )
-          ]);
+          // Execute with timeout using our utility function
+          const { withTimeout } = await import("../../../lib/dbConnect");
+          await withTimeout(dbOperation(), 8000);
           
           return true;
         } catch (error) {
@@ -87,72 +188,35 @@ export default NextAuth({
       if (token.isAdmin) {
         session.user.isAdmin = true;
         session.user.role = token.role;
+        session.user.permissions = token.permissions || [];
       } else {
-        session.user.paket = token.paket || "free";
-        session.user.quota = token.quota || 0;
-        session.user.status_pembayaran = token.status_pembayaran || "free";
+        session.user.isAdmin = false;
+        session.user.isOAuthUser = token.isOAuthUser || false;
+        // Add user-specific data if needed
       }
       return session;
     },
     async jwt({ token, user, trigger }) {
       if (user?.isAdmin) {
+        // Store admin info in token
         token.isAdmin = true;
         token.role = user.role;
-      } else if (user && !token.isAdmin) {
-        // Store user data in token on first login with timeout
+        
+        // Get admin permissions from database
         try {
-          const fetchUserData = async () => {
-            await dbConnect();
-            const dbUser = await User.findOne({ email: user.email });
-            if (dbUser) {
-              token.paket = dbUser.paket;
-              token.quota = dbUser.quota;
-              token.status_pembayaran = dbUser.status_pembayaran;
-            } else {
-              // Set defaults if user not found
-              token.paket = "free";
-              token.quota = 1;
-              token.status_pembayaran = "free";
-            }
-          };
-
-          await Promise.race([
-            fetchUserData(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('JWT timeout')), 3000)
-            )
-          ]);
+          await dbConnect();
+          const admin = await Admin.findOne({ email: user.email });
+          if (admin) {
+            token.permissions = admin.permissions || [];
+          }
         } catch (error) {
-          console.error("Error fetching user data for token:", error);
-          // Set defaults on error
-          token.paket = "free";
-          token.quota = 1;
-          token.status_pembayaran = "free";
+          console.error('Error fetching admin permissions:', error);
+          token.permissions = [];
         }
-      }
-      
-      // Refresh user data if explicitly triggered
-      if (trigger === "update" && !token.isAdmin) {
-        try {
-          const updateUserData = async () => {
-            await dbConnect();
-            const dbUser = await User.findOne({ email: token.email });
-            if (dbUser) {
-              token.paket = dbUser.paket;
-              token.quota = dbUser.quota;
-              token.status_pembayaran = dbUser.status_pembayaran;
-            }
-          };
-
-          await Promise.race([
-            updateUserData(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Update timeout')), 3000)
-            )
-          ]);
-        } catch (error) {
-          console.error("Error updating user data in token:", error);
-        }
+      } else if (user && !user.isAdmin) {
+        // Store user info in token
+        token.isAdmin = false;
+        token.isOAuthUser = user.isOAuthUser || false;
       }
       
       return token;

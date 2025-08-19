@@ -1,121 +1,136 @@
 import dbConnect from '../../../../lib/dbConnect';
-import adminAuth from '../../../../middleware/adminAuth';
 import Package from '../../../../models/Package';
-import ActivityLog from '../../../../models/ActivityLog';
+import adminAuth from '../../../../middleware/adminAuth';
 
 export default async function handler(req, res) {
   await dbConnect();
 
-  // Apply admin authentication middleware
-  await new Promise((resolve, reject) => {
-    adminAuth(['packages.view'])(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
+  // Verify admin authentication
+  const authMiddleware = adminAuth();
+  
+  // Create a promise to handle middleware
+  const authResult = await new Promise((resolve, reject) => {
+    authMiddleware(req, res, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(true);
       }
-      return resolve(result);
     });
+  }).catch(() => {
+    return res.status(401).json({ error: 'Unauthorized' });
   });
 
-  switch (req.method) {
+  if (!authResult) return;
+
+  const { method } = req;
+
+  switch (method) {
     case 'GET':
-      return await getPackages(req, res);
+      try {
+        const { search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        
+        // Build query
+        let query = {};
+        
+        if (search) {
+          query.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } }
+          ];
+        }
+        
+        if (status !== undefined) {
+          query.isActive = status === 'true';
+        }
+
+        // Build sort object
+        const sort = {};
+        sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+        const packages = await Package.find(query)
+          .sort(sort)
+          .lean();
+
+        res.status(200).json({ packages });
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+        res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data paket' });
+      }
+      break;
+
     case 'POST':
-      return await createPackage(req, res);
+      try {
+        const {
+          name,
+          description,
+          price,
+          originalPrice,
+          duration,
+          features,
+          limits,
+          metadata,
+          isActive,
+          isPopular,
+          isFeatured,
+          sortOrder
+        } = req.body;
+
+        // Validate required fields
+        if (!name || !description || !price || !duration) {
+          return res.status(400).json({
+            error: 'Nama, deskripsi, harga, dan durasi wajib diisi'
+          });
+        }
+
+        // Validate duration
+        if (!duration.value || !duration.unit) {
+          return res.status(400).json({
+            error: 'Durasi harus memiliki nilai dan unit'
+          });
+        }
+
+        // Validate price
+        if (price <= 0) {
+          return res.status(400).json({
+            error: 'Harga harus lebih dari 0'
+          });
+        }
+
+        // Create package
+        const newPackage = new Package({
+          name,
+          description,
+          price: parseFloat(price),
+          originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+          duration,
+          features: features || [],
+          limits: limits || {},
+          metadata: metadata || {},
+          isActive: isActive !== false,
+          isPopular: isPopular || false,
+          isFeatured: isFeatured || false,
+          sortOrder: sortOrder || 0
+        });
+
+        await newPackage.save();
+
+        res.status(201).json({
+          message: 'Paket berhasil dibuat',
+          package: newPackage
+        });
+      } catch (error) {
+        console.error('Error creating package:', error);
+        if (error.name === 'ValidationError') {
+          const errors = Object.values(error.errors).map(err => err.message);
+          return res.status(400).json({ error: errors.join(', ') });
+        }
+        res.status(500).json({ error: 'Terjadi kesalahan saat membuat paket' });
+      }
+      break;
+
     default:
-      return res.status(405).json({ error: 'Method not allowed' });
-  }
-}
-
-async function getPackages(req, res) {
-  try {
-    const packages = await Package.find()
-      .sort({ sortOrder: 1, createdAt: -1 })
-      .lean();
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'packages.view',
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-
-    return res.status(200).json({ packages });
-
-  } catch (error) {
-    console.error('Get Packages Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-async function createPackage(req, res) {
-  try {
-    // Check permissions
-    if (!req.admin.permissions.includes('packages.edit')) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
-    const {
-      name,
-      description,
-      price,
-      originalPrice,
-      duration,
-      features,
-      limits,
-      metadata,
-      isActive,
-      isPopular,
-      isFeatured,
-      sortOrder
-    } = req.body;
-
-    // Validate required fields
-    if (!name || !description || !price || !duration) {
-      return res.status(400).json({
-        error: 'Name, description, price, and duration are required'
-      });
-    }
-
-    // Create package
-    const pkg = new Package({
-      name,
-      description,
-      price,
-      originalPrice,
-      duration,
-      features: features || [],
-      limits: limits || {},
-      metadata: metadata || {},
-      isActive: isActive !== undefined ? isActive : true,
-      isPopular,
-      isFeatured,
-      sortOrder: sortOrder || 0
-    });
-
-    await pkg.save();
-
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'package.create',
-      target: pkg._id,
-      targetModel: 'Package',
-      details: {
-        packageName: pkg.name,
-        price: pkg.price,
-        duration: pkg.duration
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
-    });
-
-    return res.status(201).json({ package: pkg });
-
-  } catch (error) {
-    console.error('Create Package Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+      res.setHeader('Allow', ['GET', 'POST']);
+      res.status(405).json({ error: `Method ${method} tidak diizinkan` });
   }
 }

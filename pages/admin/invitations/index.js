@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import AdminLayout from '../../../components/admin/Layout';
+import AdminLayoutJWT from '../../../components/layouts/AdminLayoutJWT';
 import Link from 'next/link';
 
 export default function InvitationManagement() {
@@ -42,7 +42,7 @@ export default function InvitationManagement() {
         limit: filters.limit
       });
 
-      const response = await fetch(`/api/admin/invitations?${queryParams}`, {
+      const response = await fetch(`/api/admin/invitations/index-jwt?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -51,7 +51,6 @@ export default function InvitationManagement() {
       
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expired or invalid, redirect to login
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminInfo');
           window.location.href = '/admin/login';
@@ -122,7 +121,7 @@ export default function InvitationManagement() {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/invitations/${invitationId}/${action}`, {
+      const response = await fetch(`/api/admin/invitations/${invitationId}/${action}-jwt`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -132,7 +131,6 @@ export default function InvitationManagement() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token expired or invalid, redirect to login
           localStorage.removeItem('adminToken');
           localStorage.removeItem('adminInfo');
           window.location.href = '/admin/login';
@@ -141,97 +139,78 @@ export default function InvitationManagement() {
         throw new Error(`Failed to ${action} invitation`);
       }
 
-      // Refresh invitation list
       fetchInvitations();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusClasses = {
-      active: 'bg-green-100 text-green-800',
-      draft: 'bg-yellow-100 text-yellow-800',
-      expired: 'bg-red-100 text-red-800',
-      inactive: 'bg-gray-100 text-gray-800'
-    };
-
-    return (
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>
-        {status}
-      </span>
-    );
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'active':
+        return 'badge-light-success';
+      case 'draft':
+        return 'badge-light-warning';
+      case 'expired':
+        return 'badge-light-danger';
+      case 'inactive':
+        return 'badge-light-dark';
+      default:
+        return 'badge-light-primary';
+    }
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Invitations</h1>
-            <p className="mt-2 text-sm text-gray-700">
-              Manage all wedding invitations on your platform.
-            </p>
+    <AdminLayoutJWT>
+      <div className="card">
+        {/* Begin::Card header */}
+        <div className="card-header border-0 pt-6">
+          {/* Begin::Card title */}
+          <div className="card-title">
+            {/* Begin::Search */}
+            <div className="d-flex align-items-center position-relative my-1">
+              <i className="ki-duotone ki-magnifier fs-3 position-absolute ms-5">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
+              <input 
+                type="text" 
+                className="form-control form-control-solid w-250px ps-12" 
+                placeholder="Search invitations"
+                value={filters.search}
+                onChange={handleSearch}
+              />
+            </div>
+            {/* End::Search */}
           </div>
-          <div className="mt-4 sm:mt-0">
-            <button
-              onClick={() => router.push('/admin/invitations/export')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
-            >
-              Export Data
-            </button>
-          </div>
-        </div>
+          {/* End::Card title */}
 
-        {/* Filters */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <label htmlFor="search" className="block text-sm font-medium text-gray-700">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  name="search"
-                  id="search"
-                  value={filters.search}
-                  onChange={handleSearch}
-                  placeholder="Search by couple names or slug"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
+          {/* Begin::Card toolbar */}
+          <div className="card-toolbar">
+            {/* Begin::Toolbar */}
+            <div className="d-flex justify-content-end" data-kt-user-table-toolbar="base">
+              {/* Begin::Filter */}
+              <div className="me-3">
                 <select
-                  id="status"
-                  name="status"
+                  className="form-select form-select-solid"
                   value={filters.status}
                   onChange={handleStatusFilter}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
-                  <option value="all">All</option>
+                  <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="draft">Draft</option>
                   <option value="expired">Expired</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
+              {/* End::Filter */}
 
-              <div>
-                <label htmlFor="template" className="block text-sm font-medium text-gray-700">
-                  Template
-                </label>
+              {/* Begin::Template Filter */}
+              <div className="me-3">
                 <select
-                  id="template"
-                  name="template"
+                  className="form-select form-select-solid"
                   value={filters.template}
                   onChange={handleTemplateFilter}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="all">All Templates</option>
                   <option value="classic">Classic</option>
@@ -239,220 +218,198 @@ export default function InvitationManagement() {
                   <option value="elegant">Elegant</option>
                 </select>
               </div>
-            </div>
-          </div>
-        </div>
+              {/* End::Template Filter */}
 
-        {/* Invitations Table */}
-        <div className="bg-white shadow rounded-lg">
+              {/* Begin::Export */}
+              <button 
+                type="button" 
+                className="btn btn-light-primary me-3"
+                onClick={() => router.push('/admin/invitations/export')}
+              >
+                <i className="ki-duotone ki-exit-up fs-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                Export
+              </button>
+              {/* End::Export */}
+            </div>
+            {/* End::Toolbar */}
+          </div>
+          {/* End::Card toolbar */}
+        </div>
+        {/* End::Card header */}
+
+        {/* Begin::Card body */}
+        <div className="card-body py-4">
           {loading ? (
-            <div className="px-4 py-5 sm:p-6 flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
             </div>
           ) : error ? (
-            <div className="px-4 py-5 sm:p-6">
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Error loading invitations</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="alert alert-danger">
+              {error}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                      onClick={() => handleSort('mempelai.pria')}
-                    >
-                      Couple
-                      {filters.sortBy === 'mempelai.pria' && (
-                        <span className="ml-1">
-                          {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                      onClick={() => handleSort('slug')}
-                    >
-                      Slug
-                      {filters.sortBy === 'slug' && (
-                        <span className="ml-1">
-                          {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Owner
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Template
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                      onClick={() => handleSort('createdAt')}
-                    >
-                      Created At
-                      {filters.sortBy === 'createdAt' && (
-                        <span className="ml-1">
-                          {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {invitations.map((invitation) => (
-                    <tr key={invitation._id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+            <table className="table align-middle table-row-dashed fs-6 gy-5" id="kt_table_invitations">
+              <thead>
+                <tr className="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+                  <th className="min-w-125px cursor-pointer" onClick={() => handleSort('mempelai.pria')}>
+                    Couple
+                    {filters.sortBy === 'mempelai.pria' && (
+                      <span className="ms-1">
+                        {filters.sortOrder === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </th>
+                  <th className="min-w-125px cursor-pointer" onClick={() => handleSort('slug')}>
+                    Slug
+                    {filters.sortBy === 'slug' && (
+                      <span className="ms-1">
+                        {filters.sortOrder === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </th>
+                  <th className="min-w-125px">Owner</th>
+                  <th className="min-w-125px">Template</th>
+                  <th className="min-w-125px">Status</th>
+                  <th className="min-w-125px cursor-pointer" onClick={() => handleSort('createdAt')}>
+                    Created At
+                    {filters.sortBy === 'createdAt' && (
+                      <span className="ms-1">
+                        {filters.sortOrder === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </th>
+                  <th className="text-end min-w-100px">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 fw-semibold">
+                {invitations.map((invitation) => (
+                  <tr key={invitation._id}>
+                    <td>
+                      <div className="d-flex flex-column">
+                        <span className="text-gray-800 mb-1">
                           {invitation.mempelai?.pria} & {invitation.mempelai?.wanita}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          href={`/${invitation.slug}`}
-                          target="_blank"
-                          className="text-sm text-blue-600 hover:text-blue-900"
-                        >
-                          {invitation.slug}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{invitation.user?.name}</div>
-                        <div className="text-sm text-gray-500">{invitation.user?.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 capitalize">{invitation.template}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(invitation.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(invitation.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <Link
+                        href={`/${invitation.slug}`}
+                        target="_blank"
+                        className="text-primary text-hover-primary"
+                      >
+                        {invitation.slug}
+                      </Link>
+                    </td>
+                    <td>
+                      <div className="d-flex flex-column">
+                        <span className="text-gray-800 mb-1">{invitation.user?.name}</span>
+                        <span className="text-gray-600">{invitation.user?.email}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="text-gray-800 text-capitalize">{invitation.template}</span>
+                    </td>
+                    <td>
+                      <div className={`badge ${getStatusBadgeClass(invitation.status)} fw-bold`}>
+                        {invitation.status}
+                      </div>
+                    </td>
+                    <td>{new Date(invitation.createdAt).toLocaleDateString()}</td>
+                    <td className="text-end">
+                      <button
+                        className="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1"
+                        onClick={() => router.push(`/admin/invitations/${invitation._id}`)}
+                      >
+                        <i className="ki-duotone ki-eye fs-2">
+                          <span className="path1"></span>
+                          <span className="path2"></span>
+                          <span className="path3"></span>
+                        </i>
+                      </button>
+                      {invitation.status === 'active' ? (
                         <button
-                          onClick={() => router.push(`/admin/invitations/${invitation._id}`)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
+                          className="btn btn-icon btn-bg-light btn-active-color-warning btn-sm me-1"
+                          onClick={() => handleAction(invitation._id, 'deactivate')}
                         >
-                          View
+                          <i className="ki-duotone ki-shield-cross fs-2">
+                            <span className="path1"></span>
+                            <span className="path2"></span>
+                          </i>
                         </button>
-                        {invitation.status === 'active' ? (
-                          <button
-                            onClick={() => handleAction(invitation._id, 'deactivate')}
-                            className="text-yellow-600 hover:text-yellow-900 mr-4"
-                          >
-                            Deactivate
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleAction(invitation._id, 'activate')}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                          >
-                            Activate
-                          </button>
-                        )}
+                      ) : (
                         <button
-                          onClick={() => handleAction(invitation._id, 'delete')}
-                          className="text-red-600 hover:text-red-900"
+                          className="btn btn-icon btn-bg-light btn-active-color-success btn-sm me-1"
+                          onClick={() => handleAction(invitation._id, 'activate')}
                         >
-                          Delete
+                          <i className="ki-duotone ki-shield-tick fs-2">
+                            <span className="path1"></span>
+                            <span className="path2"></span>
+                          </i>
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                      <button
+                        className="btn btn-icon btn-bg-light btn-active-color-danger btn-sm"
+                        onClick={() => handleAction(invitation._id, 'delete')}
+                      >
+                        <i className="ki-duotone ki-trash fs-2">
+                          <span className="path1"></span>
+                          <span className="path2"></span>
+                          <span className="path3"></span>
+                          <span className="path4"></span>
+                          <span className="path5"></span>
+                        </i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
 
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+          {/* Begin::Pagination */}
+          <div className="d-flex flex-stack flex-wrap pt-10">
+            <div className="fs-6 fw-semibold text-gray-700">
+              Showing {(pagination.currentPage - 1) * filters.limit + 1} to {Math.min(pagination.currentPage * filters.limit, pagination.totalInvitations)} of {pagination.totalInvitations} entries
             </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">
-                    {(pagination.currentPage - 1) * filters.limit + 1}
-                  </span>{' '}
-                  to{' '}
-                  <span className="font-medium">
-                    {Math.min(pagination.currentPage * filters.limit, pagination.totalInvitations)}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium">{pagination.totalInvitations}</span>{' '}
-                  results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  {[...Array(Math.min(pagination.totalPages, 5))].map((_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          pagination.currentPage === pageNum
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-            </div>
+            <ul className="pagination">
+              <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => handlePageChange(1)}>
+                  <i className="ki-duotone ki-double-left fs-5"></i>
+                </button>
+              </li>
+              <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => handlePageChange(pagination.currentPage - 1)}>
+                  <i className="ki-duotone ki-left fs-5"></i>
+                </button>
+              </li>
+              {[...Array(pagination.totalPages)].map((_, i) => (
+                <li key={i + 1} className={`page-item ${pagination.currentPage === i + 1 ? 'active' : ''}`}>
+                  <button className="page-link" onClick={() => handlePageChange(i + 1)}>
+                    {i + 1}
+                  </button>
+                </li>
+              ))}
+              <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => handlePageChange(pagination.currentPage + 1)}>
+                  <i className="ki-duotone ki-right fs-5"></i>
+                </button>
+              </li>
+              <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => handlePageChange(pagination.totalPages)}>
+                  <i className="ki-duotone ki-double-right fs-5"></i>
+                </button>
+              </li>
+            </ul>
           </div>
+          {/* End::Pagination */}
         </div>
+        {/* End::Card body */}
       </div>
-    </AdminLayout>
+    </AdminLayoutJWT>
   );
 }

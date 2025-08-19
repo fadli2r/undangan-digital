@@ -1,22 +1,6 @@
-import mongoose from 'mongoose';
+// This file is deprecated. Please use lib/dbConnect.js instead.
+// Keeping this for backward compatibility.
 
-const MONGODB_URI = process.env.MONGODB_URI;
+import dbConnect from '../lib/dbConnect.js';
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
-let cached = global.mongoose;
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function dbConnect() {
-  if (cached.conn) return cached.conn;
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false }).then(m => m);
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
 export default dbConnect;

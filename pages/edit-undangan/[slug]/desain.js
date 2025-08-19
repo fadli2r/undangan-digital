@@ -1,6 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { templateList } from "../../../data/templates";
+import UserLayout from "../../../components/layouts/UserLayout";
+import BackButton from "@/components/BackButton";
 
 export default function Desain() {
   const router = useRouter();
@@ -51,41 +53,128 @@ export default function Desain() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
-  if (!undangan) return <div className="p-8 text-center">Undangan tidak ditemukan.</div>;
+  if (loading) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <UserLayout>
+        <div className="alert alert-danger">
+          <h4 className="alert-heading">Error!</h4>
+          <p>{error}</p>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (!undangan) {
+    return (
+      <UserLayout>
+        <div className="alert alert-warning">
+          <h4 className="alert-heading">Data Tidak Ditemukan</h4>
+          <p>Undangan tidak ditemukan.</p>
+        </div>
+      </UserLayout>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto mt-12 p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4">Ubah Desain / Template Undangan</h2>
-      <div className="mb-6">
-        <b>Template sekarang:</b>
-        <span className="ml-2 px-2 py-1 bg-blue-100 rounded">
-          {selectedTemplate || "-"}
-        </span>
-      </div>
-      {success && <div className="mb-4 text-green-600">{success}</div>}
-      {error && <div className="mb-4 text-red-600">{error}</div>}
-
-      {/* List Template */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {templateList.map((tpl) => (
-          <div key={tpl.slug} className={`border rounded-xl p-4 shadow text-center flex flex-col items-center
-            ${selectedTemplate === tpl.slug ? "border-blue-600 ring-2 ring-blue-300" : ""}`}>
-            <img src={tpl.thumbnail} alt={tpl.name} className="w-full h-32 object-cover rounded mb-4" />
-            <div className="font-semibold">{tpl.name}</div>
-            <div className="text-xs mb-4 text-gray-500">{tpl.description}</div>
-            <button
-              className={`px-4 py-2 rounded mt-auto
-                ${selectedTemplate === tpl.slug ? "bg-gray-400 text-white cursor-not-allowed" : "bg-blue-600 text-white"}`}
-              onClick={() => handleChangeTemplate(tpl.slug)}
-              disabled={selectedTemplate === tpl.slug || loading}
-            >
-              {selectedTemplate === tpl.slug ? "Dipakai" : "Pilih Template"}
-            </button>
+    <UserLayout>
+      <BackButton />
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <h2 className="fw-bold">Ubah Desain / Template Undangan</h2>
           </div>
-        ))}
+        </div>
+        <div className="card-body">
+          <div className="mb-6">
+            <div className="d-flex align-items-center">
+              <span className="fw-bold me-3">Template sekarang:</span>
+              <span className="badge badge-light-primary">
+                {selectedTemplate || "-"}
+              </span>
+            </div>
+          </div>
+
+          {success && (
+            <div className="alert alert-success mb-4">
+              <i className="ki-duotone ki-check-circle fs-2 me-2">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
+              {success}
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-danger mb-4">
+              <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
+              {error}
+            </div>
+          )}
+
+          {/* List Template */}
+          <div className="row g-6 g-xl-9">
+            {templateList.map((tpl) => (
+              <div key={tpl.slug} className="col-md-6 col-lg-4">
+                <div className={`card card-flush h-100 ${selectedTemplate === tpl.slug ? "border-primary" : ""}`}>
+                  <div className="card-header pt-7">
+                    <div className="card-title">
+                      <img 
+                        src={tpl.thumbnail} 
+                        alt={tpl.name} 
+                        className="w-100 h-150px object-fit-cover rounded" 
+                      />
+                    </div>
+                  </div>
+                  <div className="card-body pt-0 text-center">
+                    <div className="fs-4 fw-bold text-gray-900 mb-2">{tpl.name}</div>
+                    <div className="fs-6 fw-semibold text-gray-600 mb-4">{tpl.description}</div>
+                    
+                    {selectedTemplate === tpl.slug && (
+                      <div className="badge badge-light-success mb-3">
+                        <i className="ki-duotone ki-check fs-2 me-1">
+                          <span className="path1"></span>
+                          <span className="path2"></span>
+                        </i>
+                        Template Aktif
+                      </div>
+                    )}
+                    
+                    <button
+                      className={`btn w-100 ${
+                        selectedTemplate === tpl.slug 
+                          ? "btn-light-secondary" 
+                          : "btn-primary"
+                      }`}
+                      onClick={() => handleChangeTemplate(tpl.slug)}
+                      disabled={selectedTemplate === tpl.slug || loading}
+                    >
+                      {loading && (
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                      )}
+                      {selectedTemplate === tpl.slug ? "Sedang Digunakan" : "Pilih Template"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </UserLayout>
   );
 }

@@ -1,57 +1,194 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import InvitationStats from "../../../components/templates/InvitationStats";
-import { useLanguage } from "../../../contexts/LanguageContext";
+import UserLayout from '@/components/layouts/UserLayout';
+import { useSession } from 'next-auth/react';
 
 export default function EditUndanganIndex() {
   const router = useRouter();
   const { slug } = router.query;
-  const { language, changeLanguage, t } = useLanguage();
+  const { data: session, status } = useSession();
 
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [newSlug, setNewSlug] = useState("");
   const [slugLoading, setSlugLoading] = useState(false);
   const [slugError, setSlugError] = useState("");
 
-  // Ambil data undangan dari API
+  // Fetch invitation data
   useEffect(() => {
-    if (!slug) return;
-    fetch(`/api/invitation/detail?slug=${slug}`)
-      .then(res => res.json())
-      .then(res => {
-        setData(res.undangan);
-        setNewSlug(res.undangan.custom_slug || res.undangan.slug);
-      });
-  }, [slug]);
+    const fetchData = async () => {
+      if (!slug || !session) return;
+      
+      try {
+        const response = await fetch(`/api/invitation/detail?slug=${slug}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch invitation');
+        }
+        const invitationData = await response.json();
+        if (invitationData.undangan) {
+          setData(invitationData.undangan);
+          setNewSlug(invitationData.undangan.custom_slug || invitationData.undangan.slug);
+        } else {
+          throw new Error('Data undangan tidak ditemukan');
+        }
+      } catch (err) {
+        console.error('Error fetching invitation:', err);
+        setError('Gagal memuat data undangan');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!data) return <div className="p-8 text-center">{t('loading')}</div>;
+    fetchData();
+  }, [slug, session]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/login-metronic');
+    }
+  }, [status, router]);
+
+  if (status === 'loading' || loading) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <UserLayout>
+        <div className="alert alert-danger">
+          <h4 className="alert-heading">Error!</h4>
+          <p>{error}</p>
+          <button 
+            className="btn btn-primary"
+            onClick={() => window.location.reload()}
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (!data) {
+    return (
+      <UserLayout>
+        <div className="alert alert-info">
+          <h4 className="alert-heading">Undangan Tidak Ditemukan</h4>
+          <p>Data undangan yang Anda cari tidak ditemukan atau Anda tidak memiliki akses.</p>
+          <Link href="/edit-undangan" className="btn btn-primary">
+            Kembali ke Daftar Undangan
+          </Link>
+        </div>
+      </UserLayout>
+    );
+  }
 
   // Menu navigasi
   const menu = [
-    { label: t("ubah_desain") || "Ubah Desain", path: "desain", icon: "🎨" },
-    { label: t("informasi_mempelai") || "Informasi Mempelai", path: "mempelai", icon: "👰" },
-    { label: t("informasi_acara") || "Informasi Acara", path: "acara", icon: "📅" },
-    { label: t("informasi_tambahan") || "Informasi Tambahan", path: "tambahan", icon: "ℹ️" },
-    { label: t("gallery") || "Galeri", path: "galeri", icon: "📸" },
-    { label: t("digital_envelope") || "Amplop Digital", path: "gift", icon: "💝" },
-    { label: t("story") || "Our Story", path: "ourstory", icon: "💕" },
-    { label: t("guest_list") || "Kelola Tamu", path: "tamu", icon: "👥" },
-    { label: t("rsvp") || "RSVP", path: "rsvp", icon: "✅" },
-    { label: t("send_wishes") || "Ucapan", path: "ucapan", icon: "💌" },
-    { label: t("privacy_settings") || "Pengaturan Privasi", path: "privasi", icon: "🔒" },
-    { label: t("download") + " & " + t("export") || "Download & Export", path: "download", icon: "📥" }
+    { 
+      label: "Ubah Desain", 
+      path: "desain", 
+      icon: "ki-design-1",
+      color: "primary",
+      description: "Ganti template dan warna"
+    },
+    { 
+      label: "Informasi Mempelai", 
+      path: "mempelai", 
+      icon: "ki-heart",
+      color: "danger",
+      description: "Data pengantin pria & wanita"
+    },
+    { 
+      label: "Informasi Acara", 
+      path: "acara", 
+      icon: "ki-calendar-2",
+      color: "success",
+      description: "Tanggal, waktu & lokasi"
+    },
+    { 
+      label: "Informasi Tambahan", 
+      path: "tambahan", 
+      icon: "ki-information-5",
+      color: "info",
+      description: "Detail acara lainnya"
+    },
+    { 
+      label: "Galeri", 
+      path: "galeri", 
+      icon: "ki-picture",
+      color: "warning",
+      description: "Upload foto pre-wedding"
+    },
+    { 
+      label: "Amplop Digital", 
+      path: "gift", 
+      icon: "ki-gift",
+      color: "success",
+      description: "Rekening & hadiah"
+    },
+    { 
+      label: "Our Story", 
+      path: "ourstory", 
+      icon: "ki-book-open",
+      color: "primary",
+      description: "Cerita perjalanan cinta"
+    },
+    { 
+      label: "Kelola Tamu", 
+      path: "tamu", 
+      icon: "ki-people",
+      color: "info",
+      description: "Daftar undangan tamu"
+    },
+    { 
+      label: "RSVP", 
+      path: "rsvp", 
+      icon: "ki-check-square",
+      color: "success",
+      description: "Konfirmasi kehadiran"
+    },
+    { 
+      label: "Ucapan", 
+      path: "ucapan", 
+      icon: "ki-message-text-2",
+      color: "warning",
+      description: "Ucapan dari tamu"
+    },
+    { 
+      label: "Pengaturan Privasi", 
+      path: "privasi", 
+      icon: "ki-security-user",
+      color: "dark",
+      description: "Password & akses"
+    },
+    { 
+      label: "Download & Export", 
+      path: "download", 
+      icon: "ki-file-down",
+      color: "primary",
+      description: "Unduh PDF & backup"
+    }
   ];
 
   // Scanner button handler
   const openScanner = () => {
     window.open(`/scanner/${slug}`, '_blank');
-  };
-
-  // Language toggle handler
-  const toggleLanguage = () => {
-    changeLanguage(language === 'id' ? 'en' : 'id');
   };
 
   // Handle slug update
@@ -73,7 +210,7 @@ export default function EditUndanganIndex() {
         body: JSON.stringify({
           currentSlug: slug,
           newSlug: newSlug.trim(),
-          user_email: data.user_email
+          user_email: session.user.email
         }),
       });
 
@@ -86,6 +223,7 @@ export default function EditUndanganIndex() {
         } else {
           setEditingSlug(false);
         }
+        alert('Link berhasil diupdate!');
       } else {
         setSlugError(result.message || "Gagal mengupdate link");
       }
@@ -102,122 +240,277 @@ export default function EditUndanganIndex() {
     setSlugError("");
   };
 
+  const copyLink = () => {
+    const link = `${window.location.origin}/undangan/${slug}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert('Link berhasil disalin!');
+    });
+  };
+
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold mb-2">
-            {t('wedding_invitation')}
-          </h2>
-          
+    <UserLayout>
+      {/* Begin::Header */}
+      <div className="card card-flush mb-9">
+        <div className="card-header pt-8">
+          <div className="card-title">
+            <h2 className="fw-bold text-gray-900">Edit Undangan Digital</h2>
+          </div>
+          <div className="card-toolbar">
+            <div className="d-flex gap-3">
+              <button
+                onClick={() => router.push('/edit-undangan')}
+                className="btn btn-light-secondary"
+              >
+                <i className="ki-duotone ki-arrow-left fs-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                Kembali
+              </button>
+              
+              <a
+                href={`/undangan/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+              >
+                <i className="ki-duotone ki-eye fs-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                  <span className="path3"></span>
+                </i>
+                Lihat Undangan
+              </a>
+            </div>
+          </div>
+        </div>
+        <div className="card-body pt-0">
+          <div className="text-gray-600 fw-semibold fs-6 mb-5">
+            Kelola konten undangan digital Anda. Edit informasi, lihat statistik, dan bagikan kepada tamu.
+          </div>
+
           {/* Custom Slug Editor */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">undangan/</span>
+          <div className="d-flex align-items-center gap-2 mb-2">
+            <span className="text-muted fs-6">undangan/</span>
             {editingSlug ? (
-              <div className="flex items-center gap-2 flex-1">
+              <div className="d-flex align-items-center gap-2">
                 <input
                   type="text"
                   value={newSlug}
                   onChange={(e) => setNewSlug(e.target.value)}
-                  className="px-2 py-1 border rounded text-sm flex-1 max-w-xs"
+                  className="form-control form-control-sm w-200px"
                   placeholder="link-custom"
                   pattern="[a-zA-Z0-9-]+"
                 />
                 <button
                   onClick={handleSlugUpdate}
                   disabled={slugLoading}
-                  className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                  className="btn btn-sm btn-success"
                 >
-                  {slugLoading ? "..." : "✓"}
+                  {slugLoading ? (
+                    <span className="spinner-border spinner-border-sm"></span>
+                  ) : (
+                    <i className="ki-duotone ki-check fs-4"></i>
+                  )}
                 </button>
                 <button
                   onClick={cancelSlugEdit}
-                  className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
+                  className="btn btn-sm btn-light-danger"
                 >
-                  ✕
+                  <i className="ki-duotone ki-cross fs-4"></i>
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600 font-semibold">{data.slug}</span>
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-primary fw-bold fs-6">{data.slug}</span>
                 <button
                   onClick={() => setEditingSlug(true)}
-                  className="text-xs text-gray-500 hover:text-blue-600"
+                  className="btn btn-sm btn-light-primary"
                   title="Edit link"
                 >
-                  ✏️
+                  <i className="ki-duotone ki-pencil fs-6"></i>
+                </button>
+                <button
+                  onClick={copyLink}
+                  className="btn btn-sm btn-light-success"
+                  title="Copy link"
+                >
+                  <i className="ki-duotone ki-copy fs-6"></i>
                 </button>
               </div>
             )}
           </div>
           
           {slugError && (
-            <div className="text-red-600 text-sm mt-1">{slugError}</div>
+            <div className="alert alert-danger py-2 px-3 fs-7 mb-3">{slugError}</div>
           )}
-        </div>
-        
-        <button
-          onClick={toggleLanguage}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          {language === 'id' ? 'English' : 'Bahasa'}
-        </button>
-      </div>
-      <div className="mb-6 text-gray-500">
-        {t('template')}: <b>{data.template}</b>
-      </div>
-      
-      {/* RINGKASAN & STATISTIK */}
-      <div className="mb-10 space-y-8">
-        <div>
-          <h3 className="font-bold mb-2">{t('summary_data')}</h3>
-          <ul className="text-sm space-y-1">
-            <li>{t('groom')} & {t('bride')}: <b>{data?.mempelai?.pria || "-"} & {data?.mempelai?.wanita || "-"}</b></li>
-            <li>{t('wedding_date')}: <b>{data?.acara_utama?.tanggal ? new Date(data.acara_utama.tanggal).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }) : "-"}</b></li>
-            <li>{t('gallery')}: <b>{data?.galeri?.length || 0}</b></li>
-            <li>{t('guest_list')}: <b>{data?.tamu?.length || 0}</b></li>
-            <li>{t('digital_envelope')}: <b>{data?.gift?.enabled ? t('active') : t('inactive')}</b></li>
-          </ul>
-        </div>
 
-        {/* Statistik Undangan */}
-        <div>
-          <h3 className="font-bold mb-4">{t('invitation_stats')}</h3>
-          <InvitationStats invitationId={data._id} />
+          <div className="text-muted fs-6">
+            Template: <span className="fw-bold text-gray-800">{data.template}</span>
+          </div>
         </div>
       </div>
+      {/* End::Header */}
 
-      {/* Scanner Button */}
-      <div className="mb-8">
-        <button
-          onClick={openScanner}
-          className="w-full p-4 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2m0 0H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {t('open_qr_scanner')}
-        </button>
+      {/* Summary & Statistics */}
+      <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
+        <div className="col-lg-6">
+          <div className="card h-100">
+            <div className="card-header">
+              <div className="card-title">
+                <h3 className="fw-bold">Ringkasan Data</h3>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-row-dashed table-row-gray-300 gy-7">
+                  <tbody>
+                    <tr>
+                      <td className="fw-bold text-muted">Mempelai</td>
+                      <td className="text-end fw-bold text-gray-800">
+                        {data?.mempelai?.pria || "-"} & {data?.mempelai?.wanita || "-"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="fw-bold text-muted">Tanggal Pernikahan</td>
+                      <td className="text-end fw-bold text-gray-800">
+                        {data?.acara_utama?.tanggal ? new Date(data.acara_utama.tanggal).toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : "-"}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="fw-bold text-muted">Galeri</td>
+                      <td className="text-end">
+                        <span className="badge badge-light-primary">{data?.galeri?.length || 0} foto</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="fw-bold text-muted">Daftar Tamu</td>
+                      <td className="text-end">
+                        <span className="badge badge-light-info">{data?.tamu?.length || 0} tamu</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="fw-bold text-muted">Amplop Digital</td>
+                      <td className="text-end">
+                        <span className={`badge ${data?.gift?.enabled ? 'badge-light-success' : 'badge-light-danger'}`}>
+                          {data?.gift?.enabled ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-lg-6">
+          <div className="card h-100">
+            <div className="card-header">
+              <div className="card-title">
+                <h3 className="fw-bold">Statistik Undangan</h3>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="row g-0">
+                <div className="col-6 text-center border-end pb-5">
+                  <div className="fs-2hx fw-bold text-primary">{data?.views || 0}</div>
+                  <div className="fs-6 fw-semibold text-gray-600">Total Views</div>
+                </div>
+                <div className="col-6 text-center pb-5">
+                  <div className="fs-2hx fw-bold text-success">{data?.rsvp?.length || 0}</div>
+                  <div className="fs-6 fw-semibold text-gray-600">RSVP</div>
+                </div>
+                <div className="col-6 text-center border-end pt-5">
+                  <div className="fs-2hx fw-bold text-warning">{data?.ucapan?.length || 0}</div>
+                  <div className="fs-6 fw-semibold text-gray-600">Ucapan</div>
+                </div>
+                <div className="col-6 text-center pt-5">
+                  <div className="fs-2hx fw-bold text-info">{data?.attendance?.length || 0}</div>
+                  <div className="fs-6 fw-semibold text-gray-600">Kehadiran</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* MENU NAVIGASI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* QR Scanner */}
+      <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
+        <div className="col-12">
+          <div className="card bg-light-success">
+            <div className="card-body text-center py-10">
+              <i className="ki-duotone ki-scan-barcode fs-3x text-success mb-5">
+                <span className="path1"></span>
+                <span className="path2"></span>
+                <span className="path3"></span>
+                <span className="path4"></span>
+                <span className="path5"></span>
+                <span className="path6"></span>
+              </i>
+              <h3 className="text-gray-900 fw-bold mb-3">QR Code Scanner</h3>
+              <div className="text-gray-700 fw-semibold fs-6 mb-5">
+                Scan QR code untuk melihat siapa saja yang sudah membuka undangan
+              </div>
+              <button
+                onClick={openScanner}
+                className="btn btn-success"
+              >
+                <i className="ki-duotone ki-scan-barcode fs-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                  <span className="path3"></span>
+                  <span className="path4"></span>
+                  <span className="path5"></span>
+                  <span className="path6"></span>
+                </i>
+                Buka Scanner QR
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Menu Navigation */}
+      <div className="row g-5 g-xl-10">
         {menu.map(item => (
-          <Link
-            key={item.path}
-            href={`/edit-undangan/${slug}/${item.path}`}
-            className="flex items-center justify-center gap-2 p-4 rounded shadow text-center bg-blue-50 hover:bg-blue-100 font-semibold text-blue-700 transition"
-          >
-            <span className="text-xl">{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
+          <div key={item.path} className="col-lg-4 col-md-6">
+            <Link href={`/edit-undangan/${slug}/${item.path}`}>
+              <div className="card card-flush h-100 hover-elevate-up shadow-sm cursor-pointer">
+                <div className="card-body d-flex flex-column text-center p-9">
+                  <div className="mb-5">
+                    <i className={`ki-duotone ${item.icon} fs-3x text-${item.color}`}>
+                      <span className="path1"></span>
+                      <span className="path2"></span>
+                      <span className="path3"></span>
+                    </i>
+                  </div>
+                  <div className="fs-4 fw-bold text-gray-900 mb-2">
+                    {item.label}
+                  </div>
+                  <div className="fs-6 fw-semibold text-gray-600 mb-4">
+                    {item.description}
+                  </div>
+                  <div className="mt-auto">
+                    <div className={`btn btn-sm btn-light-${item.color}`}>
+                      Kelola
+                      <i className="ki-duotone ki-arrow-right fs-5 ms-1">
+                        <span className="path1"></span>
+                        <span className="path2"></span>
+                      </i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
         ))}
       </div>
-    </div>
+    </UserLayout>
   );
 }

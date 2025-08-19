@@ -1,0 +1,31 @@
+<!--begin::Mixed Widget 13-->
+<div class="card card-xl-stretch mb-xl-10 theme-dark-bg-body" style="background-color: #F7D9E3">
+    <!--begin::Body-->
+    <div class="card-body d-flex flex-column">
+        <!--begin::Wrapper-->
+        <div class="d-flex flex-column flex-grow-1">
+            <!--begin::Title-->
+            <a href="#" class="text-gray-900 text-hover-primary fw-bold fs-3">Earnings</a>
+            <!--end::Title-->
+            <!--begin::Chart-->
+            <div class="mixed-widget-13-chart" style="height: 100px"></div>
+            <!--end::Chart-->
+        </div>
+        <!--end::Wrapper-->
+        <!--begin::Stats-->
+        <div class="pt-5">
+            <!--begin::Symbol-->
+            <span class="text-gray-900 fw-bold fs-2x lh-0">$</span>
+            <!--end::Symbol-->
+            <!--begin::Number-->
+            <span class="text-gray-900 fw-bold fs-3x me-2 lh-0">560</span>
+            <!--end::Number-->
+            <!--begin::Text-->
+            <span class="text-gray-900 fw-bold fs-6 lh-0">+ 28% this week</span>
+            <!--end::Text-->
+        </div>
+        <!--end::Stats-->
+    </div>
+    <!--end::Body-->
+</div>
+<!--end::Mixed Widget 13-->

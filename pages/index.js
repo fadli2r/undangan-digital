@@ -1,773 +1,616 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import Image from 'next/image';
+import { useState } from 'react';
 import { templateList } from '../data/templates';
 
 const categories = [
   {
     name: "Minimalis",
-    icon: (
-      <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
-      </svg>
-    ),
+    emoji: "✨",
     count: 25,
-    description: "Desain simpel dan elegan"
+    description: "Desain simpel dan elegan",
+    color: "#6366f1"
   },
   {
     name: "Floral",
-    icon: (
-      <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-      </svg>
-    ),
+    emoji: "🌸",
     count: 30,
-    description: "Tema bunga dan alam"
+    description: "Tema bunga dan alam",
+    color: "#10b981"
   },
   {
     name: "Modern",
-    icon: (
-      <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-      </svg>
-    ),
+    emoji: "🎯",
     count: 28,
-    description: "Desain kontemporer"
+    description: "Desain kontemporer",
+    color: "#3b82f6"
   },
   {
     name: "Vintage",
-    icon: (
-      <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-      </svg>
-    ),
+    emoji: "🏛️",
     count: 15,
-    description: "Gaya klasik & retro"
+    description: "Gaya klasik & retro",
+    color: "#f59e0b"
   }
 ];
 
 const features = [
   {
-    icon: (
-      <svg className="w-10 h-10 text-blue-500 mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 20l9-5-9-5-9 5 9 5z" />
-        <path d="M12 12l9-5-9-5-9 5 9 5z" />
-      </svg>
-    ),
+    emoji: "🎨",
     title: "Desain Premium yang Mudah Disesuaikan",
-    description: "Ratusan layout unik, edit teks & warna secara instan."
+    description: "Ratusan layout unik, edit teks & warna secara instan.",
+    color: "#4361ee"
   },
   {
-    icon: (
-      <svg className="w-10 h-10 text-green-500 mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 6v6l4 2" />
-      </svg>
-    ),
-    title: "Gratis Mockup & Preview Real-Time",
-    description: "Lihat Hasil Akhir Undangan sebelum diunduh."
+    emoji: "👁️",
+    title: "Preview Real-Time",
+    description: "Lihat hasil akhir undangan sebelum diunduh.",
+    color: "#3a0ca3"
   },
   {
-    icon: (
-      <svg className="w-10 h-10 text-red-500 mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8a6 6 0 0 1-12 0" />
-        <path d="M12 14v7" />
-      </svg>
-    ),
+    emoji: "🤝",
     title: "Dukungan Pelanggan 24/7",
-    description: "Tim kami siap membantu hingga undangan sampai di tangan Anda."
+    description: "Tim kami siap membantu hingga undangan sampai di tangan Anda.",
+    color: "#7209b7"
   },
   {
-    icon: (
-      <svg className="w-10 h-10 text-yellow-500 mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 10h18" />
-        <path d="M3 14h18" />
-      </svg>
-    ),
-    title: "Pengiriman Digital & Cetak On-Demand",
-    description: "Unduhan file siap print + opsi cetak profesional."
+    emoji: "📱",
+    title: "Digital & Mobile-Friendly",
+    description: "Undangan responsif dan mudah dibagikan.",
+    color: "#560bad"
   }
 ];
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
+
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault();
+    // Handle newsletter subscription
+    console.log('Newsletter subscription:', email);
+    setEmail('');
+    // Show success message
+  };
+
   return (
     <>
       <Head>
         <title>Digital Wedding Invitation - Create Your Dream Wedding Invitation</title>
         <meta name="description" content="Create beautiful digital wedding invitations in minutes. Choose from premium templates and customize to your style." />
+        <link href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" rel="stylesheet" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet" />
       </Head>
 
-      {/* Header Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-        <nav className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+      <div className="d-flex flex-column flex-root" id="kt_app_root">
+        {/* Header Navigation */}
+        <div id="kt_app_header" className="app-header">
+          <div className="app-container container-fluid d-flex align-items-stretch justify-content-between">
             {/* Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-blue-600">
-                Undangan Digital
+            <div className="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
+              <Link href="/" className="d-lg-none">
+                <img alt="Logo" src="/logo.png" className="h-30px" />
+              </Link>
+              <Link href="/" className="d-none d-lg-flex">
+                <img alt="Logo" src="/logo.png" className="h-40px" />
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Beranda
-              </Link>
-              <Link href="/pilih-template" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Template
-              </Link>
-              <Link href="/paket" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Paket & Harga
-              </Link>
-              <Link href="/tentang" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Tentang Kami
-              </Link>
-              <Link href="/kontak" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Kontak
-              </Link>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="hidden md:flex items-center space-x-4">
-              <Link 
-                href="/login" 
-                className="text-gray-700 hover:text-blue-600 transition-colors"
-              >
-                Masuk
-              </Link>
-              <Link 
-                href="/buat-undangan" 
-                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
-              >
-                Buat Undangan
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <button 
-                className="text-gray-700 hover:text-blue-600 focus:outline-none"
-                onClick={() => {
-                  const mobileMenu = document.getElementById('mobile-menu');
-                  mobileMenu.classList.toggle('hidden');
-                }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation Menu */}
-          <div id="mobile-menu" className="hidden md:hidden mt-4 pb-4 border-t border-gray-200">
-            <div className="flex flex-col space-y-4 pt-4">
-              <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Beranda
-              </Link>
-              <Link href="/pilih-template" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Template
-              </Link>
-              <Link href="/paket" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Paket & Harga
-              </Link>
-              <Link href="/tentang" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Tentang Kami
-              </Link>
-              <Link href="/kontak" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Kontak
-              </Link>
-              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
-                <Link 
-                  href="/login" 
-                  className="text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  Masuk
-                </Link>
-                <Link 
-                  href="/buat-undangan" 
-                  className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors text-center"
-                >
-                  Buat Undangan
-                </Link>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      {/* Hero Banner / Jumbotron */}
-      <section className="relative min-h-screen flex items-center justify-center">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/bg_couple.jpg"
-            alt="Wedding Couple"
-            layout="fill"
-            objectFit="cover"
-            quality={100}
-            priority
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
-            Buat Undangan Pernikahan Impianmu dalam 5 Menit
-          </h1>
-          <p className="text-xl md:text-2xl mb-12 text-gray-200">
-            Pilih dari ratusan desain premium, cetak sendiri atau kirim digital.
-            Mudah, cepat, dan elegan.
-          </p>
-          
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/pilih-template"
-              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full font-semibold text-lg transition duration-300 transform hover:scale-105"
-            >
-              Lihat Koleksi Template
-            </Link>
-            <Link 
-              href="/buat-undangan"
-              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 px-8 py-4 rounded-full font-semibold text-lg transition duration-300"
-            >
-              Mulai Desain Sekarang
-            </Link>
-          </div>
-
-          {/* Optional: Trust Badges or Quick Stats */}
-          <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-            <div>
-              <div className="text-4xl font-bold">500+</div>
-              <div className="text-sm text-gray-300">Template Premium</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">10K+</div>
-              <div className="text-sm text-gray-300">Undangan Dibuat</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">4.9/5</div>
-              <div className="text-sm text-gray-300">Rating Pengguna</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll Down Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <svg 
-            className="w-6 h-6 text-white"
-            fill="none" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth="2" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-          </svg>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Keunggulan Kami</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
-            {features.map((feature, idx) => (
-              <div key={idx} className="bg-white p-6 rounded-lg shadow text-center hover:shadow-lg transition-shadow duration-300">
-                <div className="flex justify-center">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Templates Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Koleksi Template Unggulan</h2>
-            <p className="text-gray-600 text-lg">Pilih dari berbagai desain premium yang telah dipercaya ribuan pasangan</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {templateList.map((template, idx) => (
-              <div key={idx} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
-                <div className="relative h-64 overflow-hidden">
-                  <Image
-                    src={template.thumbnail}
-                    alt={template.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                    <Link
-                      href={`/pilih-template?template=${template.slug}`}
-                      className="bg-white text-gray-900 px-6 py-2 rounded-full font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0"
-                    >
-                      Lihat Detail
-                    </Link>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{template.name}</h3>
-                  <p className="text-gray-600 mb-4">{template.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-blue-600">Mulai Rp 50.000</span>
-                    <Link
-                      href={`/buat-undangan?template=${template.slug}`}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300"
-                    >
-                      Pilih Template
-                    </Link>
+            <div className="d-flex align-items-stretch justify-content-between flex-lg-grow-1">
+              <div className="d-none d-lg-flex align-items-stretch" id="kt_app_header_menu">
+                <div className="app-header-menu app-header-mobile-drawer align-items-stretch">
+                  <div className="menu menu-rounded menu-column menu-lg-row my-5 my-lg-0 align-items-stretch fw-semibold px-2 px-lg-0">
+                    <div className="menu-item me-0 me-lg-2">
+                      <Link href="/" className="menu-link py-3">
+                        <span className="menu-title">Beranda</span>
+                      </Link>
+                    </div>
+                    <div className="menu-item me-0 me-lg-2">
+                      <Link href="/pilih-template" className="menu-link py-3">
+                        <span className="menu-title">Template</span>
+                      </Link>
+                    </div>
+                    <div className="menu-item me-0 me-lg-2">
+                      <Link href="/paket" className="menu-link py-3">
+                        <span className="menu-title">Paket & Harga</span>
+                      </Link>
+                    </div>
+                    <div className="menu-item me-0 me-lg-2">
+                      <Link href="/tentang" className="menu-link py-3">
+                        <span className="menu-title">Tentang Kami</span>
+                      </Link>
+                    </div>
+                    <div className="menu-item me-0 me-lg-2">
+                      <Link href="/kontak" className="menu-link py-3">
+                        <span className="menu-title">Kontak</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Link
-              href="/pilih-template"
-              className="bg-gray-900 text-white px-8 py-3 rounded-full font-semibold hover:bg-gray-800 transition-colors duration-300"
-            >
-              Lihat Semua Template
-            </Link>
-          </div>
-        </div>
-      </section>
 
-      {/* Design Categories Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Kategori Desain</h2>
-            <p className="text-gray-600 text-lg">Temukan template sesuai gaya favorit Anda</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category, idx) => (
-              <Link
-                key={idx}
-                href={`/pilih-template?category=${category.name.toLowerCase()}`}
-                className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 text-center group hover:bg-blue-50"
-              >
-                <div className="text-blue-600 group-hover:text-blue-700 flex justify-center">
-                  {category.icon}
+              {/* CTA Buttons */}
+              <div className="d-flex align-items-stretch flex-shrink-0">
+                <div className="d-flex align-items-stretch flex-shrink-0">
+                  <div className="d-flex align-items-center ms-1 ms-lg-3">
+                    <Link href="/login" className="btn btn-sm btn-light me-3 d-none d-lg-flex">
+                      Masuk
+                    </Link>
+                    <Link href="/buat-undangan" className="btn btn-sm btn-primary">
+                      Buat Undangan
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold mb-2 group-hover:text-blue-700">
-                  {category.name}
-                </h3>
-                <p className="text-gray-600 text-sm mb-2">{category.description}</p>
-                <span className="text-blue-600 font-medium text-sm">
-                  {category.count} Template
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Customer Testimonials Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12">Testimoni Pelanggan</h2>
-          <div className="space-y-12">
-            <div className="bg-gray-50 p-8 rounded-lg shadow">
-              <p className="text-gray-700 italic mb-4">
-                "Layanan yang sangat memuaskan! Template yang mudah disesuaikan dan hasilnya sangat elegan."
-              </p>
-              <div className="flex items-center justify-center space-x-4">
-                <img src="/images/testimonial1.jpg" alt="Pelanggan 1" className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <p className="font-semibold">Sari Wulandari</p>
-                  <p className="text-sm text-gray-500">Jakarta</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-8 rounded-lg shadow">
-              <p className="text-gray-700 italic mb-4">
-                "Proses pembuatan undangan sangat cepat dan mudah. Customer service-nya juga sangat responsif."
-              </p>
-              <div className="flex items-center justify-center space-x-4">
-                <img src="/images/testimonial2.jpg" alt="Pelanggan 2" className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <p className="font-semibold">Budi Santoso</p>
-                  <p className="text-sm text-gray-500">Bandung</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gray-50 p-8 rounded-lg shadow">
-              <p className="text-gray-700 italic mb-4">
-                "Template yang disediakan sangat variatif dan modern. Sangat membantu kami dalam mempersiapkan undangan digital."
-              </p>
-              <div className="flex items-center justify-center space-x-4">
-                <img src="/images/testimonial3.jpg" alt="Pelanggan 3" className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <p className="font-semibold">Dewi Lestari</p>
-                  <p className="text-sm text-gray-500">Surabaya</p>
+                {/* Mobile Menu Toggle */}
+                <div className="d-flex d-lg-none align-items-center ms-2">
+                  <button
+                    className="btn btn-icon btn-active-color-primary w-35px h-35px"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  >
+                    <i className="ki-duotone ki-abstract-14 fs-2">
+                      <span className="path1"></span>
+                      <span className="path2"></span>
+                    </i>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Cara Kerja</h2>
-            <p className="text-gray-600 text-lg">Buat undangan digital Anda dalam 4 langkah mudah</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <div className="relative text-center">
-              <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                </svg>
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="d-lg-none bg-body border-bottom">
+            <div className="container-fluid">
+              <div className="d-flex flex-column py-5">
+                <Link href="/" className="py-2 text-gray-800 text-hover-primary">Beranda</Link>
+                <Link href="/pilih-template" className="py-2 text-gray-800 text-hover-primary">Template</Link>
+                <Link href="/paket" className="py-2 text-gray-800 text-hover-primary">Paket & Harga</Link>
+                <Link href="/tentang" className="py-2 text-gray-800 text-hover-primary">Tentang Kami</Link>
+                <Link href="/kontak" className="py-2 text-gray-800 text-hover-primary">Kontak</Link>
+                <div className="border-top pt-4 mt-4">
+                  <Link href="/login" className="btn btn-light w-100 mb-3">Masuk</Link>
+                  <Link href="/buat-undangan" className="btn btn-primary w-100">Buat Undangan</Link>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Pilih Template</h3>
-              <p className="text-gray-600">Pilih dari koleksi template premium kami yang elegan</p>
-              {/* Connector Line (Hidden on Mobile) */}
-              <div className="hidden md:block absolute top-8 left-[60%] w-full h-0.5 bg-gray-300"></div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative text-center">
-              <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Edit & Sesuaikan</h3>
-              <p className="text-gray-600">Ubah teks, warna, dan foto sesuai keinginan Anda</p>
-              {/* Connector Line (Hidden on Mobile) */}
-              <div className="hidden md:block absolute top-8 left-[60%] w-full h-0.5 bg-gray-300"></div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative text-center">
-              <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Preview & Bayar</h3>
-              <p className="text-gray-600">Lihat hasil akhir dan lakukan pembayaran</p>
-              {/* Connector Line (Hidden on Mobile) */}
-              <div className="hidden md:block absolute top-8 left-[60%] w-full h-0.5 bg-gray-300"></div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="relative text-center">
-              <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Share & Selesai</h3>
-              <p className="text-gray-600">Bagikan undangan digital Anda ke tamu</p>
             </div>
           </div>
+        )}
 
-          <div className="text-center mt-12">
-            <Link
-              href="/pilih-template"
-              className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300"
-            >
-              Mulai Buat Undangan
-            </Link>
+        {/* Hero Section */}
+        <div className="d-flex flex-column flex-center min-vh-100 position-relative overflow-hidden bg-primary">
+          {/* Background Gradient */}
+          <div className="position-absolute top-0 start-0 w-100 h-100" style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+          }}></div>
+
+          {/* Content */}
+          <div className="position-relative text-center text-white px-5" style={{ zIndex: 2 }}>
+            <div className="mb-10 mb-lg-20">
+              <h1 className="display-1 fw-bold mb-8 animate__animated animate__fadeInUp">
+                Buat Undangan Pernikahan Impianmu dalam 5 Menit
+              </h1>
+              <div className="fs-2 fw-semibold mb-10 animate__animated animate__fadeInUp" style={{ 
+                animationDelay: '0.5s',
+                color: 'rgba(255,255,255,0.9)'
+              }}>
+                Pilih dari ratusan desain premium, cetak sendiri atau kirim digital.
+                <br className="d-none d-lg-block" />
+                Mudah, cepat, dan elegan.
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="d-flex justify-content-center flex-wrap gap-3 animate__animated animate__fadeInUp" style={{ animationDelay: '1s' }}>
+                <Link href="/pilih-template" className="btn btn-lg btn-light fw-bold">
+                  👁️ Lihat Koleksi Template
+                </Link>
+                <Link href="/buat-undangan" className="btn btn-lg btn-outline-light fw-bold">
+                  ✨ Mulai Desain Sekarang
+                </Link>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="row g-5 justify-content-center animate__animated animate__fadeInUp" style={{ animationDelay: '1.5s' }}>
+              <div className="col-4 col-lg-2">
+                <div className="text-center">
+                  <div className="fs-2x fw-bold text-white mb-2">500+</div>
+                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Template Premium</div>
+                </div>
+              </div>
+              <div className="col-4 col-lg-2">
+                <div className="text-center">
+                  <div className="fs-2x fw-bold text-white mb-2">10K+</div>
+                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Undangan Dibuat</div>
+                </div>
+              </div>
+              <div className="col-4 col-lg-2">
+                <div className="text-center">
+                  <div className="fs-2x fw-bold text-white mb-2">4.9/5</div>
+                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Rating Pengguna</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* Special Packages/Promotions Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Paket Spesial</h2>
-            <p className="text-blue-100 text-lg">Dapatkan penawaran terbaik untuk undangan digital Anda</p>
+        {/* Features Section */}
+        <div className="py-20 bg-light">
+          <div className="container">
+            <div className="text-center mb-17">
+              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Keunggulan Kami</h2>
+              <div className="fs-5 text-muted fw-bold">
+                Mengapa ribuan pasangan memilih platform kami
+              </div>
+            </div>
+
+            <div className="row g-5 g-xl-10">
+              {features.map((feature, idx) => (
+                <div key={idx} className="col-md-6 col-lg-3">
+                  <div className="card h-100 shadow-sm" style={{ 
+                    transition: 'transform 0.3s ease',
+                    cursor: 'pointer'
+                  }} 
+                  onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
+                    <div className="card-body text-center p-4">
+                      <div className="mb-4">
+                        <div style={{ 
+                          fontSize: '3rem',
+                          background: feature.color,
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text'
+                        }}>
+                          {feature.emoji}
+                        </div>
+                      </div>
+                      <h4 className="fw-bold text-gray-900 mb-3">
+                        {feature.title}
+                      </h4>
+                      <p className="text-gray-600 mb-0">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Basic Package */}
-            <div className="bg-white text-gray-900 rounded-lg p-8 shadow-xl">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">Basic</h3>
-                <div className="text-4xl font-bold text-blue-600 mb-4">
-                  Rp 50.000
-                  <span className="text-lg text-gray-500 line-through ml-2">Rp 75.000</span>
-                </div>
-                <div className="bg-red-500 text-white text-sm px-3 py-1 rounded-full inline-block mb-6">
-                  Hemat 33%
-                </div>
+        {/* Featured Templates Section */}
+        <div className="py-20">
+          <div className="container">
+            <div className="text-center mb-17">
+              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Koleksi Template Unggulan</h2>
+              <div className="fs-5 text-muted fw-bold">
+                Pilih dari berbagai desain premium yang telah dipercaya ribuan pasangan
               </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  1 Template Premium
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Customisasi Teks & Warna
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Link Sharing
-                </li>
-              </ul>
-              <Link
-                href="/paket?package=basic"
-                className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300"
-              >
-                Pilih Paket
-              </Link>
             </div>
 
-            {/* Premium Package - Most Popular */}
-            <div className="bg-white text-gray-900 rounded-lg p-8 shadow-xl relative border-4 border-yellow-400">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-yellow-400 text-gray-900 px-4 py-2 rounded-full text-sm font-bold">
-                  PALING POPULER
-                </span>
-              </div>
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                <div className="text-4xl font-bold text-blue-600 mb-4">
-                  Rp 99.000
-                  <span className="text-lg text-gray-500 line-through ml-2">Rp 150.000</span>
-                </div>
-                <div className="bg-red-500 text-white text-sm px-3 py-1 rounded-full inline-block mb-6">
-                  Hemat 34%
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  5 Template Premium
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Galeri Foto & Video
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  RSVP & Guest List
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Music Player
-                </li>
-              </ul>
-              <Link
-                href="/paket?package=premium"
-                className="block w-full bg-yellow-400 text-gray-900 text-center py-3 rounded-lg font-semibold hover:bg-yellow-500 transition-colors duration-300"
-              >
-                Pilih Paket
-              </Link>
+            <div className="row g-5 g-xl-10">
+              {templateList && templateList.length > 0 ? (
+                templateList.slice(0, 6).map((template, idx) => (
+                  <div key={idx} className="col-md-6 col-lg-4">
+                    <div className="card h-100 shadow-sm" style={{ 
+                      transition: 'transform 0.3s ease',
+                      cursor: 'pointer'
+                    }} 
+                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
+                      <div className="card-header border-0 pt-3">
+                        <div className="position-relative w-100">
+                          <img
+                            src={template.thumbnail || '/placeholder-template.jpg'}
+                            alt={template.name}
+                            className="w-100 rounded"
+                            style={{ height: '200px', objectFit: 'cover' }}
+                            onError={(e) => {
+                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4='
+                            }}
+                          />
+                          <div className="position-absolute top-0 start-0 m-2">
+                            <span className="badge bg-primary">Premium</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="card-body d-flex flex-column">
+                        <div className="mb-3">
+                          <h5 className="fw-bold text-gray-900 mb-2">{template.name}</h5>
+                          <p className="text-gray-600 small">{template.description}</p>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-center mt-auto">
+                          <span className="fw-bold text-primary">Mulai Rp 50.000</span>
+                          <Link
+                            href={`/buat-undangan?template=${template.slug}`}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Pilih Template
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // Placeholder templates jika data tidak ada
+                Array.from({ length: 6 }, (_, idx) => (
+                  <div key={idx} className="col-md-6 col-lg-4">
+                    <div className="card h-100 shadow-sm">
+                      <div className="card-header border-0 pt-3">
+                        <div className="w-100 bg-light rounded d-flex align-items-center justify-content-center" style={{ height: '200px' }}>
+                          <span className="text-muted">🎨 Template {idx + 1}</span>
+                        </div>
+                      </div>
+                      <div className="card-body">
+                        <h5 className="fw-bold text-gray-900 mb-2">Template Premium {idx + 1}</h5>
+                        <p className="text-gray-600 small">Desain elegan untuk undangan pernikahan Anda</p>
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                          <span className="fw-bold text-primary">Mulai Rp 50.000</span>
+                          <Link href="/buat-undangan" className="btn btn-primary btn-sm">
+                            Pilih Template
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
-            {/* Ultimate Package */}
-            <div className="bg-white text-gray-900 rounded-lg p-8 shadow-xl">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">Ultimate</h3>
-                <div className="text-4xl font-bold text-blue-600 mb-4">
-                  Rp 149.000
-                  <span className="text-lg text-gray-500 line-through ml-2">Rp 250.000</span>
-                </div>
-                <div className="bg-red-500 text-white text-sm px-3 py-1 rounded-full inline-block mb-6">
-                  Hemat 40%
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Unlimited Templates
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Live Streaming Integration
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Gift Registry
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Priority Support
-                </li>
-              </ul>
-              <Link
-                href="/paket?package=ultimate"
-                className="block w-full bg-purple-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-300"
-              >
-                Pilih Paket
+            <div className="text-center mt-10">
+              <Link href="/pilih-template" className="btn btn-lg btn-dark">
+                Lihat Semua Template →
               </Link>
             </div>
           </div>
-
-          <div className="text-center mt-12">
-            <p className="text-blue-100 mb-4">⏰ Penawaran terbatas! Berakhir dalam 7 hari</p>
-            <Link
-              href="/paket"
-              className="inline-block bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-300"
-            >
-              Lihat Semua Paket
-            </Link>
-          </div>
         </div>
-      </section>
 
-      {/* Newsletter Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-gray-50 rounded-2xl p-8 md:p-12 shadow-lg">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4">Dapatkan Update & Promo Terbaru</h2>
-              <p className="text-gray-600 text-lg">
-                Berlangganan newsletter kami dan dapatkan diskon 10% untuk pemesanan pertama Anda
-              </p>
+        {/* Categories Section */}
+        <div className="py-20 bg-light">
+          <div className="container">
+            <div className="text-center mb-17">
+              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Kategori Desain</h2>
+              <div className="fs-5 text-muted fw-bold">
+                Temukan template sesuai gaya favorit Anda
+              </div>
             </div>
 
-            <form className="max-w-xl mx-auto" onSubmit={(e) => e.preventDefault()}>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <input
-                    type="email"
-                    placeholder="Masukkan alamat email Anda"
-                    className="w-full px-6 py-4 rounded-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                    required
-                  />
+            <div className="row g-5 g-xl-10">
+              {categories.map((category, idx) => (
+                <div key={idx} className="col-md-6 col-lg-3">
+                  <Link href={`/pilih-template?category=${category.name.toLowerCase()}`} className="text-decoration-none">
+                    <div className="card h-100 shadow-sm" style={{ 
+                      transition: 'transform 0.3s ease',
+                      cursor: 'pointer'
+                    }} 
+                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
+                      <div className="card-body text-center p-4">
+                        <div className="mb-4">
+                          <div style={{ 
+                            fontSize: '3rem',
+                            background: category.color,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text'
+                          }}>
+                            {category.emoji}
+                          </div>
+                        </div>
+                        <h4 className="fw-bold text-gray-900 mb-3">
+                          {category.name}
+                        </h4>
+                        <p className="text-gray-600 mb-3">
+                          {category.description}
+                        </p>
+                        <span className="badge" style={{ 
+                          backgroundColor: `${category.color}20`,
+                          color: category.color
+                        }}>
+                          {category.count} Template
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
                 </div>
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-blue-700 transition-colors duration-300 whitespace-nowrap"
-                >
-                  Berlangganan
-                </button>
-              </div>
-              <div className="text-center mt-4 text-sm text-gray-500">
-                Kami menghargai privasi Anda. Unsubscribe kapan saja.
-              </div>
-            </form>
-
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">10K+</div>
-                <div className="text-gray-600 text-sm">Subscriber</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">24/7</div>
-                <div className="text-gray-600 text-sm">Customer Support</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">4.9/5</div>
-                <div className="text-gray-600 text-sm">Rating</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">100%</div>
-                <div className="text-gray-600 text-sm">Satisfaction</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer Section */}
-      <footer className="bg-gray-900 text-gray-300 py-12">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-white text-xl font-bold mb-4">Undangan Digital</h3>
-            <p className="text-gray-400 text-sm">
-              Solusi undangan pernikahan digital yang mudah, cepat, dan elegan.
-            </p>
-            <p className="text-gray-400 text-sm mt-4">Jl. Contoh No.123, Jakarta</p>
-            <p className="text-gray-400 text-sm">Email: info@undangandigital.com</p>
-            <p className="text-gray-400 text-sm">Telp: +62 812 3456 7890</p>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4">Layanan</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="/pilih-template" className="hover:text-white transition">Pilih Template</a></li>
-              <li><a href="/buat-undangan" className="hover:text-white transition">Buat Undangan</a></li>
-              <li><a href="/paket" className="hover:text-white transition">Paket & Harga</a></li>
-              <li><a href="/faq" className="hover:text-white transition">FAQ</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4">Tentang Kami</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="/tentang" className="hover:text-white transition">Profil Perusahaan</a></li>
-              <li><a href="/kontak" className="hover:text-white transition">Kontak</a></li>
-              <li><a href="/blog" className="hover:text-white transition">Blog</a></li>
-              <li><a href="/karir" className="hover:text-white transition">Karir</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4">Ikuti Kami</h4>
-            <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-white transition">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M22 12a10 10 0 10-11.5 9.87v-6.99h-2.1v-2.88h2.1v-2.2c0-2.07 1.23-3.22 3.12-3.22.9 0 1.84.16 1.84.16v2.02h-1.04c-1.03 0-1.35.64-1.35 1.3v1.94h2.3l-.37 2.88h-1.93v6.99A10 10 0 0022 12z" />
-                </svg>
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="hover:text-white transition">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M23 3a10.9 10.9 0 01-3.14.86 4.48 4.48 0 001.98-2.48 9.14 9.14 0 01-2.88 1.1 4.52 4.52 0 00-7.7 4.13A12.84 12.84 0 013 4.16a4.52 4.52 0 001.4 6.04 4.48 4.48 0 01-2.05-.57v.06a4.52 4.52 0 003.63 4.43 4.52 4.52 0 01-2.04.08a4.52 4.52 0 004.22 3.14A9.06 9.06 0 012 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.42-.02-.63A9.22 9.22 0 0023 3z" />
-                </svg>
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-white transition">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 2A3.75 3.75 0 004 7.75v8.5A3.75 3.75 0 007.75 20h8.5a3.75 3.75 0 003.75-3.75v-8.5A3.75 3.75 0 0016.25 4h-8.5zM12 7a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6zm4.5-3a1 1 0 110 2 1 1 0 010-2z" />
-                </svg>
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="hover:text-white transition">
-                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zM4 3a2 2 0 110 4 2 2 0 010-4z" />
-                </svg>
-              </a>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-gray-800 pt-6 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} Undangan Digital. All rights reserved.
+        {/* Pricing Section */}
+        <div className="py-20 bg-primary">
+          <div className="container">
+            <div className="text-center mb-17">
+              <h2 className="fs-2hx fw-bold text-white mb-5">Paket Spesial</h2>
+              <div className="fs-5 text-white-75 fw-bold">
+                Dapatkan penawaran terbaik untuk undangan digital Anda
+              </div>
+            </div>
+
+            <div className="row g-5 g-xl-10 justify-content-center">
+              <div className="col-lg-4">
+                <div className="card h-100">
+                  <div className="card-body text-center p-9">
+                    <div className="mb-7">
+                      <h3 className="fs-2hx fw-bold text-gray-900">Basic</h3>
+                      <div className="text-gray-500 fw-semibold">Paket dasar untuk pemula</div>
+                    </div>
+                    <div className="mb-8">
+                      <span className="fs-3x fw-bold text-primary">Rp 50.000</span>
+                      <span className="fs-7 text-muted text-decoration-line-through ms-2">Rp 75.000</span>
+                    </div>
+                    <div className="mb-8">
+                      <div className="d-flex align-items-center mb-3">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">1 Template Premium</span>
+                      </div>
+                      <div className="d-flex align-items-center mb-3">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">Customisasi Teks & Warna</span>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">Link Sharing</span>
+                      </div>
+                    </div>
+                    <Link href="/paket?package=basic" className="btn btn-primary w-100">
+                      Pilih Paket
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-lg-4">
+                <div className="card h-100 border-primary">
+                  <div className="card-header border-0 pt-5">
+                    <div className="text-center">
+                      <span className="badge badge-primary fs-7 fw-bold">PALING POPULER</span>
+                    </div>
+                  </div>
+                  <div className="card-body text-center p-9 pt-0">
+                    <div className="mb-7">
+                      <h3 className="fs-2hx fw-bold text-gray-900">Premium</h3>
+                      <div className="text-gray-500 fw-semibold">Paket lengkap untuk profesional</div>
+                    </div>
+                    <div className="mb-8">
+                      <span className="fs-3x fw-bold text-primary">Rp 99.000</span>
+                      <span className="fs-7 text-muted text-decoration-line-through ms-2">Rp 150.000</span>
+                    </div>
+                    <div className="mb-8">
+                      <div className="d-flex align-items-center mb-3">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">5 Template Premium</span>
+                      </div>
+                      <div className="d-flex align-items-center mb-3">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">Galeri Foto & Video</span>
+                      </div>
+                      <div className="d-flex align-items-center">
+                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
+                        <span className="fw-semibold text-gray-700">RSVP & Guest List</span>
+                      </div>
+                    </div>
+                    <Link href="/paket?package=premium" className="btn btn-primary w-100">
+                      Pilih Paket
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center mt-10">
+              <div className="text-white-75 mb-5">⏰ Penawaran terbatas! Berakhir dalam 7 hari</div>
+              <Link href="/paket" className="btn btn-light">
+                Lihat Semua Paket
+              </Link>
+            </div>
+          </div>
         </div>
-      </footer>
+
+        {/* Newsletter Section */}
+        <div className="py-20">
+          <div className="container">
+            <div className="card">
+              <div className="card-body text-center p-15">
+                <h2 className="fs-2hx fw-bold text-gray-900 mb-5">
+                  Dapatkan Update & Promo Terbaru
+                </h2>
+                <div className="fs-5 text-muted fw-bold mb-8">
+                  Berlangganan newsletter kami dan dapatkan diskon 10% untuk pemesanan pertama Anda
+                </div>
+
+                <form onSubmit={handleNewsletterSubmit} className="d-flex flex-center flex-wrap">
+                  <div className="position-relative me-3 mb-3">
+                    <input
+                      type="email"
+                      className="form-control form-control-solid w-300px"
+                      placeholder="Masukkan alamat email Anda"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary mb-3">
+                    Berlangganan
+                  </button>
+                </form>
+
+                <div className="text-muted fs-7 mt-3">
+                  Kami menghargai privasi Anda. Unsubscribe kapan saja.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-dark py-10">
+          <div className="container">
+            <div className="row g-5">
+              <div className="col-lg-3">
+                <div className="mb-5">
+                  <img alt="Logo" src="/logo.png" className="h-40px" />
+                </div>
+                <div className="text-gray-600 fs-6 mb-5">
+                  Solusi undangan pernikahan digital yang mudah, cepat, dan elegan.
+                </div>
+                <div className="text-gray-600 fs-7">
+                  <div>Jl. Contoh No.123, Jakarta</div>
+                  <div>Email: info@undangandigital.com</div>
+                  <div>Telp: +62 812 3456 7890</div>
+                </div>
+              </div>
+
+              <div className="col-lg-3">
+                <h4 className="text-white fw-bold mb-5">Layanan</h4>
+                <div className="d-flex flex-column">
+                  <Link href="/pilih-template" className="text-gray-600 text-hover-primary py-2">Pilih Template</Link>
+                  <Link href="/buat-undangan" className="text-gray-600 text-hover-primary py-2">Buat Undangan</Link>
+                  <Link href="/paket" className="text-gray-600 text-hover-primary py-2">Paket & Harga</Link>
+                </div>
+              </div>
+
+              <div className="col-lg-3">
+                <h4 className="text-white fw-bold mb-5">Tentang Kami</h4>
+                <div className="d-flex flex-column">
+                  <Link href="/tentang" className="text-gray-600 text-hover-primary py-2">Profil Perusahaan</Link>
+                  <Link href="/kontak" className="text-gray-600 text-hover-primary py-2">Kontak</Link>
+                  <Link href="/blog" className="text-gray-600 text-hover-primary py-2">Blog</Link>
+                </div>
+              </div>
+
+              <div className="col-lg-3">
+                <h4 className="text-white fw-bold mb-5">Ikuti Kami</h4>
+                <div className="d-flex gap-3">
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" 
+                     className="btn btn-sm" style={{ backgroundColor: '#1877f2', color: 'white' }}>
+                    📘 Facebook
+                  </a>
+                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" 
+                     className="btn btn-sm" style={{ backgroundColor: '#1da1f2', color: 'white' }}>
+                    🐦 Twitter
+                  </a>
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" 
+                     className="btn btn-sm" style={{ backgroundColor: '#e4405f', color: 'white' }}>
+                    📷 Instagram
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-top border-gray-700 mt-10 pt-5 text-center">
+              <div className="text-gray-600 fs-7">
+                &copy; {new Date().getFullYear()} Undangan Digital. All rights reserved.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

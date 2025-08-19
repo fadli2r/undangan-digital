@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import DownloadFeatures from "../../../components/DownloadFeaturesFixed";
+import UserLayout from "../../../components/layouts/UserLayout";
 
 export default function Download() {
   const router = useRouter();
@@ -31,87 +32,150 @@ export default function Download() {
       });
   }, [slug]);
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
 
-  if (error) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-red-600 mb-4">{error}</p>
-        <button 
-          onClick={() => router.back()}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Kembali
-        </button>
-      </div>
-    </div>
-  );
-
-  if (!undangan) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-gray-600">Undangan tidak ditemukan.</p>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <button
+  if (error) {
+    return (
+      <UserLayout>
+        <div className="alert alert-danger">
+          <h4 className="alert-heading">Error!</h4>
+          <p className="mb-3">{error}</p>
+          <button 
             onClick={() => router.back()}
-            className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+            className="btn btn-primary"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
             Kembali
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Download & Export
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Undangan: {undangan.mempelai?.pria} & {undangan.mempelai?.wanita}
-          </p>
         </div>
+      </UserLayout>
+    );
+  }
 
-        {/* Download Features Component */}
-        <DownloadFeatures slug={slug} invitationData={undangan} />
+  if (!undangan) {
+    return (
+      <UserLayout>
+        <div className="alert alert-warning">
+          <h4 className="alert-heading">Data Tidak Ditemukan</h4>
+          <p>Undangan tidak ditemukan.</p>
+        </div>
+      </UserLayout>
+    );
+  }
 
-        {/* Statistics */}
-        <div className="mt-8 bg-white rounded-2xl shadow-xl p-8">
-          <h3 className="text-xl font-bold text-gray-800 mb-6">Statistik Undangan</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {undangan.views || 0}
+  return (
+    <UserLayout>
+      {/* Header */}
+      <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex flex-wrap align-items-center justify-content-between">
+                <div className="flex-grow-1">
+                  <h1 className="fs-2hx fw-bold text-gray-900 mb-3">
+                    Download & Export
+                  </h1>
+                  <div className="text-muted fs-6">
+                    Undangan: <span className="fw-bold text-gray-800">
+                      {undangan.mempelai?.pria} & {undangan.mempelai?.wanita}
+                    </span>
+                  </div>
+                </div>
+                <div className="d-flex gap-3">
+                  <button
+                    onClick={() => router.back()}
+                    className="btn btn-light-secondary"
+                  >
+                    <i className="ki-duotone ki-arrow-left fs-2">
+                      <span className="path1"></span>
+                      <span className="path2"></span>
+                    </i>
+                    Kembali
+                  </button>
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Total Views</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {undangan.ucapan?.length || 0}
-              </div>
-              <div className="text-sm text-gray-600">Ucapan & Doa</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-3xl font-bold text-purple-600 mb-2">
-                {undangan.rsvp?.length || 0}
-              </div>
-              <div className="text-sm text-gray-600">RSVP</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Download Features Component */}
+      <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
+        <div className="col-12">
+          <DownloadFeatures slug={slug} invitationData={undangan} />
+        </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="row g-5 g-xl-10">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <h3 className="fw-bold">Statistik Undangan</h3>
+              </div>
+            </div>
+            <div className="card-body">
+              <div className="row g-6 g-xl-9">
+                <div className="col-md-4">
+                  <div className="card bg-light-primary">
+                    <div className="card-body text-center py-8">
+                      <i className="ki-duotone ki-eye fs-3x text-primary mb-3">
+                        <span className="path1"></span>
+                        <span className="path2"></span>
+                        <span className="path3"></span>
+                      </i>
+                      <div className="fs-2hx fw-bold text-primary mb-2">
+                        {undangan.views || 0}
+                      </div>
+                      <div className="fs-6 fw-semibold text-gray-600">Total Views</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="card bg-light-success">
+                    <div className="card-body text-center py-8">
+                      <i className="ki-duotone ki-message-text-2 fs-3x text-success mb-3">
+                        <span className="path1"></span>
+                        <span className="path2"></span>
+                        <span className="path3"></span>
+                      </i>
+                      <div className="fs-2hx fw-bold text-success mb-2">
+                        {undangan.ucapan?.length || 0}
+                      </div>
+                      <div className="fs-6 fw-semibold text-gray-600">Ucapan & Doa</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="card bg-light-info">
+                    <div className="card-body text-center py-8">
+                      <i className="ki-duotone ki-check-square fs-3x text-info mb-3">
+                        <span className="path1"></span>
+                        <span className="path2"></span>
+                        <span className="path3"></span>
+                      </i>
+                      <div className="fs-2hx fw-bold text-info mb-2">
+                        {undangan.rsvp?.length || 0}
+                      </div>
+                      <div className="fs-6 fw-semibold text-gray-600">RSVP</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </UserLayout>
   );
 }
