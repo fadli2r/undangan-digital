@@ -3,9 +3,9 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300 py-12">
-      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8" style={{ maxWidth: '1200px' }}>
         <div>
-          <h3 className="text-white text-xl font-bold mb-4">Undangan Digital</h3>
+          <img alt="Dreams Logo" src="/images/DreamsWhite.png" className="h-20 mb-4" />
           <p className="text-gray-400 text-sm">
             Solusi undangan pernikahan digital yang mudah, cepat, dan elegan.
           </p>

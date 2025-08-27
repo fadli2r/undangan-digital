@@ -83,7 +83,6 @@ export default function Login() {
     <div className="d-flex flex-column min-vh-100">
       <Head>
         <title>Login - Digital Wedding Invitation</title>
-        <link href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" rel="stylesheet" />
         <link href="/metronic/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
         <link href="/metronic/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
       </Head>
@@ -247,7 +246,7 @@ export default function Login() {
             <div className="d-flex flex-column flex-center py-15 px-5 px-md-15 w-100">
               {/* Begin::Logo */}
               <Link href="/" className="mb-12">
-                <img alt="Logo" src="/logo.png" className="h-75px" />
+                <img alt="Dreams Logo" src="/images/DreamsWhite.png" className="h-75px" />
               </Link>
               {/* End::Logo */}
 

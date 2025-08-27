@@ -55,7 +55,7 @@ export default function EditPackage() {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/packages/${packageId}-jwt`, {
+const response = await fetch(`/api/admin/packages/${packageId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -127,7 +127,7 @@ export default function EditPackage() {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`/api/admin/packages/${packageId}-jwt`, {
+const response = await fetch(`/api/admin/packages/${packageId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

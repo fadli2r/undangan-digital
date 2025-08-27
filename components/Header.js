@@ -5,12 +5,12 @@ export default function Header() {
   const { data: session, status } = useSession();
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-      <nav className="max-w-6xl mx-auto px-4 py-4">
+      <nav className="max-w-7xl mx-auto px-4 py-4" style={{ maxWidth: '1200px' }}>
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-blue-600">
-              Undangan Digital
+            <Link href="/" className="flex items-center">
+              <img alt="Dreams Logo" src="/images/DreamsLogo.png" className="h-20" />
             </Link>
           </div>
 
@@ -19,8 +19,8 @@ export default function Header() {
             <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
               Beranda
             </Link>
-            <Link href="/pilih-template" className="text-gray-700 hover:text-blue-600 transition-colors">
-              Template
+            <Link href="/katalog" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Katalog Template
             </Link>
             <Link href="/paket" className="text-gray-700 hover:text-blue-600 transition-colors">
               Paket & Harga
@@ -94,8 +94,8 @@ export default function Header() {
             <Link href="/" className="text-gray-700 hover:text-blue-600 transition-colors">
               Beranda
             </Link>
-            <Link href="/pilih-template" className="text-gray-700 hover:text-blue-600 transition-colors">
-              Template
+            <Link href="/katalog" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Katalog Template
             </Link>
             <Link href="/paket" className="text-gray-700 hover:text-blue-600 transition-colors">
               Paket & Harga

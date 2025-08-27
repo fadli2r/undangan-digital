@@ -47,8 +47,10 @@ export default async function handler(req, res) {
         pengunjung: inv.views || 0,
         rsvp: (inv.rsvp || []).length,
         ucapan: (inv.ucapan || []).length,
-        thumbnail: `/templates/${inv.template.toLowerCase()}.jpg`
-      };
+  background_photo: inv.background_photo || null,
+  galeri: inv.galeri || [],
+thumbnail: inv.background_photo 
+    || (inv.galeri && inv.galeri.length > 0 ? inv.galeri[0] : `/templates/${inv.template.toLowerCase()}.jpg`)      };
     });
 
     return res.status(200).json({

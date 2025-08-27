@@ -7,28 +7,19 @@ import { useSession, signOut } from 'next-auth/react';
 export default function UserLayout({ children }) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
   useEffect(() => {
     // Initialize Metronic components after component mounts
     const initializeMetronic = () => {
       if (typeof window !== 'undefined') {
-        // Wait for scripts to be available
         const checkAndInit = () => {
-          if (window.KTMenu) {
-            window.KTMenu.createInstances();
-          }
-          if (window.KTDrawer) {
-            window.KTDrawer.createInstances();
-          }
-          if (window.KTScroll) {
-            window.KTScroll.createInstances();
-          }
+          if (window.KTMenu) window.KTMenu.createInstances();
+          if (window.KTDrawer) window.KTDrawer.createInstances();
+          if (window.KTScroll) window.KTScroll.createInstances();
         };
-        
-        // Try immediately
+
         checkAndInit();
-        
-        // Also try after a delay
         setTimeout(checkAndInit, 1000);
         setTimeout(checkAndInit, 2000);
       }
@@ -39,20 +30,44 @@ export default function UserLayout({ children }) {
     }
   }, [status]);
 
+  // ⛔️ Cek onboarding user
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (!session) return;
+
+      try {
+        const res = await fetch('/api/user/check-onboarding');
+        const data = await res.json();
+
+        if (!data.onboardingCompleted && !router.pathname.startsWith('/onboarding')) {
+  router.replace('/onboarding');
+        } else {
+          setCheckingOnboarding(false);
+        }
+      } catch (err) {
+        console.error('Failed to check onboarding:', err);
+        setCheckingOnboarding(false);
+      }
+    };
+
+    if (status === 'authenticated') {
+      checkOnboarding();
+    } else if (status === 'unauthenticated') {
+      router.replace('/login');
+    }
+  }, [session, status, router]);
+
   const handleLogout = async () => {
     try {
-      await signOut({ 
-        redirect: false,
-        callbackUrl: '/login-metronic' 
-      });
-      router.push('/login-metronic');
+      await signOut({ redirect: false, callbackUrl: '/login' });
+      router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
-  // Show loading state while checking session
-  if (status === 'loading') {
+  // Show loading state while checking session or onboarding
+  if (status === 'loading' || checkingOnboarding) {
     return (
       <>
         <Head>
@@ -71,13 +86,8 @@ export default function UserLayout({ children }) {
     );
   }
 
-  // Don't render if not authenticated
-  if (status !== 'authenticated') {
-    return null;
-  }
-
-  const userInfo = session.user;
-
+  // ✅ Jika sudah lolos, tampilkan layout
+  const userInfo = session?.user;
   return (
     <>
       <Head>
@@ -90,11 +100,6 @@ export default function UserLayout({ children }) {
         <link href="/metronic/assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
         <link href="/metronic/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
         <link href="/metronic/assets/css/style.bundle.css" rel="stylesheet" type="text/css" />
-        
-        {/* Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Metronic JavaScript */}
@@ -150,9 +155,9 @@ export default function UserLayout({ children }) {
             {/* Begin::Brand */}
             <div className="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
               {/* Begin::Logo */}
-              <a href="/dashboard-metronic">
-                <img alt="Logo" src="/logo.png" className="h-20px logo theme-light-show"/>
-                <img alt="Logo" src="/logo.png" className="h-20px logo theme-dark-show"/>
+              <a href="/dashboard">
+                <img alt="Logo" src="/images/Dreamslogo.png" className="h-80px logo theme-light-show"/>
+                <img alt="Logo" src="/images/Dreamslogo.png" className="h-80px logo theme-dark-show"/>
               </a>
               {/* End::Logo */}
             </div>
@@ -164,7 +169,7 @@ export default function UserLayout({ children }) {
                 <div className="menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500" id="kt_aside_menu" data-kt-menu="true" data-kt-menu-expand="false">
                   
                   <div className="menu-item">
-                    <a className={`menu-link ${router.pathname === '/dashboard-metronic' ? 'active' : ''}`} href="/dashboard-metronic">
+                    <a className={`menu-link ${router.pathname === '/dashboard' ? 'active' : ''}`} href="/dashboard">
                       <span className="menu-icon">
                         <i className="ki-duotone ki-element-11 fs-2">
                           <span className="path1"></span>
@@ -177,18 +182,7 @@ export default function UserLayout({ children }) {
                     </a>
                   </div>
 
-                  <div className="menu-item">
-                    <a className={`menu-link ${router.pathname === '/buat-undangan-metronic' ? 'active' : ''}`} href="/buat-undangan-metronic">
-                      <span className="menu-icon">
-                        <i className="ki-duotone ki-add-files fs-2">
-                          <span className="path1"></span>
-                          <span className="path2"></span>
-                          <span className="path3"></span>
-                        </i>
-                      </span>
-                      <span className="menu-title">Buat Undangan</span>
-                    </a>
-                  </div>
+                  
 
                   <div className="menu-item">
                     <a className={`menu-link ${router.pathname.startsWith('/edit-undangan') ? 'active' : ''}`} href="/edit-undangan">
@@ -203,7 +197,7 @@ export default function UserLayout({ children }) {
                   </div>
 
                   <div className="menu-item">
-                    <a className={`menu-link ${router.pathname === '/paket-metronic' ? 'active' : ''}`} href="/paket-metronic">
+                    <a className={`menu-link ${router.pathname === '/paket' ? 'active' : ''}`} href="/paket">
                       <span className="menu-icon">
                         <i className="ki-duotone ki-package fs-2">
                           <span className="path1"></span>
@@ -216,7 +210,7 @@ export default function UserLayout({ children }) {
                   </div>
 
                   <div className="menu-item">
-                    <a className={`menu-link ${router.pathname === '/support-center-metronic' ? 'active' : ''}`} href="/support-center-metronic">
+                    <a className={`menu-link ${router.pathname === '/support-center' ? 'active' : ''}`} href="/support-center">
                       <span className="menu-icon">
                         <i className="ki-duotone ki-support fs-2">
                           <span className="path1"></span>
@@ -362,8 +356,8 @@ export default function UserLayout({ children }) {
                   </div>
                   {/* End::Aside mobile toggle */}
                   {/* Begin::Logo */}
-                  <a href="/dashboard-metronic" className="d-flex align-items-center">
-                    <img alt="Logo" src="/logo.png" className="h-20px"/>
+                  <a href="/dashboard" className="d-flex align-items-center">
+                    <img alt="Logo" src="/images/Dreamslogo.png" className="h-40px"/>
                   </a>
                   {/* End::Logo */}
                 </div>

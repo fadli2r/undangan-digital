@@ -88,8 +88,14 @@ export default async function handler(req, res) {
           });
         }
 
+        const slug = name
+  .toLowerCase()
+  .replace(/[^\w\s-]/g, '') // hapus karakter aneh
+  .trim()
+  .replace(/\s+/g, '-');
         // Create package
         const newPackage = new Package({
+            slug, // ✅ tambahkan slug yang dihasilkan
           name,
           description,
           price: parseFloat(price),

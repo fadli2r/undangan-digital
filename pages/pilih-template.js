@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import MetronicUserLayout from "../components/layouts/MetronicUserLayout";
+import UserLayout from "../components/layouts/UserLayout";
 import { templateList } from "../data/templates";
 
 export default function PilihTemplate() {
@@ -60,17 +60,17 @@ export default function PilihTemplate() {
   if (!mounted) return null;
   
   if (!user) return (
-    <MetronicUserLayout>
+    <UserLayout>
       <div className="d-flex justify-content-center align-items-center min-h-300px">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
-    </MetronicUserLayout>
+    </UserLayout>
   );
 
   return (
-    <MetronicUserLayout>
+    <UserLayout>
       {/* Page Header */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
@@ -215,7 +215,7 @@ export default function PilihTemplate() {
                         <span className="path1"></span>
                         <span className="path2"></span>
                       </i>
-                      Pilih Template Ini
+                      Pilih Template
                     </button>
                   </div>
                 </div>
@@ -253,6 +253,6 @@ export default function PilihTemplate() {
           </div>
         </div>
       )}
-    </MetronicUserLayout>
+    </UserLayout>
   );
 }

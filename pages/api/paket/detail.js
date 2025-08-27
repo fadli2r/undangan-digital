@@ -1,101 +1,194 @@
 import { getSession } from "next-auth/react";
-
-// Mock paket data (in real app, this would come from database)
-const paketList = {
-  basic: {
-    id: "basic",
-    name: "Basic",
-    price: 25000,
-    features: [
-      "1 Template Undangan",
-      "RSVP Digital",
-      "Galeri Foto",
-      "Amplop Digital"
-    ]
-  },
-  premium: {
-    id: "premium",
-    name: "Premium",
-    price: 50000,
-    features: [
-      "Semua Fitur Basic",
-      "15 Galeri Foto",
-      "Pilih Template Premium",
-      "Countdown, Musik, Maps"
-    ]
-  }
-};
-
-// Mock promo codes (in real app, this would come from database)
-const promoCodes = {
-  "PROMO10": { discount: 0.1, type: "percentage" },  // 10% off
-  "PROMO20": { discount: 0.2, type: "percentage" },  // 20% off
-  "DISC5K": { discount: 5000, type: "fixed" }        // Rp 5.000 off
-};
-
-// Mock referral codes (in real app, this would come from database)
-const referralCodes = {
-  "REF5": { discount: 0.05, type: "percentage" },    // 5% off
-  "REF10": { discount: 0.1, type: "percentage" }     // 10% off
-};
+import dbConnect from '../../../lib/dbConnect';
+import Package from '../../../models/Package';
+import Coupon from '../../../models/Coupon';
+import User from '../../../models/User';
+import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { id, promoCode, referralCode } = req.query;
+  await dbConnect();
 
-  // Get the paket
-  const paket = paketList[id];
-  if (!paket) {
-    return res.status(404).json({ message: 'Paket tidak ditemukan' });
-  }
+  try {
+    const { id, promoCode, referralCode, userId, userEmail } = req.query;
 
-  // Calculate discounts
-  let totalDiscount = 0;
-  let discountDetails = [];
-
-  // Apply promo code if valid
-  if (promoCode && promoCodes[promoCode]) {
-    const promo = promoCodes[promoCode];
-    const promoDiscount = promo.type === 'percentage' 
-      ? paket.price * promo.discount 
-      : promo.discount;
+    // Get package from database
+    let paket;
     
-    totalDiscount += promoDiscount;
-    discountDetails.push({
-      type: 'promo',
-      code: promoCode,
-      amount: promoDiscount
-    });
-  }
-
-  // Apply referral code if valid
-  if (referralCode && referralCodes[referralCode]) {
-    const referral = referralCodes[referralCode];
-    const referralDiscount = referral.type === 'percentage'
-      ? paket.price * referral.discount
-      : referral.discount;
-    
-    totalDiscount += referralDiscount;
-    discountDetails.push({
-      type: 'referral',
-      code: referralCode,
-      amount: referralDiscount
-    });
-  }
-
-  // Calculate final price
-  const finalPrice = Math.max(0, paket.price - totalDiscount);
-
-  return res.status(200).json({
-    paket: {
-      ...paket,
-      originalPrice: paket.price,
-      discounts: discountDetails,
-      totalDiscount,
-      finalPrice
+    // Check if id is a valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      paket = await Package.findOne({ 
+        $or: [
+          { _id: id },
+          { slug: id }
+        ],
+        isActive: true 
+      });
+    } else {
+      // If not valid ObjectId, search by slug only
+      paket = await Package.findOne({ 
+        slug: id,
+        isActive: true 
+      });
     }
-  });
+
+    if (!paket) {
+      return res.status(404).json({ message: 'Paket tidak ditemukan' });
+    }
+
+    // Get user ID from session or query
+    let currentUserId = userId;
+    if (!currentUserId) {
+      // Try to get from userEmail parameter
+      if (userEmail) {
+        const user = await User.findOne({ email: userEmail });
+        currentUserId = user?._id;
+      } else {
+        // Fallback to session
+        const session = await getSession({ req });
+        if (session?.user?.email) {
+          const user = await User.findOne({ email: session.user.email });
+          currentUserId = user?._id;
+        }
+      }
+    }
+
+    // Initialize response data
+    let responseData = {
+      id: paket._id,
+      name: paket.name,
+      description: paket.description,
+      price: paket.price,
+      originalPrice: paket.originalPrice || paket.price,
+      features: paket.features?.map(f => f.name) || [],
+      limits: paket.limits,
+      finalPrice: paket.price,
+      discounts: [],
+      totalDiscount: 0
+    };
+
+    let totalDiscount = 0;
+    let discountDetails = [];
+
+    // Apply promo code if provided
+    if (promoCode && currentUserId) {
+      try {
+        const coupon = await Coupon.findOne({ 
+          code: promoCode.toUpperCase(),
+          isActive: true
+        });
+
+        if (coupon) {
+          const validation = coupon.isValidForUser(currentUserId, paket._id, paket.price);
+          
+          if (validation.valid) {
+            const promoDiscount = coupon.calculateDiscount(paket.price);
+            totalDiscount += promoDiscount;
+            discountDetails.push({
+              type: 'promo',
+              code: promoCode.toUpperCase(),
+              name: coupon.name,
+              amount: promoDiscount,
+              couponId: coupon._id
+            });
+          } else {
+            // Return error for invalid coupon but continue processing
+            discountDetails.push({
+              type: 'promo',
+              code: promoCode.toUpperCase(),
+              error: validation.reason,
+              amount: 0
+            });
+          }
+        } else {
+          discountDetails.push({
+            type: 'promo',
+            code: promoCode.toUpperCase(),
+            error: 'Kode kupon tidak valid',
+            amount: 0
+          });
+        }
+      } catch (error) {
+        console.error('Error validating promo code:', error);
+        discountDetails.push({
+          type: 'promo',
+          code: promoCode.toUpperCase(),
+          error: 'Terjadi kesalahan saat memvalidasi kupon',
+          amount: 0
+        });
+      }
+    }
+
+    // Apply referral code if provided (similar logic)
+    if (referralCode && currentUserId) {
+      try {
+        const referralCoupon = await Coupon.findOne({ 
+          code: referralCode.toUpperCase(),
+          isActive: true
+        });
+
+        if (referralCoupon) {
+          const validation = referralCoupon.isValidForUser(currentUserId, paket._id, paket.price);
+          
+          if (validation.valid) {
+            const referralDiscount = referralCoupon.calculateDiscount(paket.price);
+            totalDiscount += referralDiscount;
+            discountDetails.push({
+              type: 'referral',
+              code: referralCode.toUpperCase(),
+              name: referralCoupon.name,
+              amount: referralDiscount,
+              couponId: referralCoupon._id
+            });
+          } else {
+            discountDetails.push({
+              type: 'referral',
+              code: referralCode.toUpperCase(),
+              error: validation.reason,
+              amount: 0
+            });
+          }
+        } else {
+          discountDetails.push({
+            type: 'referral',
+            code: referralCode.toUpperCase(),
+            error: 'Kode referral tidak valid',
+            amount: 0
+          });
+        }
+      } catch (error) {
+        console.error('Error validating referral code:', error);
+        discountDetails.push({
+          type: 'referral',
+          code: referralCode.toUpperCase(),
+          error: 'Terjadi kesalahan saat memvalidasi kode referral',
+          amount: 0
+        });
+      }
+    }
+
+    // Calculate final price
+    const finalPrice = Math.max(0, paket.price - totalDiscount);
+
+    // Update response data
+    responseData.discounts = discountDetails;
+    responseData.totalDiscount = totalDiscount;
+    responseData.finalPrice = finalPrice;
+
+    return res.status(200).json({
+      paket: responseData,
+      message: totalDiscount > 0 ? 
+        `Diskon berhasil diterapkan! Total hemat: Rp ${totalDiscount.toLocaleString()}` : 
+        null
+    });
+
+  } catch (error) {
+    console.error('Error in paket detail API:', error);
+    return res.status(500).json({ 
+      message: 'Terjadi kesalahan saat mengambil data paket' 
+    });
+  }
 }

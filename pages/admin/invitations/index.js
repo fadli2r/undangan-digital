@@ -297,14 +297,16 @@ export default function InvitationManagement() {
                       </div>
                     </td>
                     <td>
-                      <Link
-                        href={`/${invitation.slug}`}
-                        target="_blank"
-                        className="text-primary text-hover-primary"
-                      >
-                        {invitation.slug}
-                      </Link>
-                    </td>
+  <a
+    href={`/undangan/${invitation.slug}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-primary text-hover-primary text-decoration-underline"
+  >
+    {invitation.slug}
+  </a>
+</td>
+
                     <td>
                       <div className="d-flex flex-column">
                         <span className="text-gray-800 mb-1">{invitation.user?.name}</span>

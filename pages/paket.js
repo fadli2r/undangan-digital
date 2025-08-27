@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import MetronicUserLayout from "../components/layouts/MetronicUserLayout";
+import UserLayout from "../components/layouts/UserLayout";
 
 const paketList = [
   {
@@ -14,9 +15,9 @@ const paketList = [
       "RSVP Digital",
       "Galeri Foto",
       "Amplop Digital",
-      "Support 24/7"
+      "Support 24/7",
     ],
-    color: "primary"
+    color: "primary",
   },
   {
     id: "premium",
@@ -30,24 +31,41 @@ const paketList = [
       "Pilih Template Premium",
       "Countdown, Musik, Maps",
       "Live Streaming",
-      "Custom Domain"
+      "Custom Domain",
     ],
-    color: "success"
-  }
+    color: "success",
+  },
 ];
 
 export default function Paket() {
-  const { data: session } = useSession();
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) router.replace("/login");
+  }, [status, session, router]);
 
   const handlePilihPaket = (paket) => {
-    // Redirect to summary page with selected paketId
     router.push(`/paket/summary?paketId=${paket.id}`);
   };
 
+  // Loading & guard (seragam dengan Dashboard)
+  if (status === "loading" || !session) {
+    return (
+      <UserLayout>
+        <div className="d-flex justify-content-center align-items-center min-h-300px">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
   return (
-    <MetronicUserLayout>
-      {/* Page Header */}
+    <UserLayout>
+      {/* Header: pola card seperti Dashboard */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
           <div className="card">
@@ -65,46 +83,48 @@ export default function Paket() {
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         {paketList.map((paket) => (
           <div key={paket.id} className="col-md-6">
-            <div className={`card ${paket.popular ? 'border-success' : ''}`}>
+            <div className={`card h-100 ${paket.popular ? "border-success" : ""}`}>
               {paket.popular && (
-                <div className="card-header border-0 pt-5">
-                  <div className="text-center">
-                    <span className="badge badge-success fs-7 fw-bold">PALING POPULER</span>
-                  </div>
+                <div className="card-header border-0 pt-5 justify-content-center">
+                  <span className="badge badge-success fs-7 fw-bold">PALING POPULER</span>
                 </div>
               )}
-              
-              <div className="card-body text-center pt-7 pb-5">
-                {/* Package Name */}
-                <div className="d-flex flex-center">
-                  <span className={`badge badge-light-${paket.color} px-3 py-2 fs-7 fw-bold text-uppercase mb-3`}>
-                    {paket.nama}
-                  </span>
-                </div>
 
-                {/* Price */}
-                <div className="text-center">
+              <div className="card-body text-center pt-7 pb-5">
+                {/* Nama Paket */}
+                <span
+                  className={`badge badge-light-${paket.color} px-3 py-2 fs-7 fw-bold text-uppercase mb-3`}
+                >
+                  {paket.nama}
+                </span>
+
+                {/* Harga */}
+                <div className="mb-5">
                   <span className="mb-2 text-primary">Rp</span>
                   <span className="fs-3x fw-bold text-primary">
-                    {paket.harga.toLocaleString()}
+                    {paket.harga.toLocaleString("id-ID")}
                   </span>
                   {paket.originalPrice && (
                     <span className="fs-7 text-muted text-decoration-line-through ms-2">
-                      Rp {paket.originalPrice.toLocaleString()}
+                      Rp {paket.originalPrice.toLocaleString("id-ID")}
                     </span>
                   )}
                 </div>
 
-                {/* Discount Badge */}
+                {/* Diskon */}
                 {paket.originalPrice && (
-                  <div className="text-center mb-5">
+                  <div className="mb-5">
                     <span className="badge badge-light-danger">
-                      Hemat {Math.round(((paket.originalPrice - paket.harga) / paket.originalPrice) * 100)}%
+                      Hemat{" "}
+                      {Math.round(
+                        ((paket.originalPrice - paket.harga) / paket.originalPrice) * 100
+                      )}
+                      %
                     </span>
                   </div>
                 )}
 
-                {/* Features List */}
+                {/* Fitur */}
                 <div className="pt-1">
                   {paket.fitur.map((fitur, i) => (
                     <div key={i} className="d-flex align-items-center mb-5">
@@ -120,7 +140,7 @@ export default function Paket() {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Aksi */}
               <div className="card-footer d-flex flex-center flex-column">
                 <button
                   onClick={() => handlePilihPaket(paket)}
@@ -128,19 +148,17 @@ export default function Paket() {
                 >
                   Pilih Paket {paket.nama}
                 </button>
-                <div className="text-sm text-gray-500">
-                  Pembayaran aman & terpercaya
-                </div>
+                <div className="text-sm text-gray-500">Pembayaran aman & terpercaya</div>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Features Comparison */}
+      {/* Perbandingan Fitur */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
-          <div className="card">
+          <div className="card card-flush">
             <div className="card-header">
               <div className="card-title">
                 <h3>Perbandingan Fitur</h3>
@@ -158,9 +176,7 @@ export default function Paket() {
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="text-gray-900 fw-bold text-hover-primary fs-6">
-                        Template Undangan
-                      </td>
+                      <td className="text-gray-900 fw-bold fs-6">Template Undangan</td>
                       <td className="text-center">
                         <span className="badge badge-light-primary">1 Template</span>
                       </td>
@@ -169,9 +185,7 @@ export default function Paket() {
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-gray-900 fw-bold text-hover-primary fs-6">
-                        Galeri Foto
-                      </td>
+                      <td className="text-gray-900 fw-bold fs-6">Galeri Foto</td>
                       <td className="text-center">
                         <i className="ki-duotone ki-check-circle fs-1 text-success">
                           <span className="path1"></span>
@@ -183,9 +197,7 @@ export default function Paket() {
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-gray-900 fw-bold text-hover-primary fs-6">
-                        RSVP Digital
-                      </td>
+                      <td className="text-gray-900 fw-bold fs-6">RSVP Digital</td>
                       <td className="text-center">
                         <i className="ki-duotone ki-check-circle fs-1 text-success">
                           <span className="path1"></span>
@@ -200,9 +212,7 @@ export default function Paket() {
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-gray-900 fw-bold text-hover-primary fs-6">
-                        Live Streaming
-                      </td>
+                      <td className="text-gray-900 fw-bold fs-6">Live Streaming</td>
                       <td className="text-center">
                         <i className="ki-duotone ki-cross-circle fs-1 text-danger">
                           <span className="path1"></span>
@@ -217,9 +227,7 @@ export default function Paket() {
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-gray-900 fw-bold text-hover-primary fs-6">
-                        Custom Domain
-                      </td>
+                      <td className="text-gray-900 fw-bold fs-6">Custom Domain</td>
                       <td className="text-center">
                         <i className="ki-duotone ki-cross-circle fs-1 text-danger">
                           <span className="path1"></span>
@@ -241,7 +249,7 @@ export default function Paket() {
         </div>
       </div>
 
-      {/* FAQ Section */}
+      {/* FAQ */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
           <div className="card">
@@ -254,35 +262,73 @@ export default function Paket() {
               <div className="accordion" id="kt_accordion_1">
                 <div className="accordion-item">
                   <h2 className="accordion-header" id="kt_accordion_1_header_1">
-                    <button className="accordion-button fs-4 fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#kt_accordion_1_body_1" aria-expanded="true" aria-controls="kt_accordion_1_body_1">
+                    <button
+                      className="accordion-button fs-4 fw-semibold"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#kt_accordion_1_body_1"
+                      aria-expanded="true"
+                      aria-controls="kt_accordion_1_body_1"
+                    >
                       Bagaimana cara pembayaran?
                     </button>
                   </h2>
-                  <div id="kt_accordion_1_body_1" className="accordion-collapse collapse show" aria-labelledby="kt_accordion_1_header_1" data-bs-parent="#kt_accordion_1">
+                  <div
+                    id="kt_accordion_1_body_1"
+                    className="accordion-collapse collapse show"
+                    aria-labelledby="kt_accordion_1_header_1"
+                    data-bs-parent="#kt_accordion_1"
+                  >
                     <div className="accordion-body">
                       Kami menerima pembayaran melalui transfer bank, e-wallet (OVO, GoPay, DANA), dan kartu kredit. Pembayaran aman dan terpercaya.
                     </div>
                   </div>
                 </div>
+
                 <div className="accordion-item">
                   <h2 className="accordion-header" id="kt_accordion_1_header_2">
-                    <button className="accordion-button fs-4 fw-semibold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#kt_accordion_1_body_2" aria-expanded="false" aria-controls="kt_accordion_1_body_2">
+                    <button
+                      className="accordion-button fs-4 fw-semibold collapsed"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#kt_accordion_1_body_2"
+                      aria-expanded="false"
+                      aria-controls="kt_accordion_1_body_2"
+                    >
                       Berapa lama proses pembuatan undangan?
                     </button>
                   </h2>
-                  <div id="kt_accordion_1_body_2" className="accordion-collapse collapse" aria-labelledby="kt_accordion_1_header_2" data-bs-parent="#kt_accordion_1">
+                  <div
+                    id="kt_accordion_1_body_2"
+                    className="accordion-collapse collapse"
+                    aria-labelledby="kt_accordion_1_header_2"
+                    data-bs-parent="#kt_accordion_1"
+                  >
                     <div className="accordion-body">
                       Setelah pembayaran dikonfirmasi, undangan digital Anda akan siap dalam 1-2 jam kerja. Untuk revisi, maksimal 24 jam.
                     </div>
                   </div>
                 </div>
+
                 <div className="accordion-item">
                   <h2 className="accordion-header" id="kt_accordion_1_header_3">
-                    <button className="accordion-button fs-4 fw-semibold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#kt_accordion_1_body_3" aria-expanded="false" aria-controls="kt_accordion_1_body_3">
+                    <button
+                      className="accordion-button fs-4 fw-semibold collapsed"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#kt_accordion_1_body_3"
+                      aria-expanded="false"
+                      aria-controls="kt_accordion_1_body_3"
+                    >
                       Apakah bisa revisi setelah jadi?
                     </button>
                   </h2>
-                  <div id="kt_accordion_1_body_3" className="accordion-collapse collapse" aria-labelledby="kt_accordion_1_header_3" data-bs-parent="#kt_accordion_1">
+                  <div
+                    id="kt_accordion_1_body_3"
+                    className="accordion-collapse collapse"
+                    aria-labelledby="kt_accordion_1_header_3"
+                    data-bs-parent="#kt_accordion_1"
+                  >
                     <div className="accordion-body">
                       Ya, Anda bisa melakukan revisi minor seperti perubahan teks, tanggal, atau foto. Revisi major design dikenakan biaya tambahan.
                     </div>
@@ -294,7 +340,7 @@ export default function Paket() {
         </div>
       </div>
 
-      {/* Support Section */}
+      {/* Support */}
       <div className="row g-5 g-xl-10">
         <div className="col-12">
           <div className="card bg-light-primary">
@@ -308,9 +354,9 @@ export default function Paket() {
               <div className="text-gray-700 fw-semibold fs-6 mb-5">
                 Tim customer service kami siap membantu Anda 24/7
               </div>
-              <a 
-                href="https://wa.me/your-number" 
-                target="_blank" 
+              <a
+                href="https://wa.me/your-number"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
               >
@@ -325,6 +371,6 @@ export default function Paket() {
           </div>
         </div>
       </div>
-    </MetronicUserLayout>
+    </UserLayout>
   );
 }

@@ -3,6 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 /* Custom CSS Variables */
 :root {
   --primary-color: #3b82f6;
@@ -11,16 +14,31 @@
   --success-color: #10b981;
   --error-color: #ef4444;
   --warning-color: #f59e0b;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Font Override - Global (Safe for icons) */
+body, html {
+  font-family: var(--font-family) !important;
+}
+
+/* Preserve icon fonts */
+[class*="ki-"], [class*="path"], .ki-duotone, .ki-solid, .ki-outline,
+[class*="fa-"], [class*="fas"], [class*="far"], [class*="fab"], [class*="fal"],
+[class*="icon-"], [class*="glyphicon"], [class*="material-icons"] {
+  font-family: inherit !important;
 }
 
 /* Base styles */
 @layer base {
   html {
     @apply scroll-smooth;
+    font-family: var(--font-family) !important;
   }
   
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: var(--font-family) !important;
   }
   
   /* Typography */

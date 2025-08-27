@@ -2,6 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { templateList } from '../data/templates';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const categories = [
   {
@@ -82,255 +84,134 @@ export default function Home() {
         <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet" />
       </Head>
 
-      <div className="d-flex flex-column flex-root" id="kt_app_root">
-        {/* Header Navigation */}
-        <div id="kt_app_header" className="app-header">
-          <div className="app-container container-fluid d-flex align-items-stretch justify-content-between">
-            {/* Logo */}
-            <div className="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
-              <Link href="/" className="d-lg-none">
-                <img alt="Logo" src="/logo.png" className="h-30px" />
-              </Link>
-              <Link href="/" className="d-none d-lg-flex">
-                <img alt="Logo" src="/logo.png" className="h-40px" />
-              </Link>
-            </div>
+      <Header />
 
-            {/* Desktop Navigation */}
-            <div className="d-flex align-items-stretch justify-content-between flex-lg-grow-1">
-              <div className="d-none d-lg-flex align-items-stretch" id="kt_app_header_menu">
-                <div className="app-header-menu app-header-mobile-drawer align-items-stretch">
-                  <div className="menu menu-rounded menu-column menu-lg-row my-5 my-lg-0 align-items-stretch fw-semibold px-2 px-lg-0">
-                    <div className="menu-item me-0 me-lg-2">
-                      <Link href="/" className="menu-link py-3">
-                        <span className="menu-title">Beranda</span>
-                      </Link>
-                    </div>
-                    <div className="menu-item me-0 me-lg-2">
-                      <Link href="/pilih-template" className="menu-link py-3">
-                        <span className="menu-title">Template</span>
-                      </Link>
-                    </div>
-                    <div className="menu-item me-0 me-lg-2">
-                      <Link href="/paket" className="menu-link py-3">
-                        <span className="menu-title">Paket & Harga</span>
-                      </Link>
-                    </div>
-                    <div className="menu-item me-0 me-lg-2">
-                      <Link href="/tentang" className="menu-link py-3">
-                        <span className="menu-title">Tentang Kami</span>
-                      </Link>
-                    </div>
-                    <div className="menu-item me-0 me-lg-2">
-                      <Link href="/kontak" className="menu-link py-3">
-                        <span className="menu-title">Kontak</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="d-flex align-items-stretch flex-shrink-0">
-                <div className="d-flex align-items-stretch flex-shrink-0">
-                  <div className="d-flex align-items-center ms-1 ms-lg-3">
-                    <Link href="/login" className="btn btn-sm btn-light me-3 d-none d-lg-flex">
-                      Masuk
-                    </Link>
-                    <Link href="/buat-undangan" className="btn btn-sm btn-primary">
-                      Buat Undangan
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Mobile Menu Toggle */}
-                <div className="d-flex d-lg-none align-items-center ms-2">
-                  <button
-                    className="btn btn-icon btn-active-color-primary w-35px h-35px"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  >
-                    <i className="ki-duotone ki-abstract-14 fs-2">
-                      <span className="path1"></span>
-                      <span className="path2"></span>
-                    </i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="d-lg-none bg-body border-bottom">
-            <div className="container-fluid">
-              <div className="d-flex flex-column py-5">
-                <Link href="/" className="py-2 text-gray-800 text-hover-primary">Beranda</Link>
-                <Link href="/pilih-template" className="py-2 text-gray-800 text-hover-primary">Template</Link>
-                <Link href="/paket" className="py-2 text-gray-800 text-hover-primary">Paket & Harga</Link>
-                <Link href="/tentang" className="py-2 text-gray-800 text-hover-primary">Tentang Kami</Link>
-                <Link href="/kontak" className="py-2 text-gray-800 text-hover-primary">Kontak</Link>
-                <div className="border-top pt-4 mt-4">
-                  <Link href="/login" className="btn btn-light w-100 mb-3">Masuk</Link>
-                  <Link href="/buat-undangan" className="btn btn-primary w-100">Buat Undangan</Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="min-h-screen bg-gray-50">
 
         {/* Hero Section */}
-        <div className="d-flex flex-column flex-center min-vh-100 position-relative overflow-hidden bg-primary">
-          {/* Background Gradient */}
-          <div className="position-absolute top-0 start-0 w-100 h-100" style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-          }}></div>
-
-          {/* Content */}
-          <div className="position-relative text-center text-white px-5" style={{ zIndex: 2 }}>
-            <div className="mb-10 mb-lg-20">
-              <h1 className="display-1 fw-bold mb-8 animate__animated animate__fadeInUp">
+        <section className="relative pt-32 pb-20 bg-gradient-to-br from-red-600 via-pink-600 to-blue-800 text-white min-h-screen flex items-center">
+          <div className="absolute inset-0 opacity-10"></div>
+          <div className="max-w-7xl mx-auto px-4 relative z-10" style={{ maxWidth: '1200px' }}>
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl  text-white-100 font-bold mb-6 animate__animated animate__fadeInUp">
                 Buat Undangan Pernikahan Impianmu dalam 5 Menit
               </h1>
-              <div className="fs-2 fw-semibold mb-10 animate__animated animate__fadeInUp" style={{ 
-                animationDelay: '0.5s',
-                color: 'rgba(255,255,255,0.9)'
-              }}>
+              <p className="text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto mb-12 animate__animated animate__fadeInUp" style={{ animationDelay: '0.5s' }}>
                 Pilih dari ratusan desain premium, cetak sendiri atau kirim digital.
-                <br className="d-none d-lg-block" />
+                <br className="hidden lg:block" />
                 Mudah, cepat, dan elegan.
-              </div>
+              </p>
 
               {/* CTA Buttons */}
-              <div className="d-flex justify-content-center flex-wrap gap-3 animate__animated animate__fadeInUp" style={{ animationDelay: '1s' }}>
-                <Link href="/pilih-template" className="btn btn-lg btn-light fw-bold">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate__animated animate__fadeInUp" style={{ animationDelay: '1s' }}>
+                <Link
+                  href="/katalog"
+                  className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-full font-semibold text-lg transition duration-300"
+                >
                   👁️ Lihat Koleksi Template
                 </Link>
-                <Link href="/buat-undangan" className="btn btn-lg btn-outline-light fw-bold">
+                <Link
+                  href="/buat-undangan"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-full font-semibold text-lg transition duration-300"
+                >
                   ✨ Mulai Desain Sekarang
                 </Link>
               </div>
-            </div>
 
-            {/* Stats */}
-            <div className="row g-5 justify-content-center animate__animated animate__fadeInUp" style={{ animationDelay: '1.5s' }}>
-              <div className="col-4 col-lg-2">
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto animate__animated animate__fadeInUp" style={{ animationDelay: '1.5s' }}>
                 <div className="text-center">
-                  <div className="fs-2x fw-bold text-white mb-2">500+</div>
-                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Template Premium</div>
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">500+</div>
+                  <div className="text-blue-100 text-sm md:text-base">Template Premium</div>
                 </div>
-              </div>
-              <div className="col-4 col-lg-2">
                 <div className="text-center">
-                  <div className="fs-2x fw-bold text-white mb-2">10K+</div>
-                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Undangan Dibuat</div>
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">10K+</div>
+                  <div className="text-blue-100 text-sm md:text-base">Undangan Dibuat</div>
                 </div>
-              </div>
-              <div className="col-4 col-lg-2">
                 <div className="text-center">
-                  <div className="fs-2x fw-bold text-white mb-2">4.9/5</div>
-                  <div className="fs-7" style={{ color: 'rgba(255,255,255,0.8)' }}>Rating Pengguna</div>
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">4.9/5</div>
+                  <div className="text-blue-100 text-sm md:text-base">Rating Pengguna</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Features Section */}
-        <div className="py-20 bg-light">
-          <div className="container">
-            <div className="text-center mb-17">
-              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Keunggulan Kami</h2>
-              <div className="fs-5 text-muted fw-bold">
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: '1200px' }}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Keunggulan Kami</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 Mengapa ribuan pasangan memilih platform kami
-              </div>
+              </p>
             </div>
 
-            <div className="row g-5 g-xl-10">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {features.map((feature, idx) => (
-                <div key={idx} className="col-md-6 col-lg-3">
-                  <div className="card h-100 shadow-sm" style={{ 
-                    transition: 'transform 0.3s ease',
-                    cursor: 'pointer'
-                  }} 
-                  onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
-                  onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
-                    <div className="card-body text-center p-4">
-                      <div className="mb-4">
-                        <div style={{ 
-                          fontSize: '3rem',
-                          background: feature.color,
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text'
-                        }}>
-                          {feature.emoji}
-                        </div>
-                      </div>
-                      <h4 className="fw-bold text-gray-900 mb-3">
-                        {feature.title}
-                      </h4>
-                      <p className="text-gray-600 mb-0">
-                        {feature.description}
-                      </p>
+                <div key={idx} className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-center">
+                  <div className="mb-4">
+                    <div className="text-5xl mb-4" style={{ 
+                      background: feature.color,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}>
+                      {feature.emoji}
                     </div>
                   </div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">
+                    {feature.title}
+                  </h4>
+                  <p className="text-gray-600">
+                    {feature.description}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Featured Templates Section */}
-        <div className="py-20">
-          <div className="container">
-            <div className="text-center mb-17">
-              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Koleksi Template Unggulan</h2>
-              <div className="fs-5 text-muted fw-bold">
+        <section className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: '1200px' }}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Koleksi Template Unggulan</h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 Pilih dari berbagai desain premium yang telah dipercaya ribuan pasangan
-              </div>
+              </p>
             </div>
 
-            <div className="row g-5 g-xl-10">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {templateList && templateList.length > 0 ? (
                 templateList.slice(0, 6).map((template, idx) => (
-                  <div key={idx} className="col-md-6 col-lg-4">
-                    <div className="card h-100 shadow-sm" style={{ 
-                      transition: 'transform 0.3s ease',
-                      cursor: 'pointer'
-                    }} 
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
-                      <div className="card-header border-0 pt-3">
-                        <div className="position-relative w-100">
-                          <img
-                            src={template.thumbnail || '/placeholder-template.jpg'}
-                            alt={template.name}
-                            className="w-100 rounded"
-                            style={{ height: '200px', objectFit: 'cover' }}
-                            onError={(e) => {
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4='
-                            }}
-                          />
-                          <div className="position-absolute top-0 start-0 m-2">
-                            <span className="badge bg-primary">Premium</span>
-                          </div>
-                        </div>
+                  <div key={idx} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                    <div className="relative">
+                      <img
+                        src={template.thumbnail || '/placeholder-template.jpg'}
+                        alt={template.name}
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjVmNWY1Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5UZW1wbGF0ZTwvdGV4dD48L3N2Zz4='
+                        }}
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Premium</span>
                       </div>
-                      <div className="card-body d-flex flex-column">
-                        <div className="mb-3">
-                          <h5 className="fw-bold text-gray-900 mb-2">{template.name}</h5>
-                          <p className="text-gray-600 small">{template.description}</p>
-                        </div>
-                        <div className="d-flex justify-content-between align-items-center mt-auto">
-                          <span className="fw-bold text-primary">Mulai Rp 50.000</span>
-                          <Link
-                            href={`/buat-undangan?template=${template.slug}`}
-                            className="btn btn-primary btn-sm"
-                          >
-                            Pilih Template
-                          </Link>
-                        </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h5 className="text-xl font-bold text-gray-900 mb-2">{template.name}</h5>
+                        <p className="text-gray-600 text-sm">{template.description}</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-blue-600">Mulai Rp 50.000</span>
+                        <Link
+                          href={`/buat-undangan?template=${template.slug}`}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition duration-300"
+                        >
+                          Pilih Template
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -338,22 +219,18 @@ export default function Home() {
               ) : (
                 // Placeholder templates jika data tidak ada
                 Array.from({ length: 6 }, (_, idx) => (
-                  <div key={idx} className="col-md-6 col-lg-4">
-                    <div className="card h-100 shadow-sm">
-                      <div className="card-header border-0 pt-3">
-                        <div className="w-100 bg-light rounded d-flex align-items-center justify-content-center" style={{ height: '200px' }}>
-                          <span className="text-muted">🎨 Template {idx + 1}</span>
-                        </div>
-                      </div>
-                      <div className="card-body">
-                        <h5 className="fw-bold text-gray-900 mb-2">Template Premium {idx + 1}</h5>
-                        <p className="text-gray-600 small">Desain elegan untuk undangan pernikahan Anda</p>
-                        <div className="d-flex justify-content-between align-items-center mt-3">
-                          <span className="fw-bold text-primary">Mulai Rp 50.000</span>
-                          <Link href="/buat-undangan" className="btn btn-primary btn-sm">
-                            Pilih Template
-                          </Link>
-                        </div>
+                  <div key={idx} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                      <span className="text-gray-500">🎨 Template {idx + 1}</span>
+                    </div>
+                    <div className="p-6">
+                      <h5 className="text-xl font-bold text-gray-900 mb-2">Template Premium {idx + 1}</h5>
+                      <p className="text-gray-600 text-sm mb-4">Desain elegan untuk undangan pernikahan Anda</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-blue-600">Mulai Rp 50.000</span>
+                        <Link href="/buat-undangan" className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition duration-300">
+                          Pilih Template
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -361,256 +238,174 @@ export default function Home() {
               )}
             </div>
 
-            <div className="text-center mt-10">
-              <Link href="/pilih-template" className="btn btn-lg btn-dark">
+            <div className="text-center mt-12">
+              <Link href="/katalog" className="bg-gray-900 text-white hover:bg-gray-800 px-8 py-4 rounded-full font-semibold text-lg transition duration-300">
                 Lihat Semua Template →
               </Link>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Categories Section */}
-        <div className="py-20 bg-light">
-          <div className="container">
-            <div className="text-center mb-17">
-              <h2 className="fs-2hx fw-bold text-gray-900 mb-5">Kategori Desain</h2>
-              <div className="fs-5 text-muted fw-bold">
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: '1200px' }}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Kategori Desain</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 Temukan template sesuai gaya favorit Anda
-              </div>
+              </p>
             </div>
 
-            <div className="row g-5 g-xl-10">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category, idx) => (
-                <div key={idx} className="col-md-6 col-lg-3">
-                  <Link href={`/pilih-template?category=${category.name.toLowerCase()}`} className="text-decoration-none">
-                    <div className="card h-100 shadow-sm" style={{ 
-                      transition: 'transform 0.3s ease',
-                      cursor: 'pointer'
-                    }} 
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}>
-                      <div className="card-body text-center p-4">
-                        <div className="mb-4">
-                          <div style={{ 
-                            fontSize: '3rem',
-                            background: category.color,
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text'
-                          }}>
-                            {category.emoji}
-                          </div>
-                        </div>
-                        <h4 className="fw-bold text-gray-900 mb-3">
-                          {category.name}
-                        </h4>
-                        <p className="text-gray-600 mb-3">
-                          {category.description}
-                        </p>
-                        <span className="badge" style={{ 
-                          backgroundColor: `${category.color}20`,
-                          color: category.color
-                        }}>
-                          {category.count} Template
-                        </span>
+                <Link key={idx} href={`/katalog?category=${category.name.toLowerCase()}`} className="block">
+                  <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-center h-full">
+                    <div className="mb-4">
+                      <div className="text-4xl mb-4" style={{ 
+                        background: category.color,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                      }}>
+                        {category.emoji}
                       </div>
                     </div>
-                  </Link>
-                </div>
+                    <h4 className="text-xl font-bold text-gray-900 mb-3">
+                      {category.name}
+                    </h4>
+                    <p className="text-gray-600 mb-4">
+                      {category.description}
+                    </p>
+                    <span 
+                      className="inline-block px-3 py-1 rounded-full text-sm font-semibold"
+                      style={{ 
+                        backgroundColor: `${category.color}20`,
+                        color: category.color
+                      }}
+                    >
+                      {category.count} Template
+                    </span>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Pricing Section */}
-        <div className="py-20 bg-primary">
-          <div className="container">
-            <div className="text-center mb-17">
-              <h2 className="fs-2hx fw-bold text-white mb-5">Paket Spesial</h2>
-              <div className="fs-5 text-white-75 fw-bold">
+        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: '1200px' }}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Paket Spesial</h2>
+              <p className="text-lg text-blue-100 max-w-2xl mx-auto">
                 Dapatkan penawaran terbaik untuk undangan digital Anda
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <div className="bg-white rounded-lg shadow-xl p-8 text-gray-900">
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold mb-2">Basic</h3>
+                  <p className="text-gray-600">Paket dasar untuk pemula</p>
+                </div>
+                <div className="text-center mb-8">
+                  <span className="text-4xl font-bold text-blue-600">Rp 50.000</span>
+                  <span className="text-sm text-gray-500 line-through ml-2">Rp 75.000</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>1 Template Premium</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>Customisasi Teks & Warna</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>Link Sharing</span>
+                  </div>
+                </div>
+                <Link href="/paket?package=basic" className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                  Pilih Paket
+                </Link>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-xl p-8 text-gray-900 border-4 border-blue-500 relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold">PALING POPULER</span>
+                </div>
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold mb-2">Premium</h3>
+                  <p className="text-gray-600">Paket lengkap untuk profesional</p>
+                </div>
+                <div className="text-center mb-8">
+                  <span className="text-4xl font-bold text-blue-600">Rp 99.000</span>
+                  <span className="text-sm text-gray-500 line-through ml-2">Rp 150.000</span>
+                </div>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>5 Template Premium</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>Galeri Foto & Video</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-500 text-xl mr-3">✅</span>
+                    <span>RSVP & Guest List</span>
+                  </div>
+                </div>
+                <Link href="/paket?package=premium" className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                  Pilih Paket
+                </Link>
               </div>
             </div>
 
-            <div className="row g-5 g-xl-10 justify-content-center">
-              <div className="col-lg-4">
-                <div className="card h-100">
-                  <div className="card-body text-center p-9">
-                    <div className="mb-7">
-                      <h3 className="fs-2hx fw-bold text-gray-900">Basic</h3>
-                      <div className="text-gray-500 fw-semibold">Paket dasar untuk pemula</div>
-                    </div>
-                    <div className="mb-8">
-                      <span className="fs-3x fw-bold text-primary">Rp 50.000</span>
-                      <span className="fs-7 text-muted text-decoration-line-through ms-2">Rp 75.000</span>
-                    </div>
-                    <div className="mb-8">
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">1 Template Premium</span>
-                      </div>
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">Customisasi Teks & Warna</span>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">Link Sharing</span>
-                      </div>
-                    </div>
-                    <Link href="/paket?package=basic" className="btn btn-primary w-100">
-                      Pilih Paket
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              <div className="col-lg-4">
-                <div className="card h-100 border-primary">
-                  <div className="card-header border-0 pt-5">
-                    <div className="text-center">
-                      <span className="badge badge-primary fs-7 fw-bold">PALING POPULER</span>
-                    </div>
-                  </div>
-                  <div className="card-body text-center p-9 pt-0">
-                    <div className="mb-7">
-                      <h3 className="fs-2hx fw-bold text-gray-900">Premium</h3>
-                      <div className="text-gray-500 fw-semibold">Paket lengkap untuk profesional</div>
-                    </div>
-                    <div className="mb-8">
-                      <span className="fs-3x fw-bold text-primary">Rp 99.000</span>
-                      <span className="fs-7 text-muted text-decoration-line-through ms-2">Rp 150.000</span>
-                    </div>
-                    <div className="mb-8">
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">5 Template Premium</span>
-                      </div>
-                      <div className="d-flex align-items-center mb-3">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">Galeri Foto & Video</span>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <span className="text-success me-3" style={{ fontSize: '1.5rem' }}>✅</span>
-                        <span className="fw-semibold text-gray-700">RSVP & Guest List</span>
-                      </div>
-                    </div>
-                    <Link href="/paket?package=premium" className="btn btn-primary w-100">
-                      Pilih Paket
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center mt-10">
-              <div className="text-white-75 mb-5">⏰ Penawaran terbatas! Berakhir dalam 7 hari</div>
-              <Link href="/paket" className="btn btn-light">
+            <div className="text-center mt-12">
+              <p className="text-blue-100 mb-4">⏰ Penawaran terbatas! Berakhir dalam 7 hari</p>
+              <Link href="/paket" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 rounded-full font-semibold transition duration-300">
                 Lihat Semua Paket
               </Link>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Newsletter Section */}
-        <div className="py-20">
-          <div className="container">
-            <div className="card">
-              <div className="card-body text-center p-15">
-                <h2 className="fs-2hx fw-bold text-gray-900 mb-5">
-                  Dapatkan Update & Promo Terbaru
-                </h2>
-                <div className="fs-5 text-muted fw-bold mb-8">
-                  Berlangganan newsletter kami dan dapatkan diskon 10% untuk pemesanan pertama Anda
-                </div>
+        <section className="py-20 bg-white">
+          <div className="max-w-6xl mx-auto px-4" style={{ maxWidth: '1200px' }}>
+            <div className="bg-gray-50 rounded-2xl p-12 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Dapatkan Update & Promo Terbaru
+              </h2>
+              <p className="text-lg text-gray-600 mb-8 max-w-4xl mx-auto">
+                Berlangganan newsletter kami dan dapatkan diskon 10% untuk pemesanan pertama Anda
+              </p>
 
-                <form onSubmit={handleNewsletterSubmit} className="d-flex flex-center flex-wrap">
-                  <div className="position-relative me-3 mb-3">
-                    <input
-                      type="email"
-                      className="form-control form-control-solid w-300px"
-                      placeholder="Masukkan alamat email Anda"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary mb-3">
-                    Berlangganan
-                  </button>
-                </form>
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                <input
+                  type="email"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Masukkan alamat email Anda"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <button type="submit" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                  Berlangganan
+                </button>
+              </form>
 
-                <div className="text-muted fs-7 mt-3">
-                  Kami menghargai privasi Anda. Unsubscribe kapan saja.
-                </div>
-              </div>
+              <p className="text-gray-500 text-sm mt-4">
+                Kami menghargai privasi Anda. Unsubscribe kapan saja.
+              </p>
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-dark py-10">
-          <div className="container">
-            <div className="row g-5">
-              <div className="col-lg-3">
-                <div className="mb-5">
-                  <img alt="Logo" src="/logo.png" className="h-40px" />
-                </div>
-                <div className="text-gray-600 fs-6 mb-5">
-                  Solusi undangan pernikahan digital yang mudah, cepat, dan elegan.
-                </div>
-                <div className="text-gray-600 fs-7">
-                  <div>Jl. Contoh No.123, Jakarta</div>
-                  <div>Email: info@undangandigital.com</div>
-                  <div>Telp: +62 812 3456 7890</div>
-                </div>
-              </div>
-
-              <div className="col-lg-3">
-                <h4 className="text-white fw-bold mb-5">Layanan</h4>
-                <div className="d-flex flex-column">
-                  <Link href="/pilih-template" className="text-gray-600 text-hover-primary py-2">Pilih Template</Link>
-                  <Link href="/buat-undangan" className="text-gray-600 text-hover-primary py-2">Buat Undangan</Link>
-                  <Link href="/paket" className="text-gray-600 text-hover-primary py-2">Paket & Harga</Link>
-                </div>
-              </div>
-
-              <div className="col-lg-3">
-                <h4 className="text-white fw-bold mb-5">Tentang Kami</h4>
-                <div className="d-flex flex-column">
-                  <Link href="/tentang" className="text-gray-600 text-hover-primary py-2">Profil Perusahaan</Link>
-                  <Link href="/kontak" className="text-gray-600 text-hover-primary py-2">Kontak</Link>
-                  <Link href="/blog" className="text-gray-600 text-hover-primary py-2">Blog</Link>
-                </div>
-              </div>
-
-              <div className="col-lg-3">
-                <h4 className="text-white fw-bold mb-5">Ikuti Kami</h4>
-                <div className="d-flex gap-3">
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" 
-                     className="btn btn-sm" style={{ backgroundColor: '#1877f2', color: 'white' }}>
-                    📘 Facebook
-                  </a>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" 
-                     className="btn btn-sm" style={{ backgroundColor: '#1da1f2', color: 'white' }}>
-                    🐦 Twitter
-                  </a>
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" 
-                     className="btn btn-sm" style={{ backgroundColor: '#e4405f', color: 'white' }}>
-                    📷 Instagram
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-top border-gray-700 mt-10 pt-5 text-center">
-              <div className="text-gray-600 fs-7">
-                &copy; {new Date().getFullYear()} Undangan Digital. All rights reserved.
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
+
+      <Footer />
     </>
   );
 }

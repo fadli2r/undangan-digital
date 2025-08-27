@@ -40,6 +40,11 @@ const UserSchema = new mongoose.Schema({
     default: true
   },
 
+// <--- Tambahkan di sini
+onboardingCompleted: {
+  type: Boolean,
+  default: false
+},
   // Subscription & Package
   currentPackage: {
     packageId: {
@@ -53,7 +58,18 @@ const UserSchema = new mongoose.Schema({
       default: true
     }
   },
-
+  onboardingStep: {
+  type: Number,
+  default: 1, // mulai dari step pertama
+},
+hasCompletedOnboarding: {
+  type: Boolean,
+  default: false
+},
+  hasSelectedPackage: {
+    type: Boolean,
+    default: false
+  },
   // Purchase History
   purchases: [{
     packageId: {

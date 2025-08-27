@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import MetronicUserLayout from "../components/layouts/MetronicUserLayout";
+import UserLayout from "../components/layouts/UserLayout";
 import { templateList } from "../data/templates";
 
 export default function BuatUndangan() {
-  const { data: session, status } = useSession();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const { template } = router.query;
+
   const [form, setForm] = useState({
     nama_pria: "",
     nama_wanita: "",
@@ -17,13 +18,19 @@ export default function BuatUndangan() {
     alamat: "",
     custom_slug: "",
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);     // submit state
   const [error, setError] = useState("");
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(true);    // auth/quota checking
   const [user, setUser] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Proteksi akses: hanya user paid (support Google/manual)
+  // template yang dipilih
+  const templateObj = useMemo(
+    () => templateList.find((tpl) => tpl.slug === template),
+    [template]
+  );
+
+  // Proteksi akses: hanya user ber-EMAIL + punya quota
   useEffect(() => {
     const cekStatusUser = async () => {
       if (status === "loading") return;
@@ -51,32 +58,29 @@ export default function BuatUndangan() {
           router.replace("/login");
           return;
         }
-        
-        // Check user data
+
         if (!userData) {
-          console.log("No user data found, redirecting to login");
           router.replace("/login");
           return;
         }
-        
-        // Check user status and quota
-        if (userData.quota < 1) {
-          console.log("User has no quota left");
+
+        if ((userData.quota ?? 0) < 1) {
           router.replace("/dashboard");
           return;
         }
+
         setUser(userData);
         setChecking(false);
-      } catch (error) {
-        console.error("Error checking user status:", error);
+      } catch (err) {
+        console.error("Error checking user status:", err);
         setChecking(false);
       }
     };
+
     cekStatusUser();
   }, [session, status, router]);
 
-  // Validasi template
-  const templateObj = templateList.find(tpl => tpl.slug === template);
+  // Validasi template; bila tidak ada, redirect pilih template
   useEffect(() => {
     if (!template) return;
     if (!templateObj) {
@@ -84,7 +88,22 @@ export default function BuatUndangan() {
     }
   }, [template, templateObj, router]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const nextStep = () => {
+    if (currentStep === 1 && (!form.nama_pria || !form.nama_wanita)) {
+      setError("Nama mempelai harus diisi");
+      return;
+    }
+    setError("");
+    setCurrentStep((s) => s + 1);
+  };
+
+  const prevStep = () => {
+    setError("");
+    setCurrentStep((s) => s - 1);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -92,17 +111,26 @@ export default function BuatUndangan() {
     setError("");
 
     // Validasi form
-    if (!form.nama_pria || !form.nama_wanita || !form.tanggal || !form.waktu || !form.lokasi || !form.alamat) {
+    if (
+      !form.nama_pria ||
+      !form.nama_wanita ||
+      !form.tanggal ||
+      !form.waktu ||
+      !form.lokasi ||
+      !form.alamat
+    ) {
       setError("Semua field harus diisi.");
       setLoading(false);
       return;
     }
 
-    // Validasi custom slug jika diisi
+    // Validasi custom slug (jika diisi)
     if (form.custom_slug) {
       const slugPattern = /^[a-zA-Z0-9-]+$/;
       if (!slugPattern.test(form.custom_slug)) {
-        setError("Link custom hanya boleh berisi huruf, angka, dan tanda hubung (-)");
+        setError(
+          "Link custom hanya boleh berisi huruf, angka, dan tanda hubung (-)"
+        );
         setLoading(false);
         return;
       }
@@ -118,18 +146,18 @@ export default function BuatUndangan() {
       }
     }
 
+    // Ambil email
     let email = session?.user?.email;
     if (!email && typeof window !== "undefined") {
       const userLS = window.localStorage.getItem("user");
       if (userLS) email = JSON.parse(userLS).email;
     }
-    
     if (!email) {
       setError("User belum login.");
       setLoading(false);
       return;
     }
-    
+
     if (!template) {
       setError("Template belum dipilih.");
       setLoading(false);
@@ -137,22 +165,22 @@ export default function BuatUndangan() {
     }
 
     try {
-      // Restructure the data to match the schema
+      // Susun payload sesuai schema backend
       const invitationData = {
         template,
         user_email: email,
         custom_slug: form.custom_slug || undefined,
         mempelai: {
           pria: form.nama_pria,
-          wanita: form.nama_wanita
+          wanita: form.nama_wanita,
         },
         acara_utama: {
           nama: "Resepsi",
           tanggal: form.tanggal,
           waktu: form.waktu,
           lokasi: form.lokasi,
-          alamat: form.alamat
-        }
+          alamat: form.alamat,
+        },
       };
 
       const res = await fetch("/api/invitation/create", {
@@ -160,97 +188,97 @@ export default function BuatUndangan() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(invitationData),
       });
-      
+
       const data = await res.json();
-      
       if (res.ok) {
-        // Berhasil membuat undangan
         router.push(`/undangan/${data.slug}`);
       } else {
         setError(data.message || "Gagal membuat undangan.");
       }
-    } catch (error) {
-      console.error("Error creating invitation:", error);
-      setError("Terjadi kesalahan saat membuat undangan. Silakan coba lagi.");
+    } catch (err) {
+      console.error("Error creating invitation:", err);
+      setError(
+        "Terjadi kesalahan saat membuat undangan. Silakan coba lagi."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const nextStep = () => {
-    if (currentStep === 1) {
-      if (!form.nama_pria || !form.nama_wanita) {
-        setError("Nama mempelai harus diisi");
-        return;
-      }
-    }
-    setError("");
-    setCurrentStep(currentStep + 1);
-  };
-
-  const prevStep = () => {
-    setError("");
-    setCurrentStep(currentStep - 1);
-  };
-
+  // Loading guard: seragam dengan Dashboard
   if (status === "loading" || checking || !templateObj) {
     return (
-      <MetronicUserLayout>
+      <UserLayout>
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
         </div>
-      </MetronicUserLayout>
+      </UserLayout>
     );
   }
 
   return (
-    <MetronicUserLayout>
-      {/* Page Header */}
+    <UserLayout>
+      {/* Header Card (seragam) */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
           <div className="card">
-            <div className="card-body">
+            <div className="card-body d-flex align-items-center justify-content-between">
               <div className="d-flex align-items-center">
                 <div className="symbol symbol-60px me-5">
-                  <img src={templateObj.thumbnail} alt={templateObj.name} className="w-100 h-100 rounded" />
+                  <img
+                    src={templateObj.thumbnail}
+                    alt={templateObj.name}
+                    className="w-100 h-100 rounded"
+                  />
                 </div>
                 <div className="flex-grow-1">
-                  <h1 className="fs-2hx fw-bold text-gray-900 mb-2">Buat Undangan Baru</h1>
+                  <h1 className="fs-2hx fw-bold text-gray-900 mb-2">
+                    Buat Undangan Baru
+                  </h1>
                   <div className="fs-6 text-gray-700">
-                    Template: <span className="fw-bold text-primary">{templateObj.name}</span>
+                    Template:{" "}
+                    <span className="fw-bold text-primary">
+                      {templateObj.name}
+                    </span>
                   </div>
-                  <div className="fs-7 text-gray-600">{templateObj.description}</div>
+                  <div className="fs-7 text-gray-600">
+                    {templateObj.description}
+                  </div>
                 </div>
-                <button
-                  className="btn btn-light-primary btn-sm"
-                  onClick={() => router.push("/pilih-template")}
-                >
-                  <i className="ki-duotone ki-arrow-left fs-3">
-                    <span className="path1"></span>
-                    <span className="path2"></span>
-                  </i>
-                  Ganti Template
-                </button>
               </div>
+
+              <button
+                className="btn btn-light-primary btn-sm"
+                onClick={() => router.push("/pilih-template")}
+              >
+                <i className="ki-duotone ki-arrow-left fs-3">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                Ganti Template
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Progress Steps */}
+      {/* Stepper (tetap, tapi dibungkus card supaya konsisten) */}
       <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
         <div className="col-12">
           <div className="card">
             <div className="card-body">
-              <div className="stepper stepper-pills stepper-column d-flex flex-column flex-xl-row flex-row-fluid gap-10" id="kt_create_account_stepper">
+              <div
+                className="stepper stepper-pills stepper-column d-flex flex-column flex-xl-row flex-row-fluid gap-10"
+                id="kt_create_account_stepper"
+              >
                 {/* Step 1 */}
-                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 1 ? 'current' : ''}`}>
+                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 1 ? "current" : ""}`}>
                   <div className="stepper-wrapper">
                     <div className="stepper-icon w-40px h-40px">
-                      <i className={`stepper-check fas fa-check ${currentStep > 1 ? 'text-white' : ''}`}></i>
-                      <span className={`stepper-number ${currentStep === 1 ? 'text-primary' : currentStep > 1 ? 'text-white' : 'text-muted'}`}>1</span>
+                      <i className={`stepper-check fas fa-check ${currentStep > 1 ? "text-white" : ""}`}></i>
+                      <span className={`stepper-number ${currentStep === 1 ? "text-primary" : currentStep > 1 ? "text-white" : "text-muted"}`}>1</span>
                     </div>
                     <div className="stepper-label">
                       <h3 className="stepper-title">Data Mempelai</h3>
@@ -260,11 +288,11 @@ export default function BuatUndangan() {
                 </div>
 
                 {/* Step 2 */}
-                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 2 ? 'current' : ''}`}>
+                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 2 ? "current" : ""}`}>
                   <div className="stepper-wrapper">
                     <div className="stepper-icon w-40px h-40px">
-                      <i className={`stepper-check fas fa-check ${currentStep > 2 ? 'text-white' : ''}`}></i>
-                      <span className={`stepper-number ${currentStep === 2 ? 'text-primary' : currentStep > 2 ? 'text-white' : 'text-muted'}`}>2</span>
+                      <i className={`stepper-check fas fa-check ${currentStep > 2 ? "text-white" : ""}`}></i>
+                      <span className={`stepper-number ${currentStep === 2 ? "text-primary" : currentStep > 2 ? "text-white" : "text-muted"}`}>2</span>
                     </div>
                     <div className="stepper-label">
                       <h3 className="stepper-title">Detail Acara</h3>
@@ -274,11 +302,11 @@ export default function BuatUndangan() {
                 </div>
 
                 {/* Step 3 */}
-                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 3 ? 'current' : ''}`}>
+                <div className={`flex-row-fluid py-lg-5 ${currentStep >= 3 ? "current" : ""}`}>
                   <div className="stepper-wrapper">
                     <div className="stepper-icon w-40px h-40px">
-                      <i className={`stepper-check fas fa-check ${currentStep > 3 ? 'text-white' : ''}`}></i>
-                      <span className={`stepper-number ${currentStep === 3 ? 'text-primary' : currentStep > 3 ? 'text-white' : 'text-muted'}`}>3</span>
+                      <i className={`stepper-check fas fa-check ${currentStep > 3 ? "text-white" : ""}`}></i>
+                      <span className={`stepper-number ${currentStep === 3 ? "text-primary" : currentStep > 3 ? "text-white" : "text-muted"}`}>3</span>
                     </div>
                     <div className="stepper-label">
                       <h3 className="stepper-title">Finalisasi</h3>
@@ -287,12 +315,25 @@ export default function BuatUndangan() {
                   </div>
                 </div>
               </div>
+
+              {/* error global di stepper */}
+              {error && (
+                <div className="alert alert-danger d-flex align-items-center p-5 mt-6 mb-0">
+                  <i className="ki-duotone ki-shield-cross fs-2hx text-danger me-4">
+                    <span className="path1"></span>
+                    <span className="path2"></span>
+                  </i>
+                  <div className="d-flex flex-column">
+                    <span>{error}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Form Content */}
+      {/* Form Card */}
       <div className="row g-5 g-xl-10">
         <div className="col-12">
           <div className="card">
@@ -445,7 +486,7 @@ export default function BuatUndangan() {
                       </label>
                       <textarea
                         className="form-control form-control-solid"
-                        rows="4"
+                        rows={4}
                         placeholder="Alamat lengkap lokasi acara"
                         name="alamat"
                         value={form.alamat}
@@ -466,86 +507,85 @@ export default function BuatUndangan() {
                       </div>
                     </div>
 
-                    <div className="mb-0">
-                      {/* Template Info */}
-                      <div className="notice d-flex bg-light-primary rounded border-primary border border-dashed p-6 mb-8">
-                        <i className="ki-duotone ki-design-1 fs-2tx text-primary me-4">
-                          <span className="path1"></span>
-                          <span className="path2"></span>
-                        </i>
-                        <div className="d-flex flex-stack flex-grow-1">
-                          <div className="fw-semibold">
-                            <div className="fs-6 text-gray-700">
-                              <strong>Template:</strong> {templateObj.name}
+                    {/* Info Template */}
+                    <div className="notice d-flex bg-light-primary rounded border-primary border border-dashed p-6 mb-8">
+                      <i className="ki-duotone ki-design-1 fs-2tx text-primary me-4">
+                        <span className="path1"></span>
+                        <span className="path2"></span>
+                      </i>
+                      <div className="d-flex flex-stack flex-grow-1">
+                        <div className="fw-semibold">
+                          <div className="fs-6 text-gray-700">
+                            <strong>Template:</strong> {templateObj.name}
+                          </div>
+                          <div className="fs-7 text-gray-600">{templateObj.description}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tabel Review */}
+                    <div className="row mb-8">
+                      <div className="col-md-6">
+                        <div className="card card-flush h-100">
+                          <div className="card-header">
+                            <div className="card-title">
+                              <h3 className="fw-bold text-gray-900">Data Mempelai</h3>
                             </div>
-                            <div className="fs-7 text-gray-600">{templateObj.description}</div>
+                          </div>
+                          <div className="card-body pt-0">
+                            <div className="table-responsive">
+                              <table className="table table-row-dashed table-row-gray-300 gy-7">
+                                <tbody>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Mempelai Pria</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.nama_pria}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Mempelai Wanita</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.nama_wanita}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Link Custom</td>
+                                    <td className="text-end text-gray-700 fw-bold">
+                                      {form.custom_slug || "Auto-generate"}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Data Review */}
-                      <div className="row mb-8">
-                        <div className="col-md-6">
-                          <div className="card card-flush h-100">
-                            <div className="card-header">
-                              <div className="card-title">
-                                <h3 className="fw-bold text-gray-900">Data Mempelai</h3>
-                              </div>
-                            </div>
-                            <div className="card-body pt-0">
-                              <div className="table-responsive">
-                                <table className="table table-row-dashed table-row-gray-300 gy-7">
-                                  <tbody>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Mempelai Pria</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.nama_pria}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Mempelai Wanita</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.nama_wanita}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Link Custom</td>
-                                      <td className="text-end text-gray-700 fw-bold">
-                                        {form.custom_slug || "Auto-generate"}
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
+                      <div className="col-md-6">
+                        <div className="card card-flush h-100">
+                          <div className="card-header">
+                            <div className="card-title">
+                              <h3 className="fw-bold text-gray-900">Detail Acara</h3>
                             </div>
                           </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="card card-flush h-100">
-                            <div className="card-header">
-                              <div className="card-title">
-                                <h3 className="fw-bold text-gray-900">Detail Acara</h3>
-                              </div>
-                            </div>
-                            <div className="card-body pt-0">
-                              <div className="table-responsive">
-                                <table className="table table-row-dashed table-row-gray-300 gy-7">
-                                  <tbody>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Tanggal</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.tanggal}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Waktu</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.waktu}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Lokasi</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.lokasi}</td>
-                                    </tr>
-                                    <tr>
-                                      <td className="fw-bold text-muted">Alamat</td>
-                                      <td className="text-end text-gray-700 fw-bold">{form.alamat}</td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
+                          <div className="card-body pt-0">
+                            <div className="table-responsive">
+                              <table className="table table-row-dashed table-row-gray-300 gy-7">
+                                <tbody>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Tanggal</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.tanggal}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Waktu</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.waktu}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Lokasi</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.lokasi}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="fw-bold text-muted">Alamat</td>
+                                    <td className="text-end text-gray-700 fw-bold">{form.alamat}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
                           </div>
                         </div>
@@ -554,20 +594,7 @@ export default function BuatUndangan() {
                   </div>
                 )}
 
-                {/* Error Message */}
-                {error && (
-                  <div className="alert alert-danger d-flex align-items-center p-5 mb-10">
-                    <i className="ki-duotone ki-shield-cross fs-2hx text-danger me-4">
-                      <span className="path1"></span>
-                      <span className="path2"></span>
-                    </i>
-                    <div className="d-flex flex-column">
-                      <span>{error}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation Buttons */}
+                {/* Navigasi Bawah */}
                 <div className="d-flex flex-stack pt-10">
                   <div className="me-2">
                     {currentStep > 1 && (
@@ -598,11 +625,7 @@ export default function BuatUndangan() {
                         </i>
                       </button>
                     ) : (
-                      <button
-                        type="submit"
-                        className="btn btn-lg btn-primary"
-                        disabled={loading}
-                      >
+                      <button type="submit" className="btn btn-lg btn-primary" disabled={loading}>
                         {loading ? (
                           <>
                             <span className="spinner-border spinner-border-sm align-middle me-2"></span>
@@ -626,6 +649,6 @@ export default function BuatUndangan() {
           </div>
         </div>
       </div>
-    </MetronicUserLayout>
+    </UserLayout>
   );
 }
