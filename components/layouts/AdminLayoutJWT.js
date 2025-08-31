@@ -30,7 +30,23 @@ export default function AdminLayoutJWT({ children }) {
       router.push('/admin/login');
     }
   }, [router]);
-
+useEffect(() => {
+    const init = () => {
+      try {
+        window.KTMenu?.createInstances?.();
+        window.KTDrawer?.createInstances?.();
+        window.KTScroll?.createInstances?.();
+        window.KTSticky?.createInstances?.();
+        // Theme
+        window.KTThemeMode?.init?.();
+      } catch (e) {
+        console.warn('Metronic init warn:', e);
+      }
+    };
+    init();
+    const t = setTimeout(init, 400);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     // Initialize Metronic components after component mounts
     const initializeMetronic = () => {
@@ -84,6 +100,7 @@ export default function AdminLayoutJWT({ children }) {
       <>
         <Head>
           <title>Admin Dashboard - Digital Invitation</title>
+          
         </Head>
         <div className="d-flex flex-column flex-root">
           <div className="page-loading d-flex flex-column flex-column-fluid">
@@ -125,8 +142,13 @@ export default function AdminLayoutJWT({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      
       </Head>
-
+<script
+    dangerouslySetInnerHTML={{
+      __html: `var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-bs-theme-mode")) { themeMode = document.documentElement.getAttribute("data-bs-theme-mode"); } else { if (localStorage.getItem("data-bs-theme") !== null) { themeMode = localStorage.getItem("data-bs-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-bs-theme", themeMode); }`,
+    }}
+  />
       {/* Metronic JavaScript */}
       <Script src="/metronic/assets/plugins/global/plugins.bundle.js" strategy="beforeInteractive" />
       <Script src="/metronic/assets/js/scripts.bundle.js" strategy="beforeInteractive" />
@@ -178,7 +200,7 @@ export default function AdminLayoutJWT({ children }) {
               
               // Initialize theme mode
               if (typeof KTThemeMode !== 'undefined') {
-                KTThemeMode.init();
+  window.KTThemeMode?.init?.();
                 console.log('KTThemeMode initialized');
               }
               
@@ -471,6 +493,83 @@ export default function AdminLayoutJWT({ children }) {
 
                   {/* Begin::Topbar */}
                   <div className="d-flex align-items-center flex-shrink-0 mb-0 mb-lg-0">
+                   {/*begin::Theme mode*/}
+								<div class="d-flex align-items-center ms-3 ms-lg-4">
+									{/*begin::Menu toggle*/}
+									<a href="#" class="btn btn-icon btn-color-gray-700 btn-active-color-primary btn-outline w-40px h-40px" data-kt-menu-trigger="{default:'click', lg: 'hover'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
+										<i class="ki-duotone ki-night-day theme-light-show fs-1">
+											<span class="path1"></span>
+											<span class="path2"></span>
+											<span class="path3"></span>
+											<span class="path4"></span>
+											<span class="path5"></span>
+											<span class="path6"></span>
+											<span class="path7"></span>
+											<span class="path8"></span>
+											<span class="path9"></span>
+											<span class="path10"></span>
+										</i>
+										<i class="ki-duotone ki-moon theme-dark-show fs-1">
+											<span class="path1"></span>
+											<span class="path2"></span>
+										</i>
+									</a>
+									{/*begin::Menu toggle*/}
+									{/*begin::Menu*/}
+									<div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-title-gray-700 menu-icon-gray-500 menu-active-bg menu-state-color fw-semibold py-4 fs-base w-150px" data-kt-menu="true" data-kt-element="theme-mode-menu">
+										{/*begin::Menu item*/}
+										<div class="menu-item px-3 my-0">
+											<a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="light">
+												<span class="menu-icon" data-kt-element="icon">
+													<i class="ki-duotone ki-night-day fs-2">
+														<span class="path1"></span>
+														<span class="path2"></span>
+														<span class="path3"></span>
+														<span class="path4"></span>
+														<span class="path5"></span>
+														<span class="path6"></span>
+														<span class="path7"></span>
+														<span class="path8"></span>
+														<span class="path9"></span>
+														<span class="path10"></span>
+													</i>
+												</span>
+												<span class="menu-title">Light</span>
+											</a>
+										</div>
+										{/*end::Menu item*/}
+										{/*begin::Menu item*/}
+										<div class="menu-item px-3 my-0">
+											<a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="dark">
+												<span class="menu-icon" data-kt-element="icon">
+													<i class="ki-duotone ki-moon fs-2">
+														<span class="path1"></span>
+														<span class="path2"></span>
+													</i>
+												</span>
+												<span class="menu-title">Dark</span>
+											</a>
+										</div>
+										{/*end::Menu item*/}
+										{/*begin::Menu item*/}
+										<div class="menu-item px-3 my-0">
+											<a href="#" class="menu-link px-3 py-2" data-kt-element="mode" data-kt-value="system">
+												<span class="menu-icon" data-kt-element="icon">
+													<i class="ki-duotone ki-screen fs-2">
+														<span class="path1"></span>
+														<span class="path2"></span>
+														<span class="path3"></span>
+														<span class="path4"></span>
+													</i>
+												</span>
+												<span class="menu-title">System</span>
+											</a>
+										</div>
+										{/*end::Menu item*/}
+									</div>
+									{/*end::Menu*/}
+								</div>
+								{/*end::Theme mode*/}
                     {/* Begin::User menu */}
                     <div className="d-flex align-items-center ms-3 ms-lg-4" id="kt_header_user_menu_toggle">
                       {/* Begin::Menu wrapper */}

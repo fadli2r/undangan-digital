@@ -1,6 +1,6 @@
 // pages/api/onboarding/summary.js
-import dbConnect from "@/lib/dbConnect";
-import Package from "@/models/Package";
+import dbConnect from '../../../lib/dbConnect';
+import Package from '../../../models/Package';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

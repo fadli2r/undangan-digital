@@ -1,19 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayoutJWT from '../../../../components/layouts/AdminLayoutJWT';
 
+function toLocalDateTimeValue(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n) => `${n}`.padStart(2, '0');
+  const yyyy = date.getFullYear();
+  const mm = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const hh = pad(date.getHours());
+  const mi = pad(date.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
 export default function EditCouponPage() {
   const router = useRouter();
   const { couponId } = router.query;
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [packages, setPackages] = useState([]);
   const [coupon, setCoupon] = useState(null);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    type: 'percentage',
+    type: 'percentage', // 'percentage' | 'fixed'
     value: '',
     minimumAmount: '',
     maximumDiscount: '',
@@ -26,140 +41,158 @@ export default function EditCouponPage() {
     excludedPackages: []
   });
 
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+
+  // convenience
+  const valueNumber = useMemo(() => Number(formData.value || 0), [formData.value]);
+
   useEffect(() => {
     if (couponId) {
-      fetchCoupon();
-      fetchPackages();
+      (async () => {
+        try {
+          setLoading(true);
+          setError('');
+          await Promise.all([fetchCoupon(), fetchPackages()]);
+        } catch (e) {
+          setError(e?.message || 'Error load data');
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponId]);
 
-  const fetchCoupon = async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+  async function fetchPackages() {
+    const token = localStorage.getItem('adminToken');
+    const res = await fetch('/api/admin/packages/index-jwt', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Gagal mengambil daftar paket');
+    const data = await res.json();
+    setPackages(data.packages || []);
+  }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch coupon');
-      }
+  async function fetchCoupon() {
+    const token = localStorage.getItem('adminToken');
+    const res = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Gagal mengambil kupon');
 
-      const data = await response.json();
-      const couponData = data.coupon;
-      setCoupon(couponData);
+    const c = data.coupon;
+    setCoupon(c || null);
+    setFormData({
+      name: c?.name || '',
+      description: c?.description || '',
+      type: c?.type || 'percentage',
+      value: (c?.value ?? '').toString(),
+      minimumAmount: (c?.minimumAmount ?? '').toString(),
+      maximumDiscount: (c?.maximumDiscount ?? '').toString(),
+      usageLimit: (c?.usageLimit ?? '').toString(),
+      userUsageLimit: (c?.userUsageLimit ?? '1').toString(),
+      startDate: toLocalDateTimeValue(c?.startDate),
+      endDate: toLocalDateTimeValue(c?.endDate),
+      isActive: c?.isActive !== false,
+      applicablePackages: c?.applicablePackages?.map((p) => p?._id || p) || [],
+      excludedPackages: c?.excludedPackages?.map((p) => p?._id || p) || []
+    });
+  }
 
-      // Format dates for datetime-local input
-      const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 16);
-      };
-
-      setFormData({
-        name: couponData.name || '',
-        description: couponData.description || '',
-        type: couponData.type || 'percentage',
-        value: couponData.value?.toString() || '',
-        minimumAmount: couponData.minimumAmount?.toString() || '',
-        maximumDiscount: couponData.maximumDiscount?.toString() || '',
-        usageLimit: couponData.usageLimit?.toString() || '',
-        userUsageLimit: couponData.userUsageLimit?.toString() || '1',
-        startDate: formatDate(couponData.startDate),
-        endDate: formatDate(couponData.endDate),
-        isActive: couponData.isActive !== false,
-        applicablePackages: couponData.applicablePackages?.map(pkg => pkg._id || pkg) || [],
-        excludedPackages: couponData.excludedPackages?.map(pkg => pkg._id || pkg) || []
-      });
-    } catch (error) {
-      console.error('Error fetching coupon:', error);
-      alert('Error loading coupon data');
-      router.push('/admin/coupons');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPackages = async () => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/packages/index-jwt', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPackages(data.packages || []);
-      }
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
+  function handleInputChange(e) {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? !!checked : value
     }));
-  };
+  }
 
-  const handlePackageSelection = (packageId, field) => {
-    setFormData(prev => {
-      const currentArray = prev[field];
-      const isSelected = currentArray.includes(packageId);
-      
+  function handlePackageSelection(packageId, field) {
+    setFormData((prev) => {
+      const arr = prev[field] || [];
+      const exist = arr.includes(packageId);
       return {
         ...prev,
-        [field]: isSelected 
-          ? currentArray.filter(id => id !== packageId)
-          : [...currentArray, packageId]
+        [field]: exist ? arr.filter((id) => id !== packageId) : [...arr, packageId]
       };
     });
-  };
+  }
 
-  const handleSubmit = async (e) => {
+  function selectAll(field) {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: packages.map((p) => p._id)
+    }));
+  }
+
+  function clearAll(field) {
+    setFormData((prev) => ({ ...prev, [field]: [] }));
+  }
+
+  function validate() {
+    const v = {};
+    if (!formData.name.trim()) v.name = 'Nama kupon wajib diisi';
+    if (!formData.startDate) v.startDate = 'Tanggal mulai wajib diisi';
+    if (!formData.endDate) v.endDate = 'Tanggal berakhir wajib diisi';
+
+    const start = formData.startDate ? new Date(formData.startDate) : null;
+    const end = formData.endDate ? new Date(formData.endDate) : null;
+    if (start && end && end < start) v.endDate = 'Tanggal berakhir tidak boleh lebih awal dari tanggal mulai';
+
+    if (formData.type === 'percentage') {
+      if (formData.value === '') v.value = 'Nilai diskon wajib diisi';
+      if (valueNumber < 0 || valueNumber > 100) v.value = 'Persentase harus antara 0 - 100';
+      if (formData.maximumDiscount && Number(formData.maximumDiscount) < 0) v.maximumDiscount = 'Maksimum diskon tidak valid';
+    } else {
+      if (formData.value === '') v.value = 'Nilai diskon wajib diisi';
+      if (valueNumber < 0) v.value = 'Nominal tidak boleh negatif';
+    }
+
+    if (formData.usageLimit && Number(formData.usageLimit) < (coupon?.usageCount || 0)) {
+      v.usageLimit = `Minimal ${coupon?.usageCount || 0} karena sudah digunakan`;
+    }
+
+    if (!formData.userUsageLimit || Number(formData.userUsageLimit) < 1) {
+      v.userUsageLimit = 'Minimal 1';
+    }
+
+    setErrors(v);
+    return Object.keys(v).length === 0;
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    setSaving(true);
+    setSuccess(false);
+    setError('');
+    if (!validate()) return;
 
     try {
+      setSaving(true);
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
+      const res = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update coupon');
-      }
-
-      alert('Kupon berhasil diperbarui!');
-      router.push('/admin/coupons');
-    } catch (error) {
-      console.error('Error updating coupon:', error);
-      alert(error.message);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Gagal memperbarui kupon');
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2500);
+    } catch (e2) {
+      setError(e2?.message || 'Gagal menyimpan');
     } finally {
       setSaving(false);
     }
-  };
+  }
 
   if (loading) {
     return (
       <AdminLayoutJWT>
-        <div className="d-flex justify-content-center align-items-center min-h-300px">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+        <div className="d-flex justify-content-center align-items-center py-20">
+          <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
         </div>
       </AdminLayoutJWT>
     );
@@ -168,299 +201,275 @@ export default function EditCouponPage() {
   if (!coupon) {
     return (
       <AdminLayoutJWT>
-        <div className="alert alert-danger">
-          Kupon tidak ditemukan
-        </div>
+        <div className="alert alert-danger">Kupon tidak ditemukan</div>
       </AdminLayoutJWT>
     );
   }
 
+  const isPercentage = formData.type === 'percentage';
+
   return (
     <AdminLayoutJWT>
-      <Head>
-        <title>Edit Kupon - Digital Invitation</title>
-      </Head>
+      <Head><title>Edit Kupon - Digital Invitation</title></Head>
 
-      {/* Begin::Content */}
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
-        {/* Begin::Container */}
         <div className="container-xxl" id="kt_content_container">
-          {/* Begin::Card */}
-          <div className="card">
-            {/* Begin::Card header */}
-            <div className="card-header">
-              <div className="card-title">
-                <h2>Edit Kupon: {coupon.code}</h2>
-              </div>
-              <div className="card-toolbar">
-                <button
-                  type="button"
-                  className="btn btn-light-primary"
-                  onClick={() => router.push('/admin/coupons')}
-                >
-                  <i className="ki-duotone ki-arrow-left fs-2">
-                    <span className="path1"></span>
-                    <span className="path2"></span>
-                  </i>
-                  Kembali
-                </button>
-              </div>
-            </div>
-            {/* End::Card header */}
 
-            {/* Begin::Card body */}
+          <div className="d-flex flex-wrap align-items-center justify-content-between mb-6">
+            <div className="d-flex align-items-center gap-3">
+              <h2 className="mb-0">Edit Kupon: <span className="fw-bold">{coupon.code}</span></h2>
+              {coupon.isActive ? <span className="badge badge-light-success">Active</span> : <span className="badge badge-light-danger">Inactive</span>}
+            </div>
+            <div className="d-flex gap-3">
+              <button type="button" className="btn btn-light" onClick={() => router.push('/admin/coupons')}>
+                <i className="ki-duotone ki-arrow-left fs-2 me-2"><span className="path1"></span><span className="path2"></span></i>
+                Kembali
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={saving}>
+                {saving ? (<><span className="spinner-border spinner-border-sm me-2" />Menyimpan...</>) : 'Simpan Perubahan'}
+              </button>
+            </div>
+          </div>
+
+          {success && (
+            <div className="alert alert-success d-flex align-items-center p-5 mb-6">
+              <i className="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span className="path1"></span><span className="path2"></span></i>
+              <div>Perubahan kupon berhasil disimpan.</div>
+            </div>
+          )}
+          {error && (
+            <div className="alert alert-danger d-flex align-items-center p-5 mb-6">
+              <i className="ki-duotone ki-information-5 fs-2hx text-danger me-4"><span className="path1"></span><span className="path2"></span></i>
+              <div>{error}</div>
+            </div>
+          )}
+
+          <div className="card">
             <div className="card-body">
-              {/* Usage Statistics */}
-              <div className="alert alert-info mb-5">
+              {/* Statistik */}
+              <div className="alert alert-info mb-8">
                 <div className="d-flex align-items-center">
-                  <i className="ki-duotone ki-information-5 fs-2x text-info me-4">
-                    <span className="path1"></span>
-                    <span className="path2"></span>
-                    <span className="path3"></span>
-                  </i>
+                  <i className="ki-duotone ki-information-5 fs-2x text-info me-4"><span className="path1"></span><span className="path2"></span></i>
                   <div>
-                    <h4 className="alert-heading">Statistik Penggunaan</h4>
-                    <p className="mb-0">
-                      Kupon ini telah digunakan <strong>{coupon.usageCount}</strong> kali
-                      {coupon.usageLimit && ` dari ${coupon.usageLimit} batas maksimum`}.
-                      {coupon.usageCount > 0 && (
-                        <span className="text-warning ms-2">
-                          ⚠️ Kupon yang sudah digunakan tidak dapat dihapus
-                        </span>
-                      )}
-                    </p>
+                    <div className="fw-semibold mb-1">Statistik Penggunaan</div>
+                    <div>
+                      Kupon digunakan <b>{coupon.usageCount}</b> kali
+                      {coupon.usageLimit ? ` dari batas ${coupon.usageLimit}` : ''}.
+                    </div>
                   </div>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="row">
-                  {/* Basic Information */}
+                  {/* Info Dasar */}
                   <div className="col-md-6">
-                    <div className="card mb-5">
-                      <div className="card-header">
-                        <h3 className="card-title">Informasi Dasar</h3>
-                      </div>
+                    <div className="card mb-6">
+                      <div className="card-header"><h3 className="card-title">Informasi Dasar</h3></div>
                       <div className="card-body">
-                        {/* Coupon Code (Read-only) */}
                         <div className="mb-5">
                           <label className="form-label">Kode Kupon</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            value={coupon.code}
-                            disabled
-                          />
-                          <div className="form-text">Kode kupon tidak dapat diubah</div>
+                          <input className="form-control" value={coupon.code} disabled />
+                          <div className="form-text">Kode kupon tidak bisa diubah</div>
                         </div>
 
-                        {/* Coupon Name */}
                         <div className="mb-5">
                           <label className="form-label required">Nama Kupon</label>
                           <input
-                            type="text"
-                            className="form-control"
                             name="name"
+                            className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="Masukkan nama kupon"
                             required
                           />
+                          {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                         </div>
 
-                        {/* Description */}
                         <div className="mb-5">
                           <label className="form-label">Deskripsi</label>
                           <textarea
-                            className="form-control"
                             name="description"
+                            className="form-control"
+                            rows={3}
                             value={formData.description}
                             onChange={handleInputChange}
-                            rows="3"
                             placeholder="Deskripsi kupon (opsional)"
                           />
                         </div>
 
-                        {/* Status */}
-                        <div className="mb-5">
-                          <div className="form-check form-switch">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              name="isActive"
-                              checked={formData.isActive}
-                              onChange={handleInputChange}
-                            />
-                            <label className="form-check-label">
-                              Kupon Aktif
-                            </label>
-                          </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            name="isActive"
+                            checked={formData.isActive}
+                            onChange={handleInputChange}
+                          />
+                          <label className="form-check-label">Kupon Aktif</label>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Discount Settings */}
+                  {/* Pengaturan Diskon */}
                   <div className="col-md-6">
-                    <div className="card mb-5">
-                      <div className="card-header">
-                        <h3 className="card-title">Pengaturan Diskon</h3>
-                      </div>
+                    <div className="card mb-6">
+                      <div className="card-header"><h3 className="card-title">Pengaturan Diskon</h3></div>
                       <div className="card-body">
-                        {/* Discount Type */}
                         <div className="mb-5">
                           <label className="form-label required">Tipe Diskon</label>
                           <select
-                            className="form-select"
                             name="type"
+                            className="form-select"
                             value={formData.type}
                             onChange={handleInputChange}
-                            required
                           >
                             <option value="percentage">Persentase (%)</option>
                             <option value="fixed">Nominal Tetap (Rp)</option>
                           </select>
                         </div>
 
-                        {/* Discount Value */}
                         <div className="mb-5">
                           <label className="form-label required">
-                            Nilai Diskon {formData.type === 'percentage' ? '(%)' : '(Rp)'}
+                            Nilai Diskon {isPercentage ? '(%)' : '(Rp)'}
                           </label>
                           <input
                             type="number"
-                            className="form-control"
                             name="value"
+                            className={`form-control ${errors.value ? 'is-invalid' : ''}`}
                             value={formData.value}
                             onChange={handleInputChange}
-                            placeholder={formData.type === 'percentage' ? 'Contoh: 10' : 'Contoh: 50000'}
                             min="0"
-                            max={formData.type === 'percentage' ? '100' : undefined}
-                            required
+                            max={isPercentage ? '100' : undefined}
+                            placeholder={isPercentage ? 'Contoh: 10' : 'Contoh: 50000'}
                           />
+                          {errors.value && <div className="invalid-feedback">{errors.value}</div>}
                         </div>
 
-                        {/* Minimum Amount */}
                         <div className="mb-5">
                           <label className="form-label">Minimum Pembelian (Rp)</label>
                           <input
                             type="number"
-                            className="form-control"
                             name="minimumAmount"
+                            className={`form-control ${errors.minimumAmount ? 'is-invalid' : ''}`}
                             value={formData.minimumAmount}
                             onChange={handleInputChange}
-                            placeholder="0"
                             min="0"
+                            placeholder="0"
                           />
+                          {errors.minimumAmount && <div className="invalid-feedback">{errors.minimumAmount}</div>}
                         </div>
 
-                        {/* Maximum Discount (for percentage type) */}
-                        {formData.type === 'percentage' && (
+                        {isPercentage && (
                           <div className="mb-5">
                             <label className="form-label">Maksimum Diskon (Rp)</label>
                             <input
                               type="number"
-                              className="form-control"
                               name="maximumDiscount"
+                              className={`form-control ${errors.maximumDiscount ? 'is-invalid' : ''}`}
                               value={formData.maximumDiscount}
                               onChange={handleInputChange}
-                              placeholder="Tidak terbatas"
                               min="0"
+                              placeholder="Tidak terbatas"
                             />
+                            {errors.maximumDiscount && <div className="invalid-feedback">{errors.maximumDiscount}</div>}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Usage Limits */}
+                  {/* Batas Penggunaan */}
                   <div className="col-md-6">
-                    <div className="card mb-5">
-                      <div className="card-header">
-                        <h3 className="card-title">Batas Penggunaan</h3>
-                      </div>
+                    <div className="card mb-6">
+                      <div className="card-header"><h3 className="card-title">Batas Penggunaan</h3></div>
                       <div className="card-body">
-                        {/* Usage Limit */}
                         <div className="mb-5">
                           <label className="form-label">Total Batas Penggunaan</label>
                           <input
                             type="number"
-                            className="form-control"
                             name="usageLimit"
+                            className={`form-control ${errors.usageLimit ? 'is-invalid' : ''}`}
                             value={formData.usageLimit}
                             onChange={handleInputChange}
+                            min={coupon?.usageCount || 0}
                             placeholder="Tidak terbatas"
-                            min={coupon.usageCount || 1}
                           />
                           <div className="form-text">
-                            {coupon.usageCount > 0 && 
-                              `Minimal ${coupon.usageCount} (sudah digunakan ${coupon.usageCount} kali)`
-                            }
+                            {coupon?.usageCount > 0
+                              ? `Minimal ${coupon.usageCount} (sudah digunakan ${coupon.usageCount} kali)`
+                              : 'Kosongkan untuk tidak terbatas'}
                           </div>
+                          {errors.usageLimit && <div className="invalid-feedback">{errors.usageLimit}</div>}
                         </div>
 
-                        {/* User Usage Limit */}
                         <div className="mb-5">
-                          <label className="form-label required">Batas Penggunaan per User</label>
+                          <label className="form-label required">Batas per User</label>
                           <input
                             type="number"
-                            className="form-control"
                             name="userUsageLimit"
+                            className={`form-control ${errors.userUsageLimit ? 'is-invalid' : ''}`}
                             value={formData.userUsageLimit}
                             onChange={handleInputChange}
                             min="1"
                             required
                           />
+                          {errors.userUsageLimit && <div className="invalid-feedback">{errors.userUsageLimit}</div>}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Date Range */}
+                  {/* Periode */}
                   <div className="col-md-6">
-                    <div className="card mb-5">
-                      <div className="card-header">
-                        <h3 className="card-title">Periode Berlaku</h3>
-                      </div>
+                    <div className="card mb-6">
+                      <div className="card-header"><h3 className="card-title">Periode Berlaku</h3></div>
                       <div className="card-body">
-                        {/* Start Date */}
                         <div className="mb-5">
                           <label className="form-label required">Tanggal Mulai</label>
                           <input
                             type="datetime-local"
-                            className="form-control"
                             name="startDate"
+                            className={`form-control ${errors.startDate ? 'is-invalid' : ''}`}
                             value={formData.startDate}
                             onChange={handleInputChange}
                             required
                           />
+                          {errors.startDate && <div className="invalid-feedback">{errors.startDate}</div>}
                         </div>
 
-                        {/* End Date */}
                         <div className="mb-5">
                           <label className="form-label required">Tanggal Berakhir</label>
                           <input
                             type="datetime-local"
-                            className="form-control"
                             name="endDate"
+                            className={`form-control ${errors.endDate ? 'is-invalid' : ''}`}
                             value={formData.endDate}
                             onChange={handleInputChange}
+                            min={formData.startDate || undefined}
                             required
                           />
+                          {errors.endDate && <div className="invalid-feedback">{errors.endDate}</div>}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Package Restrictions */}
+                  {/* Pembatasan Paket */}
                   <div className="col-12">
-                    <div className="card mb-5">
+                    <div className="card mb-6">
                       <div className="card-header">
                         <h3 className="card-title">Pembatasan Paket</h3>
+                        <div className="card-toolbar d-flex gap-2">
+                          <button type="button" className="btn btn-light btn-sm" onClick={() => selectAll('applicablePackages')}>Select All Applicable</button>
+                          <button type="button" className="btn btn-light btn-sm" onClick={() => clearAll('applicablePackages')}>Clear Applicable</button>
+                          <button type="button" className="btn btn-light btn-sm" onClick={() => selectAll('excludedPackages')}>Select All Excluded</button>
+                          <button type="button" className="btn btn-light btn-sm" onClick={() => clearAll('excludedPackages')}>Clear Excluded</button>
+                        </div>
                       </div>
                       <div className="card-body">
                         <div className="row">
-                          {/* Applicable Packages */}
                           <div className="col-md-6">
                             <label className="form-label">Paket yang Berlaku</label>
                             <div className="form-text mb-3">Kosongkan untuk berlaku di semua paket</div>
@@ -474,14 +483,13 @@ export default function EditCouponPage() {
                                     onChange={() => handlePackageSelection(pkg._id, 'applicablePackages')}
                                   />
                                   <label className="form-check-label">
-                                    {pkg.name} - Rp {pkg.price.toLocaleString()}
+                                    {pkg.name} — Rp {Number(pkg.price || 0).toLocaleString('id-ID')}
                                   </label>
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          {/* Excluded Packages */}
                           <div className="col-md-6">
                             <label className="form-label">Paket yang Dikecualikan</label>
                             <div className="form-text mb-3">Paket yang tidak bisa menggunakan kupon ini</div>
@@ -495,7 +503,7 @@ export default function EditCouponPage() {
                                     onChange={() => handlePackageSelection(pkg._id, 'excludedPackages')}
                                   />
                                   <label className="form-check-label">
-                                    {pkg.name} - Rp {pkg.price.toLocaleString()}
+                                    {pkg.name} — Rp {Number(pkg.price || 0).toLocaleString('id-ID')}
                                   </label>
                                 </div>
                               ))}
@@ -506,75 +514,22 @@ export default function EditCouponPage() {
                     </div>
                   </div>
 
-                  {/* Usage History */}
-                  {coupon.usageHistory && coupon.usageHistory.length > 0 && (
-                    <div className="col-12">
-                      <div className="card mb-5">
-                        <div className="card-header">
-                          <h3 className="card-title">Riwayat Penggunaan</h3>
-                        </div>
-                        <div className="card-body">
-                          <div className="table-responsive">
-                            <table className="table table-row-dashed align-middle gs-0 gy-4">
-                              <thead>
-                                <tr className="fw-bold text-muted">
-                                  <th>User</th>
-                                  <th>Order</th>
-                                  <th>Diskon</th>
-                                  <th>Tanggal</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {coupon.usageHistory.map((usage, index) => (
-                                  <tr key={index}>
-                                    <td>{usage.user?.name || usage.user?.email || 'N/A'}</td>
-                                    <td>{usage.order?.orderNumber || 'N/A'}</td>
-                                    <td>Rp {usage.discountAmount.toLocaleString()}</td>
-                                    <td>{new Date(usage.usedAt).toLocaleString()}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Submit Button */}
                 <div className="d-flex justify-content-end">
-                  <button
-                    type="button"
-                    className="btn btn-light me-3"
-                    onClick={() => router.push('/admin/coupons')}
-                  >
+                  <button type="button" className="btn btn-light me-3" onClick={() => router.push('/admin/coupons')}>
                     Batal
                   </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={saving}
-                  >
-                    {saving ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Menyimpan...
-                      </>
-                    ) : (
-                      'Simpan Perubahan'
-                    )}
+                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                    {saving ? (<><span className="spinner-border spinner-border-sm me-2" />Menyimpan...</>) : 'Simpan Perubahan'}
                   </button>
                 </div>
               </form>
             </div>
-            {/* End::Card body */}
           </div>
-          {/* End::Card */}
+
         </div>
-        {/* End::Container */}
       </div>
-      {/* End::Content */}
     </AdminLayoutJWT>
   );
 }

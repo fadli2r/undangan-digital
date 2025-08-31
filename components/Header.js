@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react';
 export default function Header() {
   const { data: session, status } = useSession();
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+    <header className=" top-0 left-0 right-0 z-50 bg-white shadow-md">
       <nav className="max-w-7xl mx-auto px-4 py-4" style={{ maxWidth: '1200px' }}>
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -130,7 +130,7 @@ export default function Header() {
                 <>
                   <Link 
                     href="/login" 
-                    className="text-gray-700 hover:text-blue-600 transition-colors"
+                    className="bg-red-600 text-white px-6 py-2 rounded-full hover:bg-red-700 transition-colors text-center"
                   >
                     Masuk
                   </Link>

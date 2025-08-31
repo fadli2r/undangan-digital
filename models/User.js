@@ -1,90 +1,50 @@
+// models/User.js
 import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
 
 const UserSchema = new mongoose.Schema({
   // Data utama
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true 
-  },
-  name: { 
-    type: String, 
-    required: true 
-  },
+  email: { type: String, required: true, unique: true, index: true },
+  name:  { type: String, required: true },
   password: { 
     type: String, 
-    required: function() {
-      // Password required only if not using OAuth
-      return !this.isOAuthUser;
-    }
+    required: function() { return !this.isOAuthUser; } 
   },
-  phone: {
-    type: String,
-    default: ""
-  },
-  
-  // OAuth user flag
-  isOAuthUser: {
-    type: Boolean,
-    default: false
-  },
-  
-  // Status dan verifikasi
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
+  phone: { type: String, default: "" },
 
-// <--- Tambahkan di sini
-onboardingCompleted: {
-  type: Boolean,
-  default: false
-},
+  // OAuth user flag
+  isOAuthUser: { type: Boolean, default: false },
+
+  // Status & verifikasi
+  isVerified: { type: Boolean, default: false },
+  isActive:   { type: Boolean, default: true },
+
+  // Onboarding
+  onboardingCompleted: { type: Boolean, default: false },
+  onboardingStep:      { type: Number, default: 1 },
+
+  // ✅ Quota untuk membuat undangan
+  quota: { type: Number, default: 0 },
+
+  // (Opsional) kalau mau tetap menyimpan field lama, bisa hapus ini biar tidak bingung
+  // hasCompletedOnboarding: { type: Boolean, default: false },
+
   // Subscription & Package
   currentPackage: {
-    packageId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Package'
-    },
+    packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package' },
     startDate: Date,
-    endDate: Date,
-    isActive: {
-      type: Boolean,
-      default: true
-    }
+    endDate:   Date,
+    isActive:  { type: Boolean, default: true }
   },
-  onboardingStep: {
-  type: Number,
-  default: 1, // mulai dari step pertama
-},
-hasCompletedOnboarding: {
-  type: Boolean,
-  default: false
-},
-  hasSelectedPackage: {
-    type: Boolean,
-    default: false
-  },
+
+  hasSelectedPackage: { type: Boolean, default: false },
+
   // Purchase History
   purchases: [{
-    packageId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Package'
-    },
-    orderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order'
-    },
-    amount: Number,
-    purchaseDate: {
-      type: Date,
-      default: Date.now
-    },
+    packageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Package' },
+    orderId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
+    amount:    Number,
+    purchaseDate: { type: Date, default: Date.now },
     status: {
       type: String,
       enum: ['pending', 'completed', 'cancelled', 'refunded'],
@@ -95,10 +55,7 @@ hasCompletedOnboarding: {
   }],
 
   // Invitations created
-  invitations: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Invitation'
-  }],
+  invitations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Invitation' }],
 
   // Source tracking
   source: {
@@ -106,74 +63,51 @@ hasCompletedOnboarding: {
     enum: ['website', 'whatsapp', 'admin', 'other'],
     default: 'website'
   },
-  
+
   // Admin notes
-  adminNotes: {
-    type: String,
-    default: ""
-  },
+  adminNotes: { type: String, default: "" },
 
   // Timestamps
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
-// Virtual untuk total pembelian
+// Virtuals
 UserSchema.virtual('totalPurchases').get(function() {
-  return this.purchases.reduce((total, purchase) => {
-    return total + (purchase.status === 'completed' ? purchase.amount : 0);
-  }, 0);
+  return this.purchases.reduce((total, p) => total + (p.status === 'completed' ? p.amount : 0), 0);
 });
-
-// Virtual untuk jumlah undangan aktif
 UserSchema.virtual('activeInvitationsCount').get(function() {
   return this.invitations.length;
 });
 
-// Method untuk cek status subscription
+// Methods
 UserSchema.methods.hasActiveSubscription = function() {
   if (!this.currentPackage) return false;
-  
   const now = new Date();
-  return this.currentPackage.isActive && 
-         this.currentPackage.endDate > now;
+  return this.currentPackage.isActive && this.currentPackage.endDate > now;
 };
-
-// Method untuk hash password
 UserSchema.methods.hashPassword = async function(password) {
   const salt = await bcryptjs.genSalt(12);
-  return await bcryptjs.hash(password, salt);
+  return bcryptjs.hash(password, salt);
 };
-
-// Method untuk compare password
 UserSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password) return false;
-  return await bcryptjs.compare(candidatePassword, this.password);
+  return bcryptjs.compare(candidatePassword, this.password);
 };
 
-// Middleware untuk hash password sebelum save
+// Middleware
 UserSchema.pre('save', async function(next) {
   this.updatedAt = new Date();
-  
-  // Hash password jika dimodifikasi dan bukan OAuth user
   if (this.isModified('password') && this.password && !this.isOAuthUser) {
     try {
       this.password = await this.hashPassword(this.password);
-    } catch (error) {
-      return next(error);
-    }
+    } catch (err) { return next(err); }
   }
-  
   next();
 });
 
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 
+// Hindari OverwriteModelError di Next.js
 export default mongoose.models.User || mongoose.model("User", UserSchema);

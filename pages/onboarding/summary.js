@@ -1,7 +1,9 @@
+// pages/onboarding/summary.js
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import UserLayout from "@/components/layouts/UserLayout";
+import UserLayout from "../../components/layouts/UserLayout";
+import OnboardingStepper from "../../components/onboarding/OnboardingStepper";
 
 export default function OnboardingSummary() {
   const router = useRouter();
@@ -14,88 +16,95 @@ export default function OnboardingSummary() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const user = session?.user;
 
-  const queryParams = useMemo(() => {
-    const q = new URLSearchParams();
-    if (data?.packageId) q.set("id", data.packageId);
-    if (promo) q.set("promoCode", promo);
-    if (referral) q.set("referralCode", referral);
-    if (user?.email) q.set("userEmail", user.email);
-    return q.toString();
-  }, [data?.packageId, promo, referral, user?.email]);
-
   useEffect(() => {
     const onboardingData = localStorage.getItem("onboardingData");
-    if (!onboardingData) return router.replace("/onboarding");
-
-    const parsed = JSON.parse(onboardingData);
-    setData(parsed);
+    if (!onboardingData) { router.replace("/onboarding"); return; }
+    setData(JSON.parse(onboardingData));
   }, [router]);
 
   useEffect(() => {
     if (!data?.packageId) return;
-
-    const fetchPaket = async () => {
+    (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/paket/detail?${queryParams}`);
+        const res = await fetch(`/api/paket/detail?id=${data.packageId}`);
         const json = await res.json();
         if (!json.paket) throw new Error("Paket tidak ditemukan");
         setPaket(json.paket);
-        setError(json.message || "");
-      } catch (err) {
+      } catch (e) {
         setError("Gagal memuat paket");
-        console.error(err);
       } finally {
         setLoading(false);
       }
-    };
+    })();
+  }, [data?.packageId]);
 
-    fetchPaket();
-  }, [queryParams, data?.packageId]);
+  const toIDR = (n) => `Rp ${Number(n || 0).toLocaleString("id-ID")}`;
 
-  const handleBayar = async () => {
+  const pricing = useMemo(() => {
+    const base = Number(paket?.finalPrice ?? paket?.price ?? 0);
+    const customDomain = data?.useCustomDomain ? 300000 : 0;
+    const donation = data?.oneTree ? 10000 : 0;
+    const total = base + customDomain + donation;
+    return { base, customDomain, donation, total };
+  }, [paket?.finalPrice, paket?.price, data?.useCustomDomain, data?.oneTree]);
+
+  async function handleBayar() {
     if (!paket || !user) return;
-
     setSubmitting(true);
     setError("");
-    setSuccess("");
+
+    const resolvedPackageId = paket?._id ?? paket?.id ?? null;
+    const resolvedPaketFallback = paket?.slug ?? paket?._id ?? paket?.name ?? null;
+
+    if (!resolvedPackageId && !resolvedPaketFallback) {
+      setError("Gagal menentukan paket. Muat ulang halaman lalu coba lagi.");
+      setSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      packageId: resolvedPackageId,
+      paket: resolvedPaketFallback, // fallback
+      email: user.email,
+      name: user.name,
+      onboardingData: {
+        pria: data.pria,
+        wanita: data.wanita,
+        phone: data.phone,
+        tanggal: data.tanggal,
+        lokasi: data.lokasi,
+        domain: data.domain,
+        useCustomDomain: data.useCustomDomain,
+        oneTree: data.oneTree,
+        referral: referral || data.referral || "",
+        promoCode: promo || ""
+      }
+    };
+
+    console.log("create-invoice payload =>", payload);
 
     try {
       const res = await fetch("/api/payment/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paket: paket._id,
-          email: user.email,
-          name: user.name,
-          promoCode: promo || undefined,
-          referralCode: referral || undefined,
-          amount: paket.finalPrice,
-          onboardingData: {
-            pria: data.pria,
-            wanita: data.wanita
-          }
-        })
+        body: JSON.stringify(payload),
       });
-
       const json = await res.json();
       if (res.ok && json.invoice_url) {
-        localStorage.removeItem("onboardingData");
         window.location.href = json.invoice_url;
       } else {
         throw new Error(json.message || "Gagal membuat invoice");
       }
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setSubmitting(false);
     }
-  };
+  }
 
   if (loading || status === "loading") {
     return (
@@ -122,81 +131,159 @@ export default function OnboardingSummary() {
   return (
     <UserLayout>
       <div className="container py-10">
-        <h2 className="mb-5 fw-bold">Ringkasan Pendaftaran & Pembayaran</h2>
+        <OnboardingStepper current="summary" />
 
-        {/* Data Mempelai */}
-        <div className="card mb-5">
-          <div className="card-header">
-            <h4 className="mb-0">Data Mempelai</h4>
+        <div className="d-flex flex-wrap align-items-center justify-content-between mb-6">
+          <div>
+            <h2 className="fw-bold mb-2">Ringkasan Pendaftaran & Pembayaran</h2>
+            <div className="text-muted">Silakan cek ulang data dan lanjutkan ke pembayaran.</div>
           </div>
-          <div className="card-body">
-            <p><strong>Pria:</strong> {data.pria}</p>
-            <p><strong>Wanita:</strong> {data.wanita}</p>
+          <div className="d-flex gap-3">
+            <button type="button" className="btn btn-light" onClick={() => router.push("/onboarding/data")}>
+              Kembali
+            </button>
+            <button type="button" className="btn btn-success" onClick={handleBayar} disabled={submitting}>
+              {submitting ? (<><span className="spinner-border spinner-border-sm me-2" />Memproses...</>) : "Bayar Sekarang"}
+            </button>
           </div>
         </div>
 
-        {/* Detail Paket */}
-        <div className="card mb-5">
-          <div className="card-header">
-            <h4 className="mb-0">Detail Paket</h4>
-          </div>
-          <div className="card-body">
-            <p><strong>{paket.name}</strong></p>
-            <p className="text-muted">{paket.description}</p>
-            <p>
-              Harga:{" "}
-              {paket.originalPrice && (
-                <span className="text-decoration-line-through text-muted me-2">
-                  Rp {paket.originalPrice.toLocaleString("id-ID")}
-                </span>
-              )}
-              <strong className="text-primary">Rp {paket.finalPrice.toLocaleString("id-ID")}</strong>
-            </p>
-          </div>
-        </div>
-
-        {/* Kode Promo & Referral */}
-        <div className="card mb-5">
-          <div className="card-header">
-            <h4 className="mb-0">Kode Promo & Referral</h4>
-          </div>
-          <div className="card-body row g-3">
-            <div className="col-md-6">
-              <label className="form-label">Kode Promo</label>
-              <input
-                type="text"
-                value={promo}
-                onChange={(e) => setPromo(e.target.value.toUpperCase())}
-                className="form-control"
-              />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label">Kode Referral</label>
-              <input
-                type="text"
-                value={referral}
-                onChange={(e) => setReferral(e.target.value.toUpperCase())}
-                className="form-control"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Error */}
         {error && (
-          <div className="alert alert-danger mb-5">{error}</div>
+          <div className="alert alert-danger d-flex align-items-center p-5 mb-6">
+            <i className="ki-duotone ki-information-5 fs-2hx text-danger me-4">
+              <span className="path1"></span><span className="path2"></span>
+            </i>
+            <div>{error}</div>
+          </div>
         )}
 
-        {/* Tombol Bayar */}
-        <div className="text-end">
-          <button
-            onClick={handleBayar}
-            className="btn btn-success btn-lg"
-            disabled={submitting}
-          >
-            {submitting ? "Memproses..." : "Bayar Sekarang"}
-          </button>
+        <div className="row g-5">
+          <div className="col-xl-8">
+            <div className="card mb-5">
+              <div className="card-header border-0">
+                <h3 className="card-title fw-bold text-gray-800">Data Mempelai & Acara</h3>
+              </div>
+              <div className="card-body pt-0">
+                <div className="row g-6">
+                  <div className="col-md-6">
+                    <label className="form-label">Mempelai Pria</label>
+                    <input className="form-control form-control-solid" value={data.pria || ""} disabled />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Mempelai Wanita</label>
+                    <input className="form-control form-control-solid" value={data.wanita || ""} disabled />
+                  </div>
+                </div>
+                <div className="row g-6 mt-0">
+                  <div className="col-md-6">
+                    <label className="form-label">Telepon</label>
+                    <input className="form-control form-control-solid" value={data.phone || ""} disabled />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Tanggal & Waktu</label>
+                    <input className="form-control form-control-solid" value={data.tanggal || "-"} disabled />
+                  </div>
+                </div>
+                <div className="row g-6 mt-0">
+                  <div className="col-md-8">
+                    <label className="form-label">Lokasi</label>
+                    <input className="form-control form-control-solid" value={data.lokasi || "-"} disabled />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Domain</label>
+                    <div className="input-group">
+                      <input className="form-control form-control-solid" value={data.domain || ""} disabled />
+                      <span className="input-group-text">.viding.co</span>
+                    </div>
+                    {data.useCustomDomain && <div className="form-text text-success">+ Custom Domain</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-header border-0">
+                <h3 className="card-title fw-bold text-gray-800">Kode Promo & Referral</h3>
+              </div>
+              <div className="card-body pt-0">
+                <div className="row g-6">
+                  <div className="col-md-6">
+                    <label className="form-label">Kode Promo</label>
+                    <input type="text" className="form-control form-control-solid" value={promo} onChange={(e)=>setPromo(e.target.value.toUpperCase())} placeholder="MASUKKAN KODE (opsional)" />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Kode Referral</label>
+                    <input type="text" className="form-control form-control-solid" value={referral} onChange={(e)=>setReferral(e.target.value.toUpperCase())} placeholder="MASUKKAN KODE (opsional)" />
+                  </div>
+                </div>
+                <div className="form-text mt-3">
+                  * Diskon dari kode promo/referral akan diterapkan saat pembayaran jika valid.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-xl-4">
+            <div className="card card-flush sticky-top">
+              <div className="card-header border-0">
+                <div className="card-title">
+                  <h3 className="fw-bold">Ringkasan Pembayaran</h3>
+                </div>
+              </div>
+              <div className="card-body pt-0">
+                <div className="mb-5">
+                  <div className="fw-bold">{paket.name}</div>
+                  <div className="text-muted small">{paket.description}</div>
+                  <div className="text-gray-600 small mt-2">
+                    <span className="fw-semibold">Package ID:</span>{" "}
+                    <code>{(paket?._id ?? paket?.id ?? "-")}</code>
+                  </div>
+                </div>
+
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Harga Paket</span>
+                  <div>
+                    {paket.originalPrice && paket.originalPrice > (paket.finalPrice ?? paket.price) && (
+                      <span className="text-muted text-decoration-line-through me-2">
+                        {toIDR(paket.originalPrice)}
+                      </span>
+                    )}
+                    <strong className="text-primary">
+                      {toIDR(paket.finalPrice ?? paket.price)}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Custom Domain</span>
+                  <span>{toIDR(pricing.customDomain)}</span>
+                </div>
+
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Donasi One Tree</span>
+                  <span>{toIDR(pricing.donation)}</span>
+                </div>
+
+                <div className="separator my-4"></div>
+
+                <div className="d-flex justify-content-between fs-5 fw-bold">
+                  <span>Total</span>
+                  <span>{toIDR(pricing.total)}</span>
+                </div>
+              </div>
+
+              <div className="card-footer d-flex justify-content-end gap-3">
+                <button type="button" className="btn btn-light" onClick={() => router.push("/onboarding/data")}>
+                  Kembali
+                </button>
+                <button type="button" className="btn btn-success" onClick={handleBayar} disabled={submitting}>
+                  {submitting ? (<><span className="spinner-border spinner-border-sm me-2" />Memproses...</>) : "Bayar Sekarang"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
     </UserLayout>
   );

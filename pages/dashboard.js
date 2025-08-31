@@ -143,7 +143,7 @@ export default function Dashboard() {
               defaultValue={new Date().toLocaleDateString('id-ID')}
             />
           </div>
-          <a href="/buat-undangan" className="btn btn-primary">
+          <a href="/pilih-template" className="btn btn-primary">
             <i className="ki-duotone ki-plus fs-2">
               <span className="path1"></span>
               <span className="path2"></span>
