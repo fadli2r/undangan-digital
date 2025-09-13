@@ -1,104 +1,144 @@
-import dbConnect from '../../../../lib/dbConnect';
-import adminAuth from '../../../../middleware/adminAuth';
-import Order from '../../../../models/Order';
-import ActivityLog from '../../../../models/ActivityLog';
+// pages/api/admin/order/index.js
+import dbConnect from "../../../../lib/dbConnect";
+import Order from "../../../../models/Order";
+import Package from "../../../../models/Package";
+import { requireAdminSession } from "../../../../lib/requireAdminSession";
+import mongoose from "mongoose";
 
-export default async function handler(req, res) {
-  await dbConnect();
-
-  // Apply admin authentication middleware
-  await new Promise((resolve, reject) => {
-    adminAuth(['dashboard.view'])(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
-
-  switch (req.method) {
-    case 'GET':
-      return await getOrders(req, res);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
-  }
+function escapeRegex(s) {
+  return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function getOrders(req, res) {
+export default async function handler(req, res) {
+  const session = await requireAdminSession(req, res);
+  if (!session) return; // requireAdminSession sudah handle response
+
+  await dbConnect();
+
+  const {
+    page = 1,
+    search = "",
+    status = "all",
+    sortBy = "date",
+    sortOrder = "desc",
+  } = req.query;
+
+  const limit = 10;
+  const skip = (Number(page) - 1) * limit;
+
+  // ---- Filter dasar ----
+  const filter = {};
+  if (status !== "all") filter.status = status;
+
+  // ---- Handle SEARCH ----
+  let orFilters = [];
+  if (search) {
+    const s = String(search).trim();
+    const rx = new RegExp(escapeRegex(s), "i");
+
+    // cari by email, external_id, invoice_id, xendit.*, invitation_slug
+    orFilters.push(
+      { email: rx },
+      { external_id: rx },
+      { invoice_id: rx },
+      { invitation_slug: rx },
+      { "xendit.invoiceId": rx },
+      { "xendit.externalId": rx }
+    );
+
+    // kalau search kemungkinan ObjectId → cocokkan _id, userId, packageId
+    if (mongoose.Types.ObjectId.isValid(s)) {
+      const oid = new mongoose.Types.ObjectId(s);
+      orFilters.push(
+        { _id: oid },
+        { userId: oid },
+        { packageId: oid }
+      );
+    }
+
+    // cari package by name/slug → masukkan id-nya ke filter
+    const pkgs = await Package.find({ $or: [{ name: rx }, { slug: rx }] })
+      .select("_id")
+      .lean();
+    if (pkgs.length) {
+      orFilters.push({ packageId: { $in: pkgs.map((p) => p._id) } });
+    }
+
+    filter.$or = orFilters;
+  }
+
+  // ---- Sorting ----
+  // "date" → createdAt (default), bisa tambah "amount", "status" dll.
+  const sortField =
+    sortBy === "date" ? "createdAt" :
+    sortBy === "amount" ? "amount" :
+    sortBy === "status" ? "status" :
+    sortBy; // fallback kalau dikirim field lain
+  const sort = { [sortField]: sortOrder === "asc" ? 1 : -1 };
+
   try {
-    const {
-      search = '',
-      status = 'all',
-      sortBy = 'date',
-      sortOrder = 'desc',
-      page = 1,
-      limit = 10
-    } = req.query;
-
-    // Build query
-    const query = {};
-
-    // Search filter
-    if (search) {
-      query.$or = [
-        { email: { $regex: search, $options: 'i' } },
-        { invoice_id: { $regex: search, $options: 'i' } },
-        { paket: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // Status filter
-    if (status !== 'all') {
-      query.status = status;
-    }
-
-    // Build sort object
-    const sort = {};
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Calculate pagination
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
-
-    // Get orders with pagination
-    const [orders, totalOrders] = await Promise.all([
-      Order.find(query)
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
         .sort(sort)
         .skip(skip)
-        .limit(limitNum)
+        .limit(limit)
+        .populate({ path: "packageId", select: "name slug type price" }) // ⬅️ ambil nama paket
         .lean(),
-      Order.countDocuments(query)
+      Order.countDocuments(filter),
     ]);
 
-    // Calculate pagination info
-    const totalPages = Math.ceil(totalOrders / limitNum);
+    // (opsional) normalisasi minimal agar FE enak pakai
+    const norm = (d) =>
+      d && typeof d.toISOString === "function" ? d.toISOString() : d || null;
 
-    // Log activity
-    await ActivityLog.logActivity({
-      actor: req.admin._id,
-      actorModel: 'Admin',
-      action: 'dashboard.view',
-      details: {
-        section: 'orders',
-        filters: { search, status, sortBy, sortOrder },
-        pagination: { page: pageNum, limit: limitNum }
-      },
-      ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      userAgent: req.headers['user-agent']
+    const rows = orders.map((o) => ({
+      _id: String(o._id),
+      email: o.email,
+      status: o.status,
+      amount:
+        typeof o.amount === "number"
+          ? o.amount
+          : typeof o.harga === "number"
+          ? o.harga
+          : null,
+      currency: o.currency || "IDR",
+      createdAt: norm(o.createdAt),
+      updatedAt: norm(o.updatedAt),
+      paidAt: norm(o.paidAt),
+      expiresAt: norm(o.expiresAt),
+      external_id: o.external_id || o?.xendit?.externalId || null,
+      invoice_id: o.invoice_id || o?.xendit?.invoiceId || null,
+      invoice_url: o.invoice_url || o?.xendit?.invoiceUrl || null,
+      invitation_slug: o.invitation_slug || null,
+      used: !!o.used,
+      package: o.packageId
+        ? {
+            _id: String(o.packageId._id),
+            name: o.packageId.name,
+            slug: o.packageId.slug,
+            type: o.packageId.type,
+            price:
+              typeof o.packageId.price === "number" ? o.packageId.price : null,
+          }
+        : null,
+      selectedFeatures: Array.isArray(o.selectedFeatures)
+        ? o.selectedFeatures
+        : [],
+    }));
+
+    res.json({
+      orders: rows,
+      page: Number(page),
+      pageSize: limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      sortBy: sortField,
+      sortOrder: sortOrder === "asc" ? "asc" : "desc",
+      statusFilter: status,
+      search,
     });
-
-    return res.status(200).json({
-      orders,
-      currentPage: pageNum,
-      totalPages,
-      totalOrders,
-      hasNextPage: pageNum < totalPages,
-      hasPrevPage: pageNum > 1
-    });
-
-  } catch (error) {
-    console.error('Get Orders Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+  } catch (err) {
+    console.error("Orders API error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 }

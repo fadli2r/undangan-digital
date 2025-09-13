@@ -1,50 +1,44 @@
-import dbConnect from '@/lib/dbConnect';
-import Package from '@/models/Package';
-import adminAuthJWT from '@/middleware/adminAuthJWT'; // pastikan path-nya benar
+// pages/api/admin/packages/[packageId].js
+import dbConnect from "@/lib/dbConnect";
+import Package from "@/models/Package";
+import { requireAdminSession } from "@/lib/requireAdminSession";
 
 export default async function handler(req, res) {
+  const session = await requireAdminSession(req, res);
+  if (!session) return; // Unauthorized sudah dijawab requireAdminSession
+
   await dbConnect();
 
-  // ✅ AUTENTIKASI
-  const auth = await adminAuthJWT(req, res);
-  if (!auth.success) {
-    return res.status(401).json({ error: auth.error || 'Unauthorized' });
-  }
+  const { packageId } = req.query;
 
-  const {
-    query: { packageId },
-    method,
-  } = req;
-
-  switch (method) {
-    case 'GET':
-      try {
-        const pkg = await Package.findById(packageId);
-        if (!pkg) {
-          return res.status(404).json({ error: 'Package not found' });
-        }
-        return res.status(200).json({ package: pkg });
-      } catch (error) {
-        console.error('GET error:', error);
-        return res.status(500).json({ error: 'Failed to fetch package' });
+  try {
+    if (req.method === "GET") {
+      const pkg = await Package.findById(packageId);
+      if (!pkg) {
+        return res.status(404).json({ error: "Package not found" });
       }
+      return res.status(200).json({ package: pkg });
+    }
 
-    case 'PUT':
-      try {
-        const updated = await Package.findByIdAndUpdate(packageId, req.body, {
-          new: true,
-        });
-        if (!updated) {
-          return res.status(404).json({ error: 'Package not found' });
-        }
-        return res.status(200).json({ package: updated });
-      } catch (error) {
-        console.error('PUT error:', error);
-        return res.status(500).json({ error: 'Failed to update package' });
+    if (req.method === "PUT") {
+      const updated = await Package.findByIdAndUpdate(packageId, req.body, {
+        new: true,
+      });
+      if (!updated) {
+        return res.status(404).json({ error: "Package not found" });
       }
+      return res.status(200).json({ package: updated });
+    }
 
-    default:
-      res.setHeader('Allow', ['GET', 'PUT']);
-      return res.status(405).end(`Method ${method} Not Allowed`);
+    if (req.method === "DELETE") {
+      await Package.findByIdAndDelete(packageId);
+      return res.status(200).json({ success: true });
+    }
+
+    res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  } catch (err) {
+    console.error("API error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 }

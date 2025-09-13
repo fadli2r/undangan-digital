@@ -1,27 +1,16 @@
-import dbConnect from '../../../../../lib/dbConnect';
-import Coupon from '../../../../../models/Coupon';
-import adminAuth from '../../../../../middleware/adminAuth';
+// pages/api/admin/coupons/[couponId].js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import dbConnect from "@/lib/dbConnect";
+import Coupon from "@/models/Coupon";
 
 export default async function handler(req, res) {
   await dbConnect();
 
-  // Verify admin authentication
-  const authMiddleware = adminAuth();
-  
-  // Create a promise to handle middleware
-  const authResult = await new Promise((resolve, reject) => {
-    authMiddleware(req, res, (error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(true);
-      }
-    });
-  }).catch(() => {
-    return res.status(401).json({ error: 'Unauthorized' });
-  });
-
-  if (!authResult) return;
+  const session = await getServerSession(req, res, authOptions);
+  if (!session || !session.user?.isAdmin) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
   const {
     query: { couponId },
@@ -29,27 +18,26 @@ export default async function handler(req, res) {
   } = req;
 
   switch (method) {
-    case 'GET':
+    case "GET":
       try {
         const coupon = await Coupon.findById(couponId)
-          .populate('createdBy', 'name email')
-          .populate('applicablePackages', 'name price')
-          .populate('excludedPackages', 'name price')
-          .populate('usageHistory.user', 'name email')
-          .populate('usageHistory.order', 'orderNumber totalAmount');
+          .populate("createdBy", "name email")
+          .populate("applicablePackages", "name price")
+          .populate("excludedPackages", "name price")
+          .populate("usageHistory.user", "name email")
+          .populate("usageHistory.order", "orderNumber totalAmount");
 
         if (!coupon) {
-          return res.status(404).json({ error: 'Kupon tidak ditemukan' });
+          return res.status(404).json({ error: "Kupon tidak ditemukan" });
         }
 
-        res.status(200).json({ coupon });
+        return res.status(200).json({ coupon });
       } catch (error) {
-        console.error('Error fetching coupon:', error);
-        res.status(500).json({ error: 'Failed to fetch coupon' });
+        console.error("Error fetching coupon:", error);
+        return res.status(500).json({ error: "Failed to fetch coupon" });
       }
-      break;
 
-    case 'PUT':
+    case "PUT":
       try {
         const {
           name,
@@ -64,44 +52,32 @@ export default async function handler(req, res) {
           endDate,
           isActive,
           applicablePackages,
-          excludedPackages
+          excludedPackages,
         } = req.body;
 
-        // Find existing coupon
         const existingCoupon = await Coupon.findById(couponId);
         if (!existingCoupon) {
-          return res.status(404).json({ error: 'Kupon tidak ditemukan' });
+          return res.status(404).json({ error: "Kupon tidak ditemukan" });
         }
 
-        // Validate required fields
         if (!name || !type || !value || !startDate || !endDate) {
-          return res.status(400).json({
-            error: 'Nama, tipe, nilai, tanggal mulai, dan tanggal berakhir wajib diisi'
-          });
+          return res
+            .status(400)
+            .json({ error: "Nama, tipe, nilai, tanggal mulai, dan tanggal berakhir wajib diisi" });
         }
 
-        // Validate date range
         if (new Date(endDate) <= new Date(startDate)) {
-          return res.status(400).json({
-            error: 'Tanggal berakhir harus setelah tanggal mulai'
-          });
+          return res.status(400).json({ error: "Tanggal berakhir harus setelah tanggal mulai" });
         }
 
-        // Validate percentage value
-        if (type === 'percentage' && (value <= 0 || value > 100)) {
-          return res.status(400).json({
-            error: 'Persentase diskon harus antara 1-100%'
-          });
+        if (type === "percentage" && (value <= 0 || value > 100)) {
+          return res.status(400).json({ error: "Persentase diskon harus antara 1-100%" });
         }
 
-        // Validate fixed value
-        if (type === 'fixed' && value <= 0) {
-          return res.status(400).json({
-            error: 'Nilai diskon harus lebih dari 0'
-          });
+        if (type === "fixed" && value <= 0) {
+          return res.status(400).json({ error: "Nilai diskon harus lebih dari 0" });
         }
 
-        // Update coupon
         const updatedCoupon = await Coupon.findByIdAndUpdate(
           couponId,
           {
@@ -117,55 +93,47 @@ export default async function handler(req, res) {
             endDate: new Date(endDate),
             isActive: isActive !== false,
             applicablePackages: applicablePackages || [],
-            excludedPackages: excludedPackages || []
+            excludedPackages: excludedPackages || [],
           },
           { new: true, runValidators: true }
         )
-          .populate('createdBy', 'name email')
-          .populate('applicablePackages', 'name price')
-          .populate('excludedPackages', 'name price');
+          .populate("createdBy", "name email")
+          .populate("applicablePackages", "name price")
+          .populate("excludedPackages", "name price");
 
-        res.status(200).json({
-          message: 'Kupon berhasil diperbarui',
-          coupon: updatedCoupon
+        return res.status(200).json({
+          message: "Kupon berhasil diperbarui",
+          coupon: updatedCoupon,
         });
       } catch (error) {
-        console.error('Error updating coupon:', error);
-        if (error.name === 'ValidationError') {
-          const errors = Object.values(error.errors).map(err => err.message);
-          return res.status(400).json({ error: errors.join(', ') });
+        console.error("Error updating coupon:", error);
+        if (error.name === "ValidationError") {
+          const errors = Object.values(error.errors).map((e) => e.message);
+          return res.status(400).json({ error: errors.join(", ") });
         }
-        res.status(500).json({ error: 'Failed to update coupon' });
+        return res.status(500).json({ error: "Failed to update coupon" });
       }
-      break;
 
-    case 'DELETE':
+    case "DELETE":
       try {
-        // Check if coupon has been used
         const coupon = await Coupon.findById(couponId);
         if (!coupon) {
-          return res.status(404).json({ error: 'Kupon tidak ditemukan' });
+          return res.status(404).json({ error: "Kupon tidak ditemukan" });
         }
 
         if (coupon.usageCount > 0) {
-          return res.status(400).json({
-            error: 'Tidak dapat menghapus kupon yang sudah digunakan'
-          });
+          return res.status(400).json({ error: "Tidak dapat menghapus kupon yang sudah digunakan" });
         }
 
         await Coupon.findByIdAndDelete(couponId);
-
-        res.status(200).json({
-          message: 'Kupon berhasil dihapus'
-        });
+        return res.status(200).json({ message: "Kupon berhasil dihapus" });
       } catch (error) {
-        console.error('Error deleting coupon:', error);
-        res.status(500).json({ error: 'Failed to delete coupon' });
+        console.error("Error deleting coupon:", error);
+        return res.status(500).json({ error: "Failed to delete coupon" });
       }
-      break;
 
     default:
-      res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
-      res.status(405).end(`Method ${method} Not Allowed`);
+      res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
+      return res.status(405).end(`Method ${method} Not Allowed`);
   }
 }

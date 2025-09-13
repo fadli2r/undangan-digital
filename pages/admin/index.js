@@ -1,54 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import AdminLayoutJWT from '../../components/layouts/AdminLayoutJWT';
-import DashboardContent from '../../components/admin/DashboardContent';
+import AdminLayout from '../../components/layouts/AdminLayout'
 
-export default function AdminDashboard() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [adminInfo, setAdminInfo] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const adminData = localStorage.getItem('adminInfo');
-
-    if (!token || !adminData) {
-      router.replace('/admin/login');
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(adminData);
-      setAdminInfo(parsed);
-    } catch (error) {
-      console.error('Gagal parse adminInfo:', error);
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminInfo');
-      router.replace('/admin/login');
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
-  if (loading) {
-    return (
-      <div className="d-flex flex-column flex-root">
-        <div className="page-loading d-flex flex-column flex-column-fluid">
-          <div className="d-flex align-items-center justify-content-center flex-column-fluid">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Memuat...</span>
+export default function AdminDashboardPage() {
+  return (
+    <AdminLayout>
+      <div className="row gy-5 g-xl-10">
+        <div className="col-xl-4">
+          <div className="card card-xl-stretch mb-xl-10" style={{ backgroundColor: '#F7D9E3' }}>
+            <div className="card-body d-flex flex-column">
+              <a href="#" className="text-gray-900 text-hover-primary fw-bold fs-3">Earnings</a>
+              <div className="mixed-widget-13-chart" style={{ height: 100 }} />
+              <div className="pt-5">
+                <span className="text-gray-900 fw-bold fs-2x lh-0">$</span>
+                <span className="text-gray-900 fw-bold fs-3x me-2 lh-0">560</span>
+                <span className="text-gray-900 fw-bold fs-6 lh-0">+ 28% this week</span>
+              </div>
             </div>
           </div>
         </div>
+        {/* Tambahkan widget lain sesuai template */}
       </div>
-    );
-  }
-
-  if (!adminInfo) return null;
-
-  return (
-    <AdminLayoutJWT>
-      <DashboardContent/>
-    </AdminLayoutJWT>
-  );
+    </AdminLayout>
+  )
 }

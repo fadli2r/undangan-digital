@@ -90,7 +90,7 @@ export default function EditUndangan() {
   };
 
   const handleEdit = (undangan) => router.push(`/edit-undangan/${undangan.slug}`);
-  const handleView = (undangan) => window.open(`/undangan/${undangan.slug}`, '_blank');
+  const handleView = (undangan) => window.open(`/${undangan.slug}`, '_blank');
 
   const handleDuplicate = async (undangan) => {
     showAlert.confirm(
@@ -163,7 +163,7 @@ export default function EditUndangan() {
                 <h2 className="fw-bold text-gray-900">Edit Undangan</h2>
               </div>
               <div className="card-toolbar">
-                <a href="/buat-undangan-metronic" className="btn btn-primary">
+                <a href="/buat-undangan" className="btn btn-primary">
                   <i className="ki-duotone ki-plus fs-2" /> Buat Undangan Baru
                 </a>
               </div>
@@ -262,31 +262,33 @@ export default function EditUndangan() {
                       </div>
 
                       {/* Actions */}
-                      <div className="d-flex flex-wrap gap-2">
-                        <button onClick={() => handleEdit(undangan)} className="btn btn-primary btn-sm flex-fill">
-                          <i className="ki-duotone ki-pencil fs-3 me-1" /> Edit
-                        </button>
-                        <button onClick={() => handleView(undangan)} className="btn btn-light-primary btn-sm">
-                          <i className="ki-duotone ki-eye fs-3" />
-                        </button>
-                        <div className="btn-group">
-                          <button className="btn btn-light-secondary btn-sm" data-bs-toggle="dropdown">
-                            <i className="ki-duotone ki-dots-horizontal fs-3" />
-                          </button>
-                          <ul className="dropdown-menu">
-                            <li>
-                              <button className="dropdown-item" onClick={() => handleDuplicate(undangan)}>
-                                <i className="ki-duotone ki-copy fs-3 me-2" /> Duplikasi
-                              </button>
-                            </li>
-                            <li>
-                              <button className="dropdown-item text-danger" onClick={() => handleDelete(undangan)}>
-                                <i className="ki-duotone ki-trash fs-3 me-2" /> Hapus
-                              </button>
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
+<div className="d-flex flex-wrap gap-2">
+  <button onClick={() => handleEdit(undangan)} className="btn btn-primary btn-sm flex-fill">
+    <i className="ki-duotone ki-pencil fs-3 me-1">
+      <span className="path1" />
+      <span className="path2" />
+    </i>
+    Edit
+  </button>
+
+  <button onClick={() => handleView(undangan)} className="btn btn-light-primary btn-sm">
+    <i className="ki-duotone ki-send fs-3">
+      <span className="path1" />
+      <span className="path2" />
+    </i>
+  </button>
+<button
+  onClick={() => handleDelete(undangan)}
+  className="btn btn-light-danger btn-sm"
+>
+  <i className="ki-duotone ki-trash fs-3">
+    <span className="path1"></span>
+    <span className="path2"></span>
+  </i>
+</button>
+
+
+</div>
                     </div>
                   </div>
                 </div>

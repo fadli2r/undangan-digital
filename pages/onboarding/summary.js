@@ -1,9 +1,18 @@
-// pages/onboarding/summary.js
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "../../components/layouts/UserLayout";
 import OnboardingStepper from "../../components/onboarding/OnboardingStepper";
+
+// helper: sanitasi slug (backup jika localStorage lama belum punya slug)
+function toSlug(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
 
 export default function OnboardingSummary() {
   const router = useRouter();
@@ -22,7 +31,13 @@ export default function OnboardingSummary() {
   useEffect(() => {
     const onboardingData = localStorage.getItem("onboardingData");
     if (!onboardingData) { router.replace("/onboarding"); return; }
-    setData(JSON.parse(onboardingData));
+    const parsed = JSON.parse(onboardingData);
+    // pastikan ada slug bersih
+    const safeSlug = toSlug(parsed.slug || parsed.domain);
+    const fixed = { ...parsed, slug: safeSlug };
+    setData(fixed);
+    // sinkronkan balik (sekalian ngerapihin storage)
+    localStorage.setItem("onboardingData", JSON.stringify(fixed));
   }, [router]);
 
   useEffect(() => {
@@ -53,22 +68,16 @@ export default function OnboardingSummary() {
   }, [paket?.finalPrice, paket?.price, data?.useCustomDomain, data?.oneTree]);
 
   async function handleBayar() {
-    if (!paket || !user) return;
+    if (!paket || !user || !data) return;
     setSubmitting(true);
     setError("");
 
-    const resolvedPackageId = paket?._id ?? paket?.id ?? null;
-    const resolvedPaketFallback = paket?.slug ?? paket?._id ?? paket?.name ?? null;
-
-    if (!resolvedPackageId && !resolvedPaketFallback) {
-      setError("Gagal menentukan paket. Muat ulang halaman lalu coba lagi.");
-      setSubmitting(false);
-      return;
-    }
+    // pakai slug bersih dari storage
+    const safeSlug = toSlug(data.slug || data.domain);
 
     const payload = {
-      packageId: resolvedPackageId,
-      paket: resolvedPaketFallback, // fallback
+      packageId: paket?._id ?? paket?.id ?? null,
+      paket: paket?.slug ?? paket?._id ?? paket?.name ?? null,
       email: user.email,
       name: user.name,
       onboardingData: {
@@ -77,15 +86,15 @@ export default function OnboardingSummary() {
         phone: data.phone,
         tanggal: data.tanggal,
         lokasi: data.lokasi,
-        domain: data.domain,
+        domain: data.domain,          // tetap kirim aslinya kalau kamu butuh tampilkan kembali
+        slug: data.domain,            // ← ini penting
         useCustomDomain: data.useCustomDomain,
         oneTree: data.oneTree,
         referral: referral || data.referral || "",
-        promoCode: promo || ""
-      }
+        promoCode: promo || "",
+        fromOnboarding: true,
+      },
     };
-
-    console.log("create-invoice payload =>", payload);
 
     try {
       const res = await fetch("/api/payment/create-invoice", {
@@ -127,6 +136,12 @@ export default function OnboardingSummary() {
       </UserLayout>
     );
   }
+
+  // preview URL pakai slug bersih
+  const showSlug = toSlug(data.slug || data.domain || "namakamu");
+  const domainPreview = data.useCustomDomain
+    ? `${showSlug}.dreamslink.id`
+    : `dreamslink.id/${showSlug}`;
 
   return (
     <UserLayout>
@@ -190,10 +205,15 @@ export default function OnboardingSummary() {
                     <input className="form-control form-control-solid" value={data.lokasi || "-"} disabled />
                   </div>
                   <div className="col-md-4">
-                    <label className="form-label">Domain</label>
+                    <label className="form-label">Slug/Domain</label>
                     <div className="input-group">
-                      <input className="form-control form-control-solid" value={data.domain || ""} disabled />
-                      <span className="input-group-text">.viding.co</span>
+                      <input className="form-control form-control-solid" value={showSlug} disabled />
+                      <span className="input-group-text">
+                        {data.useCustomDomain ? ".dreamslink.id" : "/"}
+                      </span>
+                    </div>
+                    <div className="form-text mt-1">
+                      URL: <b>{domainPreview}</b>
                     </div>
                     {data.useCustomDomain && <div className="form-text text-success">+ Custom Domain</div>}
                   </div>
@@ -201,6 +221,7 @@ export default function OnboardingSummary() {
               </div>
             </div>
 
+            {/* Kode Promo & Referral */}
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">Kode Promo & Referral</h3>
@@ -209,11 +230,23 @@ export default function OnboardingSummary() {
                 <div className="row g-6">
                   <div className="col-md-6">
                     <label className="form-label">Kode Promo</label>
-                    <input type="text" className="form-control form-control-solid" value={promo} onChange={(e)=>setPromo(e.target.value.toUpperCase())} placeholder="MASUKKAN KODE (opsional)" />
+                    <input
+                      type="text"
+                      className="form-control form-control-solid"
+                      value={promo}
+                      onChange={(e) => setPromo(e.target.value.toUpperCase())}
+                      placeholder="MASUKKAN KODE (opsional)"
+                    />
                   </div>
                   <div className="col-md-6">
                     <label className="form-label">Kode Referral</label>
-                    <input type="text" className="form-control form-control-solid" value={referral} onChange={(e)=>setReferral(e.target.value.toUpperCase())} placeholder="MASUKKAN KODE (opsional)" />
+                    <input
+                      type="text"
+                      className="form-control form-control-solid"
+                      value={referral}
+                      onChange={(e) => setReferral(e.target.value.toUpperCase())}
+                      placeholder="MASUKKAN KODE (opsional)"
+                    />
                   </div>
                 </div>
                 <div className="form-text mt-3">
@@ -223,6 +256,7 @@ export default function OnboardingSummary() {
             </div>
           </div>
 
+          {/* Ringkasan pembayaran */}
           <div className="col-xl-4">
             <div className="card card-flush sticky-top">
               <div className="card-header border-0">
@@ -231,25 +265,16 @@ export default function OnboardingSummary() {
                 </div>
               </div>
               <div className="card-body pt-0">
-                <div className="mb-5">
-                  <div className="fw-bold">{paket.name}</div>
-                  <div className="text-muted small">{paket.description}</div>
-                  <div className="text-gray-600 small mt-2">
-                    <span className="fw-semibold">Package ID:</span>{" "}
-                    <code>{(paket?._id ?? paket?.id ?? "-")}</code>
-                  </div>
-                </div>
-
                 <div className="d-flex justify-content-between mb-3">
                   <span>Harga Paket</span>
                   <div>
-                    {paket.originalPrice && paket.originalPrice > (paket.finalPrice ?? paket.price) && (
+                    {paket?.originalPrice && paket.originalPrice > (paket.finalPrice ?? paket.price) && (
                       <span className="text-muted text-decoration-line-through me-2">
                         {toIDR(paket.originalPrice)}
                       </span>
                     )}
                     <strong className="text-primary">
-                      {toIDR(paket.finalPrice ?? paket.price)}
+                      {toIDR(paket?.finalPrice ?? paket?.price)}
                     </strong>
                   </div>
                 </div>

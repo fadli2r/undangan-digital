@@ -1,7 +1,7 @@
+// pages/admin/coupons/new.js
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import Head from 'next/head';
-import AdminLayoutJWT from '../../../components/layouts/AdminLayoutJWT';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 export default function CreateCouponPage() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function CreateCouponPage() {
     code: '',
     name: '',
     description: '',
-    type: 'percentage',
+    type: 'percentage', // 'percentage' | 'fixed'
     value: '',
     minimumAmount: '',
     maximumDiscount: '',
@@ -44,10 +44,14 @@ export default function CreateCouponPage() {
   }, []);
 
   async function fetchPackages() {
-    const token = localStorage.getItem('adminToken');
-    const response = await fetch('/api/admin/packages/index-jwt', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const response = await fetch('/api/admin/packages', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
     });
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') window.location.replace('/admin/login');
+      return;
+    }
     if (!response.ok) throw new Error('Gagal mengambil daftar paket');
     const data = await response.json();
     setPackages(data.packages || []);
@@ -117,13 +121,17 @@ export default function CreateCouponPage() {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/coupons/index-jwt', {
+      const response = await fetch('/api/admin/coupons', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        if (typeof window !== 'undefined') window.location.replace('/admin/login');
+        return;
+      }
       if (!response.ok) throw new Error(data?.error || 'Failed to create coupon');
 
       setSuccess(true);
@@ -136,8 +144,8 @@ export default function CreateCouponPage() {
   }
 
   return (
-    <AdminLayoutJWT>
-      <Head><title>Buat Kupon Baru - Digital Invitation</title></Head>
+    <AdminLayout>
+
 
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
         <div className="container-xxl" id="kt_content_container">
@@ -441,6 +449,6 @@ export default function CreateCouponPage() {
 
         </div>
       </div>
-    </AdminLayoutJWT>
+    </AdminLayout>
   );
 }

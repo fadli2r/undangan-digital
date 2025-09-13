@@ -12,11 +12,11 @@ export default function QuickActionsCard({ actions = [], customActions = [] }) {
     },
     {
       id: 'choose-template',
-      label: 'Pilih Template',
+      label: 'Undangan Saya',
       icon: 'ki-duotone ki-element-7',
-      href: '/pilih-template',
+      href: '/edit-undangan',
       color: 'info',
-      description: 'Jelajahi template undangan'
+      description: 'Edit undangan kamu'
     },
     {
       id: 'view-packages',

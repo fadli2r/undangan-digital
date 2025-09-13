@@ -1,106 +1,86 @@
-import dbConnect from '../../../../lib/dbConnect';
-import Coupon from '../../../../models/Coupon';
-import Package from '../../../../models/Package';
-import adminAuth from '../../../../middleware/adminAuth';
+// pages/api/admin/coupons/index.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import dbConnect from "@/lib/dbConnect";
+import Coupon from "@/models/Coupon";
+import Package from "@/models/Package";
+import Admin from "@/models/Admin";
 
 export default async function handler(req, res) {
   await dbConnect();
 
-  // Verify admin authentication
-  const authMiddleware = adminAuth();
-  
-  // Create a promise to handle middleware
-  const authResult = await new Promise((resolve, reject) => {
-    authMiddleware(req, res, (error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(true);
-      }
-    });
-  }).catch(() => {
-    return res.status(401).json({ error: 'Unauthorized' });
-  });
+  // Validasi session admin
+  const session = await getServerSession(req, res, authOptions);
+  if (!session || !session.user?.isAdmin) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-  if (!authResult) return;
+  // resolve admin _id untuk createdBy/logging
+  const adminDoc = await Admin.findOne({ email: session.user.email }).select("_id");
+  const adminId = adminDoc?._id || null;
 
   const { method } = req;
 
   switch (method) {
-    case 'GET':
+    case "GET": {
       try {
         const {
           page = 1,
           limit = 10,
-          search = '',
-          status = 'all',
-          type = 'all',
-          sortBy = 'createdAt',
-          sortOrder = 'desc'
+          search = "",
+          status = "all",
+          type = "all",
+          sortBy = "createdAt",
+          sortOrder = "desc",
         } = req.query;
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const sortDirection = sortOrder === 'desc' ? -1 : 1;
+        const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+        const sortDirection = sortOrder === "desc" ? -1 : 1;
 
-        // Build filter query
-        let filter = {};
+        const now = new Date();
+        const filter = {};
 
-        // Search filter
         if (search) {
           filter.$or = [
-            { code: { $regex: search, $options: 'i' } },
-            { name: { $regex: search, $options: 'i' } },
-            { description: { $regex: search, $options: 'i' } }
+            { code: { $regex: search, $options: "i" } },
+            { name: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
           ];
         }
 
-        // Status filter
-        const now = new Date();
-        if (status !== 'all') {
-          switch (status) {
-            case 'active':
-              filter.isActive = true;
-              filter.startDate = { $lte: now };
-              filter.endDate = { $gte: now };
-              break;
-            case 'inactive':
-              filter.isActive = false;
-              break;
-            case 'expired':
-              filter.endDate = { $lt: now };
-              break;
-            case 'scheduled':
-              filter.startDate = { $gt: now };
-              break;
-            case 'exhausted':
-              filter.$expr = {
-                $and: [
-                  { $ne: ['$usageLimit', null] },
-                  { $gte: ['$usageCount', '$usageLimit'] }
-                ]
-              };
-              break;
+        if (status !== "all") {
+          if (status === "active") {
+            filter.isActive = true;
+            filter.startDate = { $lte: now };
+            filter.endDate = { $gte: now };
+          } else if (status === "inactive") {
+            filter.isActive = false;
+          } else if (status === "expired") {
+            filter.endDate = { $lt: now };
+          } else if (status === "scheduled") {
+            filter.startDate = { $gt: now };
+          } else if (status === "exhausted") {
+            filter.$expr = {
+              $and: [
+                { $ne: ["$usageLimit", null] },
+                { $gte: ["$usageCount", "$usageLimit"] },
+              ],
+            };
           }
         }
 
-        // Type filter
-        if (type !== 'all') {
-          filter.type = type;
-        }
+        if (type !== "all") filter.type = type;
 
-        // Get coupons with pagination
         const coupons = await Coupon.find(filter)
-          .populate('createdBy', 'name email')
-          .populate('applicablePackages', 'name price')
-          .populate('excludedPackages', 'name price')
+          .populate("createdBy", "name email")
+          .populate("applicablePackages", "name price")
+          .populate("excludedPackages", "name price")
           .sort({ [sortBy]: sortDirection })
           .skip(skip)
-          .limit(parseInt(limit));
+          .limit(parseInt(limit, 10));
 
-        // Get total count
         const total = await Coupon.countDocuments(filter);
 
-        // Calculate statistics
         const stats = await Coupon.aggregate([
           {
             $group: {
@@ -111,52 +91,52 @@ export default async function handler(req, res) {
                   $cond: [
                     {
                       $and: [
-                        { $eq: ['$isActive', true] },
-                        { $lte: ['$startDate', now] },
-                        { $gte: ['$endDate', now] }
-                      ]
+                        { $eq: ["$isActive", true] },
+                        { $lte: ["$startDate", now] },
+                        { $gte: ["$endDate", now] },
+                      ],
                     },
                     1,
-                    0
-                  ]
-                }
+                    0,
+                  ],
+                },
               },
-              totalUsage: { $sum: '$usageCount' },
+              totalUsage: { $sum: "$usageCount" },
               totalDiscountGiven: {
                 $sum: {
                   $reduce: {
-                    input: '$usageHistory',
+                    input: "$usageHistory",
                     initialValue: 0,
-                    in: { $add: ['$$value', '$$this.discountAmount'] }
-                  }
-                }
-              }
-            }
-          }
+                    in: { $add: ["$$value", "$$this.discountAmount"] },
+                  },
+                },
+              },
+            },
+          },
         ]);
 
-        res.status(200).json({
+        return res.status(200).json({
           coupons,
           pagination: {
-            current: parseInt(page),
-            pages: Math.ceil(total / parseInt(limit)),
+            current: parseInt(page, 10),
+            pages: Math.ceil(total / parseInt(limit, 10)),
             total,
-            limit: parseInt(limit)
+            limit: parseInt(limit, 10),
           },
           stats: stats[0] || {
             totalCoupons: 0,
             activeCoupons: 0,
             totalUsage: 0,
-            totalDiscountGiven: 0
-          }
+            totalDiscountGiven: 0,
+          },
         });
       } catch (error) {
-        console.error('Error fetching coupons:', error);
-        res.status(500).json({ error: 'Failed to fetch coupons' });
+        console.error("Error fetching coupons:", error);
+        return res.status(500).json({ error: "Failed to fetch coupons" });
       }
-      break;
+    }
 
-    case 'POST':
+    case "POST": {
       try {
         const {
           code,
@@ -172,50 +152,33 @@ export default async function handler(req, res) {
           endDate,
           isActive,
           applicablePackages,
-          excludedPackages
+          excludedPackages,
         } = req.body;
 
-        // Validate required fields
         if (!code || !name || !type || !value || !startDate || !endDate) {
-          return res.status(400).json({ 
-            error: 'Kode, nama, tipe, nilai, tanggal mulai, dan tanggal berakhir wajib diisi' 
+          return res.status(400).json({
+            error: "Kode, nama, tipe, nilai, tanggal mulai, dan tanggal berakhir wajib diisi",
           });
         }
 
-        // Check if coupon code already exists
-        const existingCoupon = await Coupon.findOne({ 
-          code: code.toUpperCase() 
-        });
-        
-        if (existingCoupon) {
-          return res.status(400).json({ 
-            error: 'Kode kupon sudah digunakan' 
-          });
+        const existing = await Coupon.findOne({ code: code.toUpperCase() });
+        if (existing) {
+          return res.status(400).json({ error: "Kode kupon sudah digunakan" });
         }
 
-        // Validate date range
         if (new Date(endDate) <= new Date(startDate)) {
-          return res.status(400).json({ 
-            error: 'Tanggal berakhir harus setelah tanggal mulai' 
-          });
+          return res.status(400).json({ error: "Tanggal berakhir harus setelah tanggal mulai" });
         }
 
-        // Validate percentage value
-        if (type === 'percentage' && (value <= 0 || value > 100)) {
-          return res.status(400).json({ 
-            error: 'Persentase diskon harus antara 1-100%' 
-          });
+        if (type === "percentage" && (value <= 0 || value > 100)) {
+          return res.status(400).json({ error: "Persentase diskon harus antara 1-100%" });
         }
 
-        // Validate fixed value
-        if (type === 'fixed' && value <= 0) {
-          return res.status(400).json({ 
-            error: 'Nilai diskon harus lebih dari 0' 
-          });
+        if (type === "fixed" && value <= 0) {
+          return res.status(400).json({ error: "Nilai diskon harus lebih dari 0" });
         }
 
-        // Create new coupon
-        const newCoupon = new Coupon({
+        const newCoupon = await Coupon.create({
           code: code.toUpperCase(),
           name,
           description,
@@ -223,40 +186,37 @@ export default async function handler(req, res) {
           value: parseFloat(value),
           minimumAmount: parseFloat(minimumAmount) || 0,
           maximumDiscount: maximumDiscount ? parseFloat(maximumDiscount) : undefined,
-          usageLimit: usageLimit ? parseInt(usageLimit) : undefined,
-          userUsageLimit: parseInt(userUsageLimit) || 1,
+          usageLimit: usageLimit ? parseInt(usageLimit, 10) : undefined,
+          userUsageLimit: parseInt(userUsageLimit, 10) || 1,
           startDate: new Date(startDate),
           endDate: new Date(endDate),
           isActive: isActive !== false,
           applicablePackages: applicablePackages || [],
           excludedPackages: excludedPackages || [],
-          createdBy: adminUser._id
+          createdBy: adminId,
         });
 
-        await newCoupon.save();
+        const populated = await Coupon.findById(newCoupon._id)
+          .populate("createdBy", "name email")
+          .populate("applicablePackages", "name price")
+          .populate("excludedPackages", "name price");
 
-        // Populate the created coupon
-        const populatedCoupon = await Coupon.findById(newCoupon._id)
-          .populate('createdBy', 'name email')
-          .populate('applicablePackages', 'name price')
-          .populate('excludedPackages', 'name price');
-
-        res.status(201).json({
-          message: 'Kupon berhasil dibuat',
-          coupon: populatedCoupon
+        return res.status(201).json({
+          message: "Kupon berhasil dibuat",
+          coupon: populated,
         });
       } catch (error) {
-        console.error('Error creating coupon:', error);
-        if (error.name === 'ValidationError') {
-          const errors = Object.values(error.errors).map(err => err.message);
-          return res.status(400).json({ error: errors.join(', ') });
+        console.error("Error creating coupon:", error);
+        if (error.name === "ValidationError") {
+          const errors = Object.values(error.errors).map((e) => e.message);
+          return res.status(400).json({ error: errors.join(", ") });
         }
-        res.status(500).json({ error: 'Failed to create coupon' });
+        return res.status(500).json({ error: "Failed to create coupon" });
       }
-      break;
+    }
 
     default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).end(`Method ${method} Not Allowed`);
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).end(`Method ${method} Not Allowed`);
   }
 }

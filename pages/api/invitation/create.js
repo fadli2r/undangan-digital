@@ -1,13 +1,13 @@
-// pages/api/invitations/create.js
-import dbConnect from "../../../lib/dbConnect";
-import Invitation from "../../../models/Invitation";
-import User from "../../../models/User";
+// /pages/api/invitations/create.js
+import dbConnect from "@/lib/dbConnect";
+import Invitation from "@/models/Invitation";
+import User from "@/models/User";
+import Order from "@/models/Order";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
 function sanitizeSlug(raw) {
-  if (!raw) return "";
-  return String(raw)
+  return String(raw || "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9-]/g, "-")
@@ -18,20 +18,13 @@ function sanitizeSlug(raw) {
 function generateSlug(len = 8) {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  for (let i = 0; i < len; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < len; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
   return result;
 }
 
-function safeParseBody(body) {
-  if (!body) return {};
-  if (typeof body === "string") {
-    try { return JSON.parse(body); } catch { return {}; }
-  }
-  return body;
-}
-
 export default async function handler(req, res) {
-  // pastikan response JSON & non-cache
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
 
@@ -45,58 +38,60 @@ export default async function handler(req, res) {
     if (!session?.user?.email) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const email = session.user.email;
+    const email = session.user.email.toLowerCase();
 
     await dbConnect();
 
-    // Body input (robust)
+    // Body input
     const {
+      orderId,
       template,
       slug: slugInput,
       pria = "",
       wanita = "",
       orangtua_pria = "",
       orangtua_wanita = "",
-      tanggal = null,
+      tanggal,
       waktu = "",
       lokasi = "",
-    } = safeParseBody(req.body);
+    } = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
-    if (!template) {
-      return res.status(400).json({ message: "Template diperlukan" });
+    if (!orderId) return res.status(400).json({ message: "OrderId wajib diisi" });
+    if (!template) return res.status(400).json({ message: "Template wajib diisi" });
+
+    // Cari order
+    const order = await Order.findOne({
+      _id: orderId,
+      user_email: email,
+      status: "paid",
+      used: false,
+    }).populate("packageId");
+
+    if (!order) {
+      return res.status(400).json({ message: "Order tidak valid atau sudah digunakan" });
     }
 
-    // 1) Kurangi quota atomik; pastikan quota > 0
-    const user = await User.findOneAndUpdate(
-      { email, quota: { $gt: 0 } },
-      { $inc: { quota: -1 }, $set: { onboardingCompleted: true } },
-      { new: true }
-    );
-    if (!user) {
-      return res.status(403).json({ message: "Quota habis, silakan beli paket" });
+    // Slug unik
+    let slug = sanitizeSlug(slugInput || `${pria}-${wanita}`);
+    if (!slug) slug = generateSlug(8);
+
+    let counter = 0;
+    while (await Invitation.findOne({ slug })) {
+      slug = `${slug}-${generateSlug(4)}`;
+      if (++counter > 5) break;
     }
 
-    // 2) Tentukan slug (pakai input jika ada, kalau tidak generate)
-    let slug = sanitizeSlug(slugInput) || generateSlug(8);
+    // Ambil fitur dari package
+    const pkg = order.packageId;
+    const featureKeys = Array.isArray(pkg?.featureKeys) ? pkg.featureKeys.map(String) : [];
 
-    // 3) Pastikan slug unik (maks 10 percobaan). Jika gagal → rollback quota.
-    let attempts = 0;
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const exists = await Invitation.findOne({ slug }).lean();
-      if (!exists) break;
-      if (++attempts > 10) {
-        await User.updateOne({ email }, { $inc: { quota: 1 } }); // rollback
-        return res.status(409).json({ message: "Tidak bisa membuat slug unik, coba lagi" });
-      }
-      slug = sanitizeSlug(`${slugInput || "inv"}-${generateSlug(4)}`);
-    }
-
-    // 4) Buat invitation
+    // Buat invitation
     const inv = await Invitation.create({
       slug,
       template,
       user_email: email,
+      packageId: pkg?._id || null,
+      allowedFeatures: featureKeys,
       mempelai: {
         pria,
         wanita,
@@ -126,17 +121,32 @@ export default async function handler(req, res) {
       updatedAt: new Date(),
     });
 
+    // Update order jadi used
+    order.used = true;
+    order.invitation_slug = inv.slug;
+    await order.save();
+
+    // Update user → masukkan ke daftar invitations
+    const user = await User.findOne({ email });
+    if (user) {
+      if (!user.invitations.includes(inv._id)) {
+        user.invitations.push(inv._id);
+      }
+       // Kurangi quota jika masih ada
+  if (typeof user.quota === "number" && user.quota > 0) {
+    user.quota = user.quota - 1;
+  }
+      await user.save();
+    }
+
     return res.status(201).json({
       message: "Undangan berhasil dibuat",
       slug: inv.slug,
       _id: inv._id,
-      quota_sisa: user.quota,
+      package: pkg ? { id: pkg._id, name: pkg.name } : null,
     });
   } catch (err) {
     console.error("API /invitations/create error:", err);
     return res.status(500).json({ message: "Gagal membuat undangan" });
-    // (opsional) bisa tambahkan mekanisme rollback quota jika error terjadi
-    // setelah quota terpotong namun sebelum create Invitation — namun di atas
-    // kita hanya memanggil create() setelah slug siap, jadi risiko kecil.
   }
 }

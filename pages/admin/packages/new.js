@@ -1,494 +1,465 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import AdminLayoutJWT from '../../../components/layouts/AdminLayoutJWT';
+// pages/admin/packages/new.js
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
+import AdminLayout from "../../../components/layouts/AdminLayout";
 
-export default function CreatePackage() {
+const INITIAL_FORM = {
+  // basic
+  name: "",
+  slug: "",
+  description: "",
+  price: 0,
+  originalPrice: "",
+  currency: "IDR",
+  duration: { value: 12, unit: "months" },
+
+  // gating
+  type: "fixed",            // 'fixed' | 'custom'
+  featureKeys: [],          // default aktif
+  selectableFeatures: [],   // utk custom (kosong = semua bisa dipilih)
+
+  // marketing features (opsional untuk landing)
+  features: [],
+
+  // limits
+  limits: {
+    invitations: 1,
+    guests: 100,
+    photos: 10,
+    templates: [],
+    customDomain: false,
+    removeWatermark: false,
+    analytics: false,
+    priority_support: false,
+  },
+
+  // display/status
+  metadata: { color: "#3B82F6", icon: "📦", badge: "" },
+  isActive: true,
+  isPopular: false,
+  isFeatured: false,
+  sortOrder: 0,
+};
+
+export default function NewPackage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    price: 0,
-    originalPrice: 0,
-    duration: {
-      value: 1,
-      unit: 'months'
-    },
-    features: [],
-    limits: {
-      invitations: 1,
-      guests: 100,
-      photos: 10,
-      templates: [],
-      customDomain: false,
-      removeWatermark: false,
-      analytics: false,
-      priority_support: false
-    },
-    metadata: {
-      color: '#3B82F6',
-      icon: '📦',
-      badge: ''
-    },
-    isActive: true,
-    isPopular: false,
-    isFeatured: false,
-    sortOrder: 0
-  });
+  // katalog fitur untuk checkbox gating
+  const [allFeatures, setAllFeatures] = useState([]);
+  const [loadingFeatures, setLoadingFeatures] = useState(true);
 
-  const handleChange = (field, value) => {
-    setForm(prev => ({
+  // 🔒 Redirect non-admin
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session || !session.user?.isAdmin) {
+      router.replace("/admin/login");
+    }
+  }, [session, status, router]);
+
+  // fetch katalog fitur
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.isAdmin) {
+      (async () => {
+        try {
+          setLoadingFeatures(true);
+          const res = await fetch(`/api/admin/features?active=true&limit=1000`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Failed to fetch features");
+          setAllFeatures(data.features || []);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingFeatures(false);
+        }
+      })();
+    }
+  }, [status, session]);
+
+  // ------- handlers -------
+  function handleChange(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+  function handleNestedChange(parent, field, value) {
+    setForm((prev) => ({ ...prev, [parent]: { ...prev[parent], [field]: value } }));
+  }
+  function toggleKey(path, key) {
+    setForm((prev) => {
+      const draft = { ...prev };
+      const set = new Set(draft[path] || []);
+      if (set.has(key)) set.delete(key); else set.add(key);
+      draft[path] = Array.from(set);
+      return draft;
+    });
+  }
+  function addMarketingFeature() {
+    setForm((prev) => ({
       ...prev,
-      [field]: value
+      features: [...prev.features, { name: "", description: "", included: true, limit: null }],
     }));
-  };
-
-  const handleNestedChange = (parent, field, value) => {
-    setForm(prev => ({
+  }
+  function updateMarketingFeature(idx, field, value) {
+    setForm((prev) => ({
       ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value
-      }
+      features: prev.features.map((f, i) => (i === idx ? { ...f, [field]: value } : f)),
     }));
-  };
+  }
+  function removeMarketingFeature(idx) {
+    setForm((prev) => ({ ...prev, features: prev.features.filter((_, i) => i !== idx) }));
+  }
 
-  const handleFeatureChange = (index, field, value) => {
-    setForm(prev => ({
-      ...prev,
-      features: prev.features.map((feature, i) =>
-        i === index ? { ...feature, [field]: value } : feature
-      )
-    }));
-  };
-
-  const addFeature = () => {
-    setForm(prev => ({
-      ...prev,
-      features: [
-        ...prev.features,
-        { name: '', description: '', included: true, limit: null }
-      ]
-    }));
-  };
-
-  const removeFeature = (index) => {
-    setForm(prev => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setSaving(true);
+    setError("");
+    setSuccess(false);
     try {
-      setSaving(true);
-      setError(null);
-
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/admin/packages/index-jwt', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(form)
+      const res = await fetch("/api/admin/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create package');
-      }
-
-      router.push('/admin/packages');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create package");
+      setSuccess(true);
+      // setelah sukses, arahkan ke edit detail paket
+      router.replace(`/admin/packages/${data.package._id}/edit`);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to create package");
     } finally {
       setSaving(false);
     }
-  };
+  }
+
+  if (status === "loading" || (!session?.user?.isAdmin && status !== "unauthenticated")) {
+    return (
+      <AdminLayout>
+        <div className="d-flex align-items-center justify-content-center py-20">
+          <div className="spinner-border text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
-    <AdminLayoutJWT>
-      <div className="space-y-6">
+    <AdminLayout>
+      <div className="d-flex flex-column gap-5">
         {/* Header */}
-        <div className="sm:flex sm:items-center sm:justify-between">
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Create New Package</h1>
-            <p className="mt-2 text-sm text-gray-700">
-              Add a new package with its features and limits.
-            </p>
+            <h1 className="fs-2hx text-gray-900 fw-bold">New Package</h1>
+            <div className="text-muted">Buat paket baru & atur fitur bawaannya.</div>
           </div>
-          <div className="mt-4 sm:mt-0">
-            <button
-              onClick={() => router.push('/admin/packages')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
+          <div>
+            <button type="button" onClick={() => router.push("/admin/packages")} className="btn btn-light">
+              <i className="ki-duotone ki-arrow-left fs-3 me-2" />
               Back to Packages
             </button>
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* Alerts */}
+        {success && (
+          <div className="alert alert-success d-flex align-items-center">
+            <i className="ki-duotone ki-check fs-2 me-3" />
+            <div>Package created successfully.</div>
+          </div>
+        )}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
-              </div>
-            </div>
+          <div className="alert alert-danger d-flex align-items-center">
+            <i className="ki-duotone ki-information-5 fs-2 me-3" />
+            <div>{error}</div>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="d-flex flex-column gap-5">
           {/* Basic Information */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Price</label>
-                <input
-                  type="number"
-                  value={form.price}
-                  onChange={(e) => handleChange('price', parseFloat(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Original Price</label>
-                <input
-                  type="number"
-                  value={form.originalPrice || ''}
-                  onChange={(e) => handleChange('originalPrice', parseFloat(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Sort Order</label>
-                <input
-                  type="number"
-                  value={form.sortOrder}
-                  onChange={(e) => handleChange('sortOrder', parseInt(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
+          <div className="card">
+            <div className="card-header border-0">
+              <h3 className="card-title fw-bold text-gray-800">Basic Information</h3>
+            </div>
+            <div className="card-body pt-0">
+              <div className="row g-6">
+                <div className="col-sm-6">
+                  <label className="form-label required">Name</label>
+                  <input className="form-control" value={form.name} onChange={(e)=>handleChange("name", e.target.value)} required />
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label">Slug</label>
+                  <input className="form-control" value={form.slug} onChange={(e)=>handleChange("slug", e.target.value.toLowerCase())} placeholder="auto from name if empty" />
+                </div>
+
+                <div className="col-sm-4">
+                  <label className="form-label required">Price</label>
+                  <input type="number" className="form-control" value={form.price} onChange={(e)=>handleChange("price", parseFloat(e.target.value || "0"))} min="0" step="0.01" required />
+                </div>
+                <div className="col-sm-4">
+                  <label className="form-label">Original Price</label>
+                  <input type="number" className="form-control" value={form.originalPrice === "" ? "" : Number(form.originalPrice)} onChange={(e)=>handleChange("originalPrice", e.target.value === "" ? "" : parseFloat(e.target.value || "0"))} min="0" step="0.01" />
+                </div>
+                <div className="col-sm-4">
+                  <label className="form-label">Currency</label>
+                  <input className="form-control" value={form.currency} onChange={(e)=>handleChange("currency", e.target.value)} />
+                </div>
+
+                <div className="col-sm-12">
+                  <label className="form-label required">Description</label>
+                  <textarea rows={3} className="form-control" value={form.description} onChange={(e)=>handleChange("description", e.target.value)} required />
+                </div>
+
+                <div className="col-sm-6">
+                  <label className="form-label required">Sort Order</label>
+                  <input type="number" className="form-control" value={form.sortOrder} onChange={(e)=>handleChange("sortOrder", parseInt(e.target.value || "0", 10))} required />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Duration */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Duration</h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Value</label>
-                <input
-                  type="number"
-                  value={form.duration.value}
-                  onChange={(e) => handleNestedChange('duration', 'value', parseInt(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Unit</label>
-                <select
-                  value={form.duration.unit}
-                  onChange={(e) => handleNestedChange('duration', 'unit', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                >
-                  <option value="days">Days</option>
-                  <option value="months">Months</option>
-                  <option value="years">Years</option>
-                  <option value="lifetime">Lifetime</option>
-                </select>
+          {/* Duration & Type */}
+          <div className="card">
+            <div className="card-header border-0">
+              <h3 className="card-title fw-bold text-gray-800">Duration & Type</h3>
+            </div>
+            <div className="card-body pt-0">
+              <div className="row g-6">
+                <div className="col-sm-6">
+                  <label className="form-label required">Duration</label>
+                  <div className="input-group">
+                    <input type="number" className="form-control" value={form.duration.value} onChange={(e)=>handleNestedChange("duration","value", parseInt(e.target.value || "1", 10))} min="1" required />
+                    <select className="form-select" value={form.duration.unit} onChange={(e)=>handleNestedChange("duration","unit", e.target.value)} required>
+                      <option value="days">Days</option>
+                      <option value="months">Months</option>
+                      <option value="years">Years</option>
+                      <option value="lifetime">Lifetime</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label required">Type</label>
+                  <select className="form-select" value={form.type} onChange={(e)=>handleChange("type", e.target.value)} required>
+                    <option value="fixed">Fixed</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Features */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Features</h3>
-              <button
-                type="button"
-                onClick={addFeature}
-                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Add Feature
-              </button>
+          {/* Gating Feature Keys */}
+          <div className="card">
+            <div className="card-header border-0 align-items-center">
+              <h3 className="card-title fw-bold text-gray-800">Feature Keys (Gating)</h3>
             </div>
-            <div className="space-y-4">
-              {form.features.map((feature, index) => (
-                <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-grow grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Name</label>
-                      <input
-                        type="text"
-                        value={feature.name}
-                        onChange={(e) => handleFeatureChange(index, 'name', e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Description</label>
-                      <input
-                        type="text"
-                        value={feature.description || ''}
-                        onChange={(e) => handleFeatureChange(index, 'description', e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Limit</label>
-                      <input
-                        type="number"
-                        value={feature.limit || ''}
-                        onChange={(e) => handleFeatureChange(index, 'limit', e.target.value ? parseInt(e.target.value) : null)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder="No limit"
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={feature.included}
-                          onChange={(e) => handleFeatureChange(index, 'included', e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">Included</span>
-                      </label>
+            <div className="card-body pt-0">
+              {loadingFeatures ? (
+                <div className="d-flex align-items-center text-primary">
+                  <span className="spinner-border spinner-border-sm me-2" /> Memuat fitur…
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 fw-semibold">Default aktif (featureKeys)</div>
+                  <div className="row g-3">
+                    {allFeatures.map((f) => (
+                      <div className="col-md-4" key={f._id}>
+                        <label className="form-check form-check-custom">
+                          <input
+                            type="checkbox"
+                            className="form-check-input me-2"
+                            checked={form.featureKeys.includes(f.key)}
+                            onChange={() => toggleKey("featureKeys", f.key)}
+                          />
+                          <span className="form-check-label">
+                            <code>{f.key}</code> — {f.name}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                    {allFeatures.length === 0 && <div className="text-muted">Belum ada fitur</div>}
+                  </div>
+
+                  <div className="separator my-6"></div>
+
+                  <div className="mb-3 fw-semibold">Selectable (khusus paket <b>custom</b>)</div>
+                  <div className="form-text mb-3">Kosongkan untuk mengizinkan semua fitur katalog dipilih user.</div>
+                  <div className="row g-3">
+                    {allFeatures.map((f) => (
+                      <div className="col-md-4" key={f._id}>
+                        <label className="form-check form-check-custom">
+                          <input
+                            type="checkbox"
+                            className="form-check-input me-2"
+                            checked={form.selectableFeatures.includes(f.key)}
+                            onChange={() => toggleKey("selectableFeatures", f.key)}
+                            disabled={form.type !== "custom"}
+                          />
+                          <span className="form-check-label">
+                            <code>{f.key}</code> — {f.name}
+                          </span>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Marketing Features (optional untuk landing) */}
+          <div className="card">
+            <div className="card-header border-0 align-items-center">
+              <h3 className="card-title fw-bold text-gray-800">Marketing Features (optional)</h3>
+              <div className="card-toolbar">
+                <button type="button" onClick={addMarketingFeature} className="btn btn-light-primary">
+                  <i className="ki-duotone ki-plus fs-3 me-1" />
+                  Add Feature
+                </button>
+              </div>
+            </div>
+            <div className="card-body pt-0">
+              {form.features.length === 0 && <div className="text-muted">Belum ada marketing features.</div>}
+              <div className="d-flex flex-column gap-4">
+                {form.features.map((f, i) => (
+                  <div key={i} className="border rounded p-4 bg-light">
+                    <div className="row g-4">
+                      <div className="col-md-6">
+                        <label className="form-label required">Name</label>
+                        <input className="form-control" value={f.name} onChange={(e)=>updateMarketingFeature(i,"name", e.target.value)} required />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Description</label>
+                        <input className="form-control" value={f.description || ""} onChange={(e)=>updateMarketingFeature(i,"description", e.target.value)} />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">Limit</label>
+                        <input type="number" className="form-control" value={f.limit ?? ""} onChange={(e)=>updateMarketingFeature(i,"limit", e.target.value ? parseInt(e.target.value, 10) : null)} placeholder="No limit" />
+                      </div>
+                      <div className="col-md-4 d-flex align-items-end">
+                        <label className="form-check form-check-custom">
+                          <input type="checkbox" className="form-check-input me-2" checked={!!f.included} onChange={(e)=>updateMarketingFeature(i,"included", e.target.checked)} />
+                          <span className="form-check-label">Included</span>
+                        </label>
+                      </div>
+                      <div className="col-md-4 d-flex align-items-end justify-content-end">
+                        <button type="button" className="btn btn-light-danger" onClick={()=>removeMarketingFeature(i)}>
+                          <i className="ki-duotone ki-trash fs-3 me-1" />
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFeature(index)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Limits */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Limits</h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Max Invitations</label>
-                <input
-                  type="number"
-                  value={form.limits.invitations}
-                  onChange={(e) => handleNestedChange('limits', 'invitations', parseInt(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Max Guests per Invitation</label>
-                <input
-                  type="number"
-                  value={form.limits.guests}
-                  onChange={(e) => handleNestedChange('limits', 'guests', parseInt(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Max Photos</label>
-                <input
-                  type="number"
-                  value={form.limits.photos}
-                  onChange={(e) => handleNestedChange('limits', 'photos', parseInt(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Available Templates</label>
-                <select
-                  multiple
-                  value={form.limits.templates}
-                  onChange={(e) => handleNestedChange('limits', 'templates', Array.from(e.target.selectedOptions, option => option.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="classic">Classic</option>
-                  <option value="modern">Modern</option>
-                  <option value="elegant">Elegant</option>
-                </select>
-              </div>
+          <div className="card">
+            <div className="card-header border-0">
+              <h3 className="card-title fw-bold text-gray-800">Limits</h3>
             </div>
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.limits.customDomain}
-                  onChange={(e) => handleNestedChange('limits', 'customDomain', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Allow Custom Domain</label>
+            <div className="card-body pt-0">
+              <div className="row g-6">
+                <div className="col-sm-6">
+                  <label className="form-label required">Max Invitations</label>
+                  <input type="number" className="form-control" value={form.limits.invitations} onChange={(e)=>handleNestedChange("limits","invitations", parseInt(e.target.value || "1", 10))} min="1" required />
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label required">Max Guests per Invitation</label>
+                  <input type="number" className="form-control" value={form.limits.guests} onChange={(e)=>handleNestedChange("limits","guests", parseInt(e.target.value || "1", 10))} min="1" required />
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label required">Max Photos</label>
+                  <input type="number" className="form-control" value={form.limits.photos} onChange={(e)=>handleNestedChange("limits","photos", parseInt(e.target.value || "0", 10))} min="0" required />
+                </div>
+                <div className="col-sm-6">
+                  <label className="form-label">Available Templates</label>
+                  <select
+                    multiple
+                    className="form-select"
+                    value={form.limits.templates}
+                    onChange={(e)=>handleNestedChange("limits","templates", Array.from(e.target.selectedOptions, o => o.value))}
+                  >
+                    <option value="classic">Classic</option>
+                    <option value="modern">Modern</option>
+                    <option value="elegant">Elegant</option>
+                  </select>
+                </div>
               </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.limits.removeWatermark}
-                  onChange={(e) => handleNestedChange('limits', 'removeWatermark', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Remove Watermark</label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.limits.analytics}
-                  onChange={(e) => handleNestedChange('limits', 'analytics', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Enable Analytics</label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.limits.priority_support}
-                  onChange={(e) => handleNestedChange('limits', 'priority_support', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Priority Support</label>
+
+              <div className="separator my-6"></div>
+
+              <div className="d-flex flex-column gap-4">
+                <label className="form-check form-check-custom">
+                  <input type="checkbox" className="form-check-input me-2" checked={form.limits.customDomain} onChange={(e)=>handleNestedChange("limits","customDomain", e.target.checked)} />
+                  <span className="form-check-label">Allow Custom Domain</span>
+                </label>
+                <label className="form-check form-check-custom">
+                  <input type="checkbox" className="form-check-input me-2" checked={form.limits.removeWatermark} onChange={(e)=>handleNestedChange("limits","removeWatermark", e.target.checked)} />
+                  <span className="form-check-label">Remove Watermark</span>
+                </label>
+                <label className="form-check form-check-custom">
+                  <input type="checkbox" className="form-check-input me-2" checked={form.limits.analytics} onChange={(e)=>handleNestedChange("limits","analytics", e.target.checked)} />
+                  <span className="form-check-label">Analytics</span>
+                </label>
+                <label className="form-check form-check-custom">
+                  <input type="checkbox" className="form-check-input me-2" checked={form.limits.priority_support} onChange={(e)=>handleNestedChange("limits","priority_support", e.target.checked)} />
+                  <span className="form-check-label">Priority Support</span>
+                </label>
               </div>
             </div>
           </div>
 
-          {/* Metadata */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Display Settings</h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Color</label>
-                <input
-                  type="color"
-                  value={form.metadata.color}
-                  onChange={(e) => handleNestedChange('metadata', 'color', e.target.value)}
-                  className="mt-1 block w-full h-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Icon</label>
-                <input
-                  type="text"
-                  value={form.metadata.icon}
-                  onChange={(e) => handleNestedChange('metadata', 'icon', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="📦"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Badge Text</label>
-                <input
-                  type="text"
-                  value={form.metadata.badge || ''}
-                  onChange={(e) => handleNestedChange('metadata', 'badge', e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Most Popular"
-                />
+          {/* Display & Status */}
+          <div className="card">
+            <div className="card-header border-0">
+              <h3 className="card-title fw-bold text-gray-800">Display & Status</h3>
+            </div>
+            <div className="card-body pt-0">
+              <div className="row g-6">
+                <div className="col-sm-4">
+                  <label className="form-label">Color</label>
+                  <input type="color" className="form-control form-control-color" value={form.metadata.color} onChange={(e)=>handleNestedChange("metadata","color", e.target.value)} />
+                </div>
+                <div className="col-sm-4">
+                  <label className="form-label">Icon</label>
+                  <input className="form-control" value={form.metadata.icon} onChange={(e)=>handleNestedChange("metadata","icon", e.target.value)} placeholder="📦" />
+                </div>
+                <div className="col-sm-4">
+                  <label className="form-label">Badge</label>
+                  <input className="form-control" value={form.metadata.badge} onChange={(e)=>handleNestedChange("metadata","badge", e.target.value)} placeholder="Most Popular" />
+                </div>
+                <div className="col-12 d-flex flex-wrap gap-6 mt-2">
+                  <label className="form-check form-check-custom form-check-solid">
+                    <input type="checkbox" className="form-check-input" checked={form.isActive} onChange={(e)=>handleChange("isActive", e.target.checked)} />
+                    <span className="form-check-label ms-2">Active</span>
+                  </label>
+                  <label className="form-check form-check-custom form-check-solid">
+                    <input type="checkbox" className="form-check-input" checked={form.isPopular} onChange={(e)=>handleChange("isPopular", e.target.checked)} />
+                    <span className="form-check-label ms-2">Popular</span>
+                  </label>
+                  <label className="form-check form-check-custom form-check-solid">
+                    <input type="checkbox" className="form-check-input" checked={form.isFeatured} onChange={(e)=>handleChange("isFeatured", e.target.checked)} />
+                    <span className="form-check-label ms-2">Featured</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Status */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Status</h3>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(e) => handleChange('isActive', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Active</label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.isPopular}
-                  onChange={(e) => handleChange('isPopular', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Popular</label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={form.isFeatured}
-                  onChange={(e) => handleChange('isFeatured', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label className="ml-2 text-sm text-gray-700">Featured</label>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? 'Creating...' : 'Create Package'}
+          {/* Submit */}
+          <div className="d-flex justify-content-end">
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? (<><span className="spinner-border spinner-border-sm me-2" />Saving…</>) : "Create Package"}
             </button>
           </div>
         </form>
       </div>
-    </AdminLayoutJWT>
+    </AdminLayout>
   );
 }

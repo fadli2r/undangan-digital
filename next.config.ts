@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
@@ -15,19 +15,23 @@ const nextConfig: NextConfig = {
       'logos-world.net',
       'seeklogo.com',
       'www.google.com',
-      'maps.googleapis.com'
+      'maps.googleapis.com',
     ],
     remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
+    ],
+  },
+
+  async rewrites() {
+    return [
       {
-        protocol: 'https',
-        hostname: '**'
+        source:
+          '/:slug((?!api|_next|static|public|assets|dashboard|login|support-center|paket|edit-undangan|buat-undangan|onboarding|admin|orders|scanner).*)',
+        destination: '/undangan/:slug',
       },
-      {
-        protocol: 'http',
-        hostname: '**'
-      }
-    ]
-  }
+    ];
+  },
 };
 
 export default nextConfig;

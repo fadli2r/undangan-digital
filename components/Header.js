@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -22,7 +24,7 @@ export default function Header() {
             <Link href="/katalog" className="text-gray-700 hover:text-blue-600 transition-colors">
               Katalog Template
             </Link>
-            <Link href="/paket" className="text-gray-700 hover:text-blue-600 transition-colors">
+            <Link href="/produk" className="text-gray-700 hover:text-blue-600 transition-colors">
               Paket & Harga
             </Link>
             <Link href="/tentang" className="text-gray-700 hover:text-blue-600 transition-colors">

@@ -1,15 +1,46 @@
 // pages/admin/settings/index.js
 import { useEffect, useState } from 'react';
-import AdminLayoutJWT from '../../../components/layouts/AdminLayoutJWT';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
-    general: { siteName: '', siteDescription: '', contactEmail: '', supportPhone: '', whatsappNumber: '' },
-    features: { allowRegistration: true, requireEmailVerification: true, enablePaymentGateway: true, enableSocialLogin: true },
-    limits: { maxInvitationsPerUser: 5, maxGuestsPerInvitation: 500, maxPhotosPerGallery: 20 },
-    payment: { xenditApiKey: '', xenditWebhookToken: '', enableSandbox: true },
-    email: { smtpHost: '', smtpPort: 587, smtpUser: '', smtpPassword: '', fromEmail: '', fromName: '' },
-    social: { facebookUrl: '', instagramUrl: '', twitterUrl: '', youtubeUrl: '' },
+    general: {
+      siteName: '',
+      siteDescription: '',
+      contactEmail: '',
+      supportPhone: '',
+      whatsappNumber: '',
+    },
+    features: {
+      allowRegistration: true,
+      requireEmailVerification: true,
+      enablePaymentGateway: true,
+      enableSocialLogin: true,
+    },
+    limits: {
+      maxInvitationsPerUser: 5,
+      maxGuestsPerInvitation: 500,
+      maxPhotosPerGallery: 20,
+    },
+    payment: {
+      xenditApiKey: '',
+      xenditWebhookToken: '',
+      enableSandbox: true,
+    },
+    email: {
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPassword: '',
+      fromEmail: '',
+      fromName: '',
+    },
+    social: {
+      facebookUrl: '',
+      instagramUrl: '',
+      twitterUrl: '',
+      youtubeUrl: '',
+    },
   });
 
   const [activeTab, setActiveTab] = useState('general');
@@ -21,54 +52,81 @@ export default function AdminSettings() {
   // ---------- Data Fetch ----------
   useEffect(() => {
     fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchSettings() {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      if (!token) throw new Error('No authentication token found');
+      setError(null);
 
-      const res = await fetch('/api/admin/settings/index-jwt', {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      const res = await fetch('/api/admin/settings', {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       });
+
+      // Redirect jika tidak authorized
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') window.location.replace('/admin/login');
+        return;
+      }
+
       if (!res.ok) throw new Error('Failed to fetch settings');
 
       const data = await res.json();
-      if (data?.settings) setSettings(data.settings);
-      setError(null);
+      if (data?.settings) setSettings((prev) => normalizeSettings(prev, data.settings));
     } catch (e) {
-      setError(e.message || 'Failed to fetch settings');
+      setError(e?.message || 'Failed to fetch settings');
     } finally {
       setLoading(false);
     }
+  }
+
+  // Normalisasi aman agar field yang kosong tetap ada
+  function normalizeSettings(prev, incoming) {
+    return {
+      general: { ...prev.general, ...(incoming.general || {}) },
+      features: { ...prev.features, ...(incoming.features || {}) },
+      limits: { ...prev.limits, ...(incoming.limits || {}) },
+      payment: { ...prev.payment, ...(incoming.payment || {}) },
+      email: { ...prev.email, ...(incoming.email || {}) },
+      social: { ...prev.social, ...(incoming.social || {}) },
+    };
   }
 
   async function handleSave() {
     try {
       setSaving(true);
       setError(null);
-      const token = localStorage.getItem('adminToken');
-      if (!token) throw new Error('No authentication token found');
 
-      const res = await fetch('/api/admin/settings/index-jwt', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings }),
       });
+
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') window.location.replace('/admin/login');
+        return;
+      }
+
       if (!res.ok) throw new Error('Failed to save settings');
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2500);
     } catch (e) {
-      setError(e.message || 'Failed to save settings');
+      setError(e?.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   }
 
   function handleInput(section, field, value) {
-    setSettings((prev) => ({ ...prev, [section]: { ...prev[section], [field]: value } }));
+    setSettings((prev) => ({
+      ...prev,
+      [section]: { ...prev[section], [field]: value },
+    }));
   }
 
   // ---------- UI Helpers ----------
@@ -76,11 +134,14 @@ export default function AdminSettings() {
     <div
       role="button"
       onClick={() => setActiveTab(id)}
-      className={`d-flex flex-stack py-4 px-4 rounded border mb-3 ${activeTab === id ? 'bg-light-primary border-primary' : 'bg-body'}`}
+      className={`d-flex flex-stack py-4 px-4 rounded border mb-3 ${
+        activeTab === id ? 'bg-light-primary border-primary' : 'bg-body'
+      }`}
     >
       <div className="d-flex align-items-center">
         <i className={`ki-duotone ${icon} fs-2 text-primary me-3`}>
-          <span className="path1"></span><span className="path2"></span>
+          <span className="path1"></span>
+          <span className="path2"></span>
         </i>
         <div className="d-flex flex-column">
           <span className="fw-bold text-gray-900">{title}</span>
@@ -98,18 +159,30 @@ export default function AdminSettings() {
         <div className="text-muted">Kelola konfigurasi platform dan preferensi sistem.</div>
       </div>
       <div className="d-flex gap-3">
-        <button type="button" className="btn btn-light" onClick={fetchSettings} disabled={loading || saving}>
+        <button
+          type="button"
+          className="btn btn-light"
+          onClick={fetchSettings}
+          disabled={loading || saving}
+        >
           Reset
         </button>
         <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
           {saving ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
               Saving...
             </>
           ) : (
             <>
-              <i className="ki-duotone ki-check fs-2 me-2"><span className="path1"></span><span className="path2"></span></i>
+              <i className="ki-duotone ki-check fs-2 me-2">
+                <span className="path1"></span>
+                <span className="path2"></span>
+              </i>
               Save Changes
             </>
           )}
@@ -121,17 +194,18 @@ export default function AdminSettings() {
   // ---------- Loading ----------
   if (loading) {
     return (
-      <AdminLayoutJWT>
+      <AdminLayout>
         <div className="d-flex align-items-center justify-content-center py-20">
-          <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
         </div>
-      </AdminLayoutJWT>
+      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayoutJWT>
-      <HeaderBar />
+    <AdminLayout>
 
       {/* Alerts */}
       {success && (
@@ -524,6 +598,6 @@ export default function AdminSettings() {
           </div>
         </div>
       </div>
-    </AdminLayoutJWT>
+    </AdminLayout>
   );
 }

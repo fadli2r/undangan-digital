@@ -1,10 +1,14 @@
+// pages/admin/coupons/index.js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import Head from 'next/head';
-import AdminLayoutJWT from '../../../components/layouts/AdminLayoutJWT';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 export default function CouponsPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+
   const [loading, setLoading] = useState(true);
   const [coupons, setCoupons] = useState([]);
   const [stats, setStats] = useState(null);
@@ -12,50 +16,47 @@ export default function CouponsPage() {
     current: 1,
     pages: 1,
     total: 0,
-    limit: 10
+    limit: 10,
   });
 
   // Filters
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [type, setType] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  // Redirect non-admin
   useEffect(() => {
-    fetchCoupons();
-  }, [search, status, type, sortBy, sortOrder, pagination.current]);
+    if (status === 'unauthenticated') {
+      router.replace('/admin/login');
+    } else if (status === 'authenticated' && !session?.user?.isAdmin) {
+      router.replace('/');
+    }
+  }, [status, session, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.isAdmin) {
+      fetchCoupons();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, type, sortBy, sortOrder, pagination.current, status]);
 
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      
-      if (!token) {
-        router.push('/admin/login');
-        return;
-      }
-
       const queryParams = new URLSearchParams({
         page: pagination.current,
         limit: pagination.limit,
         search,
-        status,
+        status: statusFilter,
         type,
         sortBy,
-        sortOrder
+        sortOrder,
       });
 
-      const response = await fetch(`/api/admin/coupons/index-jwt?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch coupons');
-      }
+      const response = await fetch(`/api/admin/coupons?${queryParams}`);
+      if (!response.ok) throw new Error('Failed to fetch coupons');
 
       const data = await response.json();
       setCoupons(data.coupons);
@@ -69,18 +70,11 @@ export default function CouponsPage() {
   };
 
   const handleDelete = async (couponId) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus kupon ini?')) {
-      return;
-    }
+    if (!confirm('Apakah Anda yakin ingin menghapus kupon ini?')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
+      const response = await fetch(`/api/admin/coupons/${couponId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
       });
 
       if (!response.ok) {
@@ -88,7 +82,6 @@ export default function CouponsPage() {
         throw new Error(error.error || 'Failed to delete coupon');
       }
 
-      // Refresh coupons list
       fetchCoupons();
     } catch (error) {
       console.error('Error deleting coupon:', error);
@@ -102,26 +95,25 @@ export default function CouponsPage() {
       inactive: 'badge badge-light-danger',
       expired: 'badge badge-light-warning',
       scheduled: 'badge badge-light-info',
-      exhausted: 'badge badge-light-dark'
+      exhausted: 'badge badge-light-dark',
     };
 
     return (
-      <span className={badgeClasses[coupon.status]}>
-        {coupon.status.charAt(0).toUpperCase() + coupon.status.slice(1)}
+      <span className={badgeClasses[coupon.status] || 'badge badge-light'}>
+        {coupon.status?.charAt(0).toUpperCase() + coupon.status?.slice(1)}
       </span>
     );
   };
 
   return (
-    <AdminLayoutJWT>
+    <AdminLayout>
       <Head>
         <title>Manajemen Kupon - Digital Invitation</title>
       </Head>
 
       {/* Begin::Content */}
-      <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
         {/* Begin::Container */}
-        <div className="container-xxl" id="kt_content_container">
+
           {/* Begin::Row */}
           <div className="row g-5 g-xl-8">
             {/* Begin::Stats */}
@@ -455,10 +447,8 @@ export default function CouponsPage() {
             {/* End::Card body */}
           </div>
           {/* End::Card */}
-        </div>
         {/* End::Container */}
-      </div>
       {/* End::Content */}
-    </AdminLayoutJWT>
+    </AdminLayout>
   );
 }

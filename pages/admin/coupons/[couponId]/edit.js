@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import AdminLayoutJWT from '../../../../components/layouts/AdminLayoutJWT';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 function toLocalDateTimeValue(d) {
   if (!d) return '';
@@ -49,37 +49,44 @@ export default function EditCouponPage() {
   const valueNumber = useMemo(() => Number(formData.value || 0), [formData.value]);
 
   useEffect(() => {
-    if (couponId) {
-      (async () => {
-        try {
-          setLoading(true);
-          setError('');
-          await Promise.all([fetchCoupon(), fetchPackages()]);
-        } catch (e) {
-          setError(e?.message || 'Error load data');
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
+    if (!couponId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        setError('');
+        await Promise.all([fetchCoupon(), fetchPackages()]);
+      } catch (e) {
+        setError(e?.message || 'Error load data');
+      } finally {
+        setLoading(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponId]);
 
   async function fetchPackages() {
-    const token = localStorage.getItem('adminToken');
-    const res = await fetch('/api/admin/packages/index-jwt', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const res = await fetch('/api/admin/packages', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
     });
+    if (res.status === 401) {
+      router.replace('/admin/login');
+      return;
+    }
     if (!res.ok) throw new Error('Gagal mengambil daftar paket');
     const data = await res.json();
     setPackages(data.packages || []);
   }
 
   async function fetchCoupon() {
-    const token = localStorage.getItem('adminToken');
-    const res = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
     });
+    if (res.status === 401) {
+      router.replace('/admin/login');
+      return;
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || 'Gagal mengambil kupon');
 
@@ -171,12 +178,16 @@ export default function EditCouponPage() {
 
     try {
       setSaving(true);
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`/api/admin/coupons/${couponId}-jwt`, {
+      const res = await fetch(`/api/admin/coupons/${couponId}`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
+      if (res.status === 401) {
+        router.replace('/admin/login');
+        return;
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Gagal memperbarui kupon');
       setSuccess(true);
@@ -188,28 +199,29 @@ export default function EditCouponPage() {
     }
   }
 
+
   if (loading) {
     return (
-      <AdminLayoutJWT>
+      <AdminLayout>
         <div className="d-flex justify-content-center align-items-center py-20">
           <div className="spinner-border text-primary" role="status"><span className="visually-hidden">Loading...</span></div>
         </div>
-      </AdminLayoutJWT>
+      </AdminLayout>
     );
   }
 
   if (!coupon) {
     return (
-      <AdminLayoutJWT>
+      <AdminLayout>
         <div className="alert alert-danger">Kupon tidak ditemukan</div>
-      </AdminLayoutJWT>
+      </AdminLayout>
     );
   }
 
   const isPercentage = formData.type === 'percentage';
 
   return (
-    <AdminLayoutJWT>
+    <AdminLayout>
       <Head><title>Edit Kupon - Digital Invitation</title></Head>
 
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -530,6 +542,6 @@ export default function EditCouponPage() {
 
         </div>
       </div>
-    </AdminLayoutJWT>
+    </AdminLayout>
   );
 }

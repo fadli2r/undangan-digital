@@ -19,14 +19,8 @@
 
 /* Font Override - Global (Safe for icons) */
 body, html {
-  font-family: var(--font-family) !important;
-}
+  font-family: var(--font-family) !important;    height: 100vh;
 
-/* Preserve icon fonts */
-[class*="ki-"], [class*="path"], .ki-duotone, .ki-solid, .ki-outline,
-[class*="fa-"], [class*="fas"], [class*="far"], [class*="fab"], [class*="fal"],
-[class*="icon-"], [class*="glyphicon"], [class*="material-icons"] {
-  font-family: inherit !important;
 }
 
 /* Base styles */

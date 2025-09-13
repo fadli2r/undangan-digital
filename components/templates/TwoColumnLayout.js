@@ -1,4 +1,6 @@
 // components/TwoColumnLayout.js
+'use client';
+
 import React from 'react'
 
 export default function TwoColumnLayout({ 

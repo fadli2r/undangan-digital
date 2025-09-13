@@ -1,65 +1,50 @@
-import dbConnect from '../../../../lib/dbConnect';
-import Package from '../../../../models/Package';
-import adminAuth from '../../../../middleware/adminAuth';
+// pages/api/admin/packages/index.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]";
+import dbConnect from "../../../../lib/dbConnect";
+import Package from "../../../../models/Package";
 
 export default async function handler(req, res) {
   await dbConnect();
 
-  // Verify admin authentication
-  const authMiddleware = adminAuth();
-  
-  // Create a promise to handle middleware
-  const authResult = await new Promise((resolve, reject) => {
-    authMiddleware(req, res, (error) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(true);
-      }
-    });
-  }).catch(() => {
-    return res.status(401).json({ error: 'Unauthorized' });
-  });
-
-  if (!authResult) return;
+  const session = await getServerSession(req, res, authOptions);
+  if (!session || !session.user?.isAdmin) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
   const { method } = req;
 
   switch (method) {
-    case 'GET':
+    case "GET": {
       try {
-        const { search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
-        
-        // Build query
-        let query = {};
-        
+        const { search = "", status = undefined, sortBy = "createdAt", sortOrder = "desc" } =
+          req.query;
+
+        const query = {};
         if (search) {
           query.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { description: { $regex: search, $options: 'i' } }
+            { name: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
           ];
         }
-        
         if (status !== undefined) {
-          query.isActive = status === 'true';
+          query.isActive = String(status) === "true";
         }
 
-        // Build sort object
-        const sort = {};
-        sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
-        const packages = await Package.find(query)
-          .sort(sort)
-          .lean();
+        const packages = await Package.find(query).sort(sort).lean();
 
-        res.status(200).json({ packages });
+        return res.status(200).json({ packages });
       } catch (error) {
-        console.error('Error fetching packages:', error);
-        res.status(500).json({ error: 'Terjadi kesalahan saat mengambil data paket' });
+        console.error("Error fetching packages:", error);
+        return res
+          .status(500)
+          .json({ error: "Terjadi kesalahan saat mengambil data paket" });
       }
-      break;
+    }
 
-    case 'POST':
+    case "POST": {
       try {
         const {
           name,
@@ -73,32 +58,26 @@ export default async function handler(req, res) {
           isActive,
           isPopular,
           isFeatured,
-          sortOrder
+          sortOrder,
         } = req.body;
 
-        // Validate required fields
         if (!name || !description || !price || !duration) {
-          return res.status(400).json({
-            error: 'Nama, deskripsi, harga, dan durasi wajib diisi'
-          });
+          return res
+            .status(400)
+            .json({ error: "Nama, deskripsi, harga, dan durasi wajib diisi" });
         }
 
-        // Validate duration
-        if (!duration.value || !duration.unit) {
-          return res.status(400).json({
-            error: 'Durasi harus memiliki nilai dan unit'
-          });
+        if (!duration?.value || !duration?.unit) {
+          return res
+            .status(400)
+            .json({ error: "Durasi harus memiliki nilai dan unit" });
         }
 
-        // Validate price
         if (price <= 0) {
-          return res.status(400).json({
-            error: 'Harga harus lebih dari 0'
-          });
+          return res.status(400).json({ error: "Harga harus lebih dari 0" });
         }
 
-        // Create package
-        const newPackage = new Package({
+        const newPackage = await Package.create({
           name,
           description,
           price: parseFloat(price),
@@ -108,29 +87,28 @@ export default async function handler(req, res) {
           limits: limits || {},
           metadata: metadata || {},
           isActive: isActive !== false,
-          isPopular: isPopular || false,
-          isFeatured: isFeatured || false,
-          sortOrder: sortOrder || 0
+          isPopular: !!isPopular,
+          isFeatured: !!isFeatured,
+          sortOrder: sortOrder || 0,
         });
 
-        await newPackage.save();
-
-        res.status(201).json({
-          message: 'Paket berhasil dibuat',
-          package: newPackage
-        });
+        return res
+          .status(201)
+          .json({ message: "Paket berhasil dibuat", package: newPackage });
       } catch (error) {
-        console.error('Error creating package:', error);
-        if (error.name === 'ValidationError') {
-          const errors = Object.values(error.errors).map(err => err.message);
-          return res.status(400).json({ error: errors.join(', ') });
+        console.error("Error creating package:", error);
+        if (error.name === "ValidationError") {
+          const errors = Object.values(error.errors).map((e) => e.message);
+          return res.status(400).json({ error: errors.join(", ") });
         }
-        res.status(500).json({ error: 'Terjadi kesalahan saat membuat paket' });
+        return res
+          .status(500)
+          .json({ error: "Terjadi kesalahan saat membuat paket" });
       }
-      break;
+    }
 
     default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).json({ error: `Method ${method} tidak diizinkan` });
+      res.setHeader("Allow", ["GET", "POST"]);
+      return res.status(405).json({ error: `Method ${method} tidak diizinkan` });
   }
 }

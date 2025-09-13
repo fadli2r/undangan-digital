@@ -4,6 +4,30 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <script
+    dangerouslySetInnerHTML={{
+      __html: `
+        const defaultThemeMode = 'light';
+        let themeMode;
+
+        if (document.documentElement) {
+          if (localStorage.getItem('kt-theme')) {
+            themeMode = localStorage.getItem('kt-theme');
+          } else if (document.documentElement.hasAttribute('data-kt-theme-mode')) {
+            themeMode = document.documentElement.getAttribute('data-kt-theme-mode');
+          } else {
+            themeMode = defaultThemeMode;
+          }
+
+          if (themeMode === 'system') {
+            themeMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+
+          document.documentElement.classList.add(themeMode);
+        }
+      `,
+    }}
+  />
         {/* Meta tags */}
         <meta charSet="utf-8" />
         
@@ -23,49 +47,21 @@ export default function Document() {
         <link href="/font-override.css" rel="stylesheet" type="text/css" />
         
         {/* Font Override Styles - Safe for icons */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            body, html {
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
-            }
-            
-            /* Preserve icon fonts */
-            [class*="ki-"], [class*="path"], .ki-duotone, .ki-solid, .ki-outline,
-            [class*="fa-"], [class*="fas"], [class*="far"], [class*="fab"], [class*="fal"],
-            [class*="icon-"], [class*="glyphicon"], [class*="material-icons"] {
-              font-family: inherit !important;
-            }
-            
-            /* Apply Inter to specific elements only */
-            .btn:not([class*="ki-"]), .form-control, .form-select, 
-            .card:not([class*="ki-"]), .table:not([class*="ki-"]), 
-            .nav:not([class*="ki-"]), .navbar:not([class*="ki-"]), 
-            .dropdown-menu:not([class*="ki-"]) {
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
-            }
-            
-            h1:not([class*="ki-"]), h2:not([class*="ki-"]), h3:not([class*="ki-"]), 
-            h4:not([class*="ki-"]), h5:not([class*="ki-"]), h6:not([class*="ki-"]),
-            .fs-1:not([class*="ki-"]), .fs-2:not([class*="ki-"]), .fs-3:not([class*="ki-"]), 
-            .fs-4:not([class*="ki-"]), .fs-5:not([class*="ki-"]), .fs-6:not([class*="ki-"]), 
-            .fs-2hx:not([class*="ki-"]), .fs-3x:not([class*="ki-"]) {
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
-            }
-            
-            .fw-bold:not([class*="ki-"]), .fw-bolder:not([class*="ki-"]), 
-            .fw-semibold:not([class*="ki-"]) {
-              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
-            }
-          `
-        }} />
+       
       </Head>
-      <body id="kt_body" className="auth-bg" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif" }}>
+      <body id="kt_body" >
+        
         <Main />
         <NextScript />
         
         {/* Metronic JS */}
         <script src="/metronic/assets/plugins/global/plugins.bundle.js"></script>
         <script src="/metronic/assets/js/scripts.bundle.js"></script>
+
+        		<script src="/metronic/assets/js/widgets.bundle.js"></script>
+		<script src="/metronic/assets/js/custom/widgets.js"></script>
+		<script src="/metronic/assets/js/custom/apps/chat/chat.js"></script>
+		<script src="/metronic/assets/js/custom/utilities/modals/users-search.js"></script>
       </body>
     </Html>
   )

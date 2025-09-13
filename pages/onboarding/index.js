@@ -54,8 +54,6 @@ export default function OnboardingPaket() {
   return (
     <UserLayout>
       {/* Content */}
-      <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
-        <div className="container-xxl" id="kt_content_container">
 
           {/* Stepper Horizontal */}
           <OnboardingStepper current="package" />
@@ -179,8 +177,6 @@ export default function OnboardingPaket() {
             </div>
           </div>
           {/* /Pricing card */}
-        </div>
-      </div>
     </UserLayout>
   );
 }

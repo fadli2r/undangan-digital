@@ -106,24 +106,13 @@ export default function Dashboard() {
     }
   };
 
-  if (loading || status === "loading") {
-    return (
-      <UserLayout>
-        <div className="d-flex justify-content-center align-items-center min-h-300px">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
-        </div>
-      </UserLayout>
-    );
-  }
 
   return (
     <UserLayout>
       {/* Header Section */}
       <div className="d-flex flex-wrap flex-stack mb-6">
         <h3 className="fw-bold my-2">
-          Dashboard
+          
           <span className="fs-6 text-gray-400 fw-semibold ms-1">Selamat datang kembali!</span>
         </h3>
         <div className="d-flex my-2">
@@ -137,7 +126,7 @@ export default function Dashboard() {
               <span className="path6"></span>
             </i>
             <input 
-              className="form-control form-control-solid w-250px ps-13" 
+              className="form-control form-control-solid w-150px ps-13" 
               placeholder="Pilih tanggal" 
               type="text"
               defaultValue={new Date().toLocaleDateString('id-ID')}
@@ -149,80 +138,54 @@ export default function Dashboard() {
               <span className="path2"></span>
             </i>
             Buat Undangan Baru
-          </a>
+          </a> 
         </div>
       </div>
 
       {/* KPI Cards Row */}
-      <div className="row g-5 g-xl-10 mb-5 mb-xl-10">
-        <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-          <KPICard
-            title="Undangan Aktif"
-            value={stats.undanganAktif}
-            icon="ki-duotone ki-calendar"
-            backgroundColor="#F1416C"
-            subtitle={{
-              label: "Rata ucapan / undangan",
-              value: avgUcapanPerUndangan
-            }}
-          />
-        </div>
+<div className="row g-5 g-xl-10 mb-5 mb-xl-10">
+  <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
+    <KPICard
+      title="Undangan Aktif"
+      value={stats.undanganAktif}
+      icon="ki-calendar"
+      backgroundColor="#F1416C"
+      subtitle={{ label: "Rata ucapan / undangan", value: avgUcapanPerUndangan }}
+    />
+  </div>
 
-        <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-          <KPICard
-            title="Total Pengunjung"
-            value={stats.totalPengunjung}
-            icon="ki-duotone ki-eye"
-            backgroundColor="#7239EA"
-            trend={{
-              value: pengunjungDelta,
-              label: "vs minggu lalu"
-            }}
-          />
-        </div>
+  <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
+    <KPICard
+      title="Total Pengunjung"
+      value={stats.totalPengunjung}
+      icon="ki-eye"
+      backgroundColor="#7239EA"
+      trend={{ value: pengunjungDelta, label: "this week" }}
+    />
+  </div>
 
-        <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-          <KPICard
-            title="Total RSVP"
-            value={stats.totalRSVP}
-            icon="ki-duotone ki-check-circle"
-            backgroundColor="#17C653"
-            trend={{
-              value: rsvpDelta,
-              label: "vs minggu lalu"
-            }}
-            badge={
-              <>
-                <div className="d-flex justify-content-between">
-                  <span className="fs-6 text-white opacity-75">Conversion Rate</span>
-                  <span className="fs-6 fw-bolder text-white">{conversion}%</span>
-                </div>
-                <div className="progress mt-2" style={{ height: 6 }}>
-                  <div 
-                    className="progress-bar bg-white bg-opacity-25" 
-                    role="progressbar" 
-                    style={{ width: `${Math.min(conversion, 100)}%` }} 
-                  />
-                </div>
-              </>
-            }
-          />
-        </div>
+  <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
+    <KPICard
+      title="Total RSVP"
+      value={stats.totalRSVP}
+      icon="ki-check-circle"
+      backgroundColor="#17C653"
+      trend={{ value: rsvpDelta, label: "this week" }}
+      
+    />
+  </div>
 
-        <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-          <KPICard
-            title="Ucapan & Doa"
-            value={stats.totalUcapan}
-            icon="ki-duotone ki-message-text-2"
-            backgroundColor="#FFC700"
-            textColor="#1B1B29"
-            subtitle={{
-              label: "Ucapan hari ini",
-              value: "12"
-            }}
-          />
-        </div>
-      </div>
+  <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
+    <KPICard
+      title="Ucapan & Doa"
+      value={stats.totalUcapan}
+      icon="ki-message-text-2"
+      backgroundColor="#18C853"
+      subtitle={{ label: "Ucapan hari ini" }}
+    />
+  </div>
+</div>
+
         <div className="mb-5 col-xl-12">
 
       {/* Main Content Row */}                  <QuickActionsCard />

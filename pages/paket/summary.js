@@ -98,52 +98,48 @@ export default function PaketSummary() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryParams]);
 
-  const handlePayNow = async () => {
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
+ const handlePayNow = async () => {
+  setSubmitting(true);
+  setError("");
+  setSuccess("");
 
-    // Ambil identitas user
-    let email = session?.user?.email || "";
-    let name = session?.user?.name || "";
-
-    if (typeof window !== "undefined" && !email) {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      email = user.email || "";
-      name = user.name || "";
-    }
-
-    if (!email) {
-      setError("Silakan login terlebih dahulu");
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/payment/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paket: paketId,
-          email,
-          name,
-          promoCode: promo || undefined,
-          referralCode: referral || undefined,
-          amount: paket?.finalPrice,
-        }),
-      });
-
-      const data = await res.json();
-      if (data && data.invoice_url) {
-        window.location.href = data.invoice_url;
-      } else {
-        setError(data.message || "Gagal membuat invoice");
-      }
-    } catch (err) {
-      setError("Terjadi kesalahan sistem");
-    }
+  let email = session?.user?.email || "";
+  let name = session?.user?.name || "";
+  if (typeof window !== "undefined" && !email) {
+    const u = JSON.parse(localStorage.getItem("user") || "{}");
+    email = u.email || "";
+    name = u.name || "";
+  }
+  if (!email) {
+    setError("Silakan login terlebih dahulu");
     setSubmitting(false);
-  };
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/payment/create-invoice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        paket: paketId,    // biar server resolve Package
+        email,
+        name,
+        // minta server redirect ke /buat-undangan?orderId=...
+        successPath: "/buat-undangan"
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.invoice_url) {
+      window.location.href = data.invoice_url;
+    } else {
+      setError(data.message || "Gagal membuat invoice");
+    }
+  } catch (err) {
+    setError("Terjadi kesalahan sistem");
+  }
+  setSubmitting(false);
+};
 
   // Loading state
   if (status === "loading" || loading) {

@@ -7,6 +7,7 @@ import { showAlert, showToast } from "@/utils/sweetAlert";
 export default function Mempelai() {
   const router = useRouter();
   const { slug } = router.query;
+const [error, setError] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [undangan, setUndangan] = useState(null);
