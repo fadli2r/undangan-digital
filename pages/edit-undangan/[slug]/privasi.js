@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import Link from "next/link";
 
 export default function PrivacySettings() {
   const router = useRouter();
@@ -88,10 +89,15 @@ export default function PrivacySettings() {
     <UserLayout>
       <BackButton />
       <div className="card">
-        <div className="card-header">
+        <div className="card-header d-flex justify-content-between align-items-center">
           <div className="card-title">
             <h2 className="fw-bold">Pengaturan Privasi</h2>
           </div>
+          {slug && (
+            <Link href={`/edit-undangan/${slug}/einvitation`} className="btn btn-sm btn-light-primary">
+              ✨ Edit E-Invitation
+            </Link>
+          )}
         </div>
         <div className="card-body">
           <div className="mb-8">

@@ -1,83 +1,122 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+// ----- REPLACE komponen GiftConfirmationList lama kamu dengan ini -----
 
-// --- KOMONEN DAFTAR GIFT CONFIRMATION ---
 function GiftConfirmationList({ slug }) {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+
+  const fmtIDR = (n) => `Rp${Number(n || 0).toLocaleString("id-ID")}`;
+  const fmtDate = (d) =>
+    d ? new Date(d).toLocaleString("id-ID", { hour12: false }) : "-";
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
-    fetch(`/api/invitation/gift-list?slug=${slug}`)
-      .then(res => res.json())
-      .then(data => {
-        setList(data.list || []);
-        setLoading(false);
-      });
+    let aborted = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/invitation/gift-list?slug=${slug}`, { cache: "no-store" });
+        const data = await res.json();
+        if (!aborted) setList(Array.isArray(data.list) ? data.list : []);
+      } catch {
+        if (!aborted) setList([]);
+      } finally {
+        if (!aborted) setLoading(false);
+      }
+    })();
+    return () => { aborted = true; };
   }, [slug]);
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center py-5">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return list;
+    return list.filter((g) =>
+      [g?.nama, g?.bank, g?.pesan].filter(Boolean).some((v) => String(v).toLowerCase().includes(term))
     );
-  }
-
-  if (!list.length) {
-    return (
-      <div className="text-center py-10">
-        <i className="ki-duotone ki-gift fs-3x text-muted mb-3">
-          <span className="path1"></span>
-          <span className="path2"></span>
-          <span className="path3"></span>
-        </i>
-        <div className="text-muted fs-6">Belum ada konfirmasi gift masuk</div>
-      </div>
-    );
-  }
+  }, [q, list]);
 
   return (
     <div className="card">
+      {/* begin::Card header */}
       <div className="card-header">
         <div className="card-title">
           <h3 className="fw-bold">Daftar Gift Confirmation</h3>
         </div>
-      </div>
-      <div className="card-body">
-        <div className="table-responsive">
-          <table className="table table-row-dashed table-row-gray-300 gy-7">
-            <thead>
-              <tr className="fw-bold fs-6 text-gray-800">
-                <th>Nama</th>
-                <th>Metode</th>
-                <th>Nominal</th>
-                <th>Pesan</th>
-                <th>Waktu</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((gift, idx) => (
-                <tr key={idx}>
-                  <td className="fw-bold">{gift.nama}</td>
-                  <td>{gift.bank}</td>
-                  <td>Rp{Number(gift.nominal).toLocaleString()}</td>
-                  <td>{gift.pesan || "-"}</td>
-                  <td>{new Date(gift.waktu).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* begin::Toolbar (Search) */}
+        <div className="card-toolbar">
+          <div className="d-flex align-items-center position-relative my-1">
+            <i className="ki-duotone ki-magnifier fs-3 position-absolute ms-5">
+              <span className="path1"></span>
+              <span className="path2"></span>
+            </i>
+            <input
+              type="text"
+              className="form-control form-control-solid w-250px ps-13"
+              placeholder="Cari nama/bank/pesan..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
+        {/* end::Toolbar */}
       </div>
+      {/* end::Card header */}
+
+      {/* begin::Card body */}
+      <div className="card-body pt-0">
+        {loading ? (
+          <div className="d-flex justify-content-center align-items-center py-10">
+            <div className="spinner-border text-primary" role="status" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-14">
+            <i className="ki-duotone ki-gift fs-3x text-muted mb-3">
+              <span className="path1" />
+              <span className="path2" />
+              <span className="path3" />
+            </i>
+            <div className="text-muted fs-6">
+              {q ? "Tidak ada hasil untuk pencarian." : "Belum ada konfirmasi gift masuk"}
+            </div>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table align-middle table-row-dashed fw-semibold fs-6 gy-5">
+              <thead>
+                <tr className="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+                  <th>Nama</th>
+                  <th>Metode</th>
+                  <th>Nominal</th>
+                  <th>Pesan</th>
+                  <th>Waktu</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700">
+                {filtered.map((g, idx) => (
+                  <tr key={idx}>
+                    <td className="fw-bold">{g?.nama || "-"}</td>
+                    <td>{g?.bank || g?.metode || "-"}</td>
+                    <td>{fmtIDR(g?.nominal)}</td>
+                    <td className="text-break">{g?.pesan || "-"}</td>
+                    <td>{fmtDate(g?.waktu)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      {/* end::Card body */}
     </div>
   );
 }
+export { GiftConfirmationList };
+
 
 export default function Gift() {
   const router = useRouter();
@@ -245,234 +284,287 @@ export default function Gift() {
             {gift.enabled && (
               <>
                 {/* Bank Accounts */}
-                <div className="mb-8">
-                  <div className="d-flex justify-content-between align-items-center mb-5">
-                    <h3 className="fw-bold">Rekening Bank</h3>
-                    <button
-                      type="button"
-                      onClick={addBankAccount}
-                      className="btn btn-light-primary btn-sm"
-                    >
-                      <i className="ki-duotone ki-plus fs-2">
-                        <span className="path1"></span>
-                        <span className="path2"></span>
-                      </i>
-                      Tambah Rekening
-                    </button>
-                  </div>
+{/* Rekening Bank */}
+<div className="card card-flush mb-8">
+  <div className="card-header d-flex justify-content-between align-items-center">
+    <h3 className="fw-bold mb-0">Rekening Bank</h3>
+    <button
+      type="button"
+      onClick={addBankAccount}
+      className="btn btn-sm btn-light-primary"
+    >
+      <i className="ki-duotone ki-plus fs-2 me-1">
+        <span className="path1"></span>
+        <span className="path2"></span>
+      </i>
+      Tambah Rekening
+    </button>
+  </div>
 
-                  {gift.bank_accounts.length === 0 && (
-                    <div className="text-center py-10">
-                      <i className="ki-duotone ki-bank fs-3x text-muted mb-3">
-                        <span className="path1"></span>
-                        <span className="path2"></span>
-                      </i>
-                      <div className="text-muted fs-6">Belum ada rekening bank</div>
-                    </div>
-                  )}
+  <div className="card-body">
+    {gift.bank_accounts.length === 0 && (
+      <div className="text-center py-10">
+        <i className="ki-duotone ki-bank fs-3x text-muted mb-3">
+          <span className="path1"></span>
+          <span className="path2"></span>
+        </i>
+        <div className="text-muted fs-6">Belum ada rekening bank</div>
+      </div>
+    )}
 
-                  {gift.bank_accounts.map((acc, i) => (
-                    <div key={i} className="card card-flush shadow-sm mb-5">
-                      <div className="card-body">
-                        <div className="mb-5">
-                          <label className="form-label required">Nama Bank</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Contoh: BCA, Mandiri, BNI"
-                            value={acc.bank}
-                            onChange={e => updateBankAccount(i, "bank", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label required">Nomor Rekening</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Masukkan nomor rekening"
-                            value={acc.nomor}
-                            onChange={e => updateBankAccount(i, "nomor", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label required">Atas Nama</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Nama pemilik rekening"
-                            value={acc.atas_nama}
-                            onChange={e => updateBankAccount(i, "atas_nama", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label">URL Logo (opsional)</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="URL logo bank"
-                            value={acc.logo}
-                            onChange={e => updateBankAccount(i, "logo", e.target.value)}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeBankAccount(i)}
-                          className="btn btn-light-danger"
-                        >
-                          <i className="ki-duotone ki-trash fs-2">
-                            <span className="path1"></span>
-                            <span className="path2"></span>
-                            <span className="path3"></span>
-                            <span className="path4"></span>
-                            <span className="path5"></span>
-                          </i>
-                          Hapus Rekening
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    {gift.bank_accounts.map((acc, i) => (
+      <div key={i} className="border rounded p-5 mb-5 border-dashed">
+        <div className="row">
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Nama Bank</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Contoh: BCA, Mandiri, BNI"
+              value={acc.bank}
+              onChange={e => updateBankAccount(i, "bank", e.target.value)}
+              required
+            />
+          </div>
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Nomor Rekening</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Masukkan nomor rekening"
+              value={acc.nomor}
+              onChange={e => updateBankAccount(i, "nomor", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Atas Nama</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Nama pemilik rekening"
+              value={acc.atas_nama}
+              onChange={e => updateBankAccount(i, "atas_nama", e.target.value)}
+              required
+            />
+          </div>
+          <div className="col-md-6 mb-5">
+            <label className="form-label">URL Logo (opsional)</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="URL logo bank"
+              value={acc.logo}
+              onChange={e => updateBankAccount(i, "logo", e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="text-end">
+          <button
+            type="button"
+            onClick={() => removeBankAccount(i)}
+            className="btn btn-light-danger btn-sm"
+          >
+            <i className="ki-duotone ki-trash fs-3 me-1">
+              <span className="path1"></span>
+              <span className="path2"></span>
+            </i>
+            Hapus Rekening
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
 
-                {/* E-Wallets */}
-                <div className="mb-8">
-                  <div className="d-flex justify-content-between align-items-center mb-5">
-                    <h3 className="fw-bold">E-Wallet</h3>
-                    <button
-                      type="button"
-                      onClick={addEWallet}
-                      className="btn btn-light-primary btn-sm"
-                    >
-                      <i className="ki-duotone ki-plus fs-2">
-                        <span className="path1"></span>
-                        <span className="path2"></span>
-                      </i>
-                      Tambah E-Wallet
-                    </button>
-                  </div>
+{/* E-Wallet */}
+<div className="card card-flush mb-8">
+  <div className="card-header d-flex justify-content-between align-items-center">
+    <h3 className="fw-bold mb-0">E-Wallet</h3>
+    <button
+      type="button"
+      onClick={addEWallet}
+      className="btn btn-sm btn-light-primary"
+    >
+      <i className="ki-duotone ki-plus fs-2 me-1">
+        <span className="path1"></span>
+        <span className="path2"></span>
+      </i>
+      Tambah E-Wallet
+    </button>
+  </div>
 
-                  {gift.e_wallets.length === 0 && (
-                    <div className="text-center py-10">
-                      <i className="ki-duotone ki-wallet fs-3x text-muted mb-3">
-                        <span className="path1"></span>
-                        <span className="path2"></span>
-                      </i>
-                      <div className="text-muted fs-6">Belum ada e-wallet</div>
-                    </div>
-                  )}
+  <div className="card-body">
+    {gift.e_wallets.length === 0 && (
+      <div className="text-center py-10">
+        <i className="ki-duotone ki-wallet fs-3x text-muted mb-3">
+          <span className="path1"></span>
+          <span className="path2"></span>
+        </i>
+        <div className="text-muted fs-6">Belum ada e-wallet</div>
+      </div>
+    )}
 
-                  {gift.e_wallets.map((ew, i) => (
-                    <div key={i} className="card card-flush shadow-sm mb-5">
-                      <div className="card-body">
-                        <div className="mb-5">
-                          <label className="form-label required">Nama E-Wallet</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Contoh: GoPay, OVO, DANA"
-                            value={ew.nama}
-                            onChange={e => updateEWallet(i, "nama", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label required">Nomor/Username</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Nomor HP atau username"
-                            value={ew.nomor}
-                            onChange={e => updateEWallet(i, "nomor", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label">URL QR Code (opsional)</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="URL QR Code e-wallet"
-                            value={ew.qr_code}
-                            onChange={e => updateEWallet(i, "qr_code", e.target.value)}
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label">URL Logo (opsional)</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="URL logo e-wallet"
-                            value={ew.logo}
-                            onChange={e => updateEWallet(i, "logo", e.target.value)}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeEWallet(i)}
-                          className="btn btn-light-danger"
-                        >
-                          <i className="ki-duotone ki-trash fs-2">
-                            <span className="path1"></span>
-                            <span className="path2"></span>
-                            <span className="path3"></span>
-                            <span className="path4"></span>
-                            <span className="path5"></span>
-                          </i>
-                          Hapus E-Wallet
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+    {gift.e_wallets.map((ew, i) => (
+      <div key={i} className="border rounded p-5 mb-5 border-dashed">
+        <div className="row">
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Nama E-Wallet</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Contoh: GoPay, OVO, DANA"
+              value={ew.nama}
+              onChange={e => updateEWallet(i, "nama", e.target.value)}
+              required
+            />
+          </div>
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Nomor/Username</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Nomor HP atau username"
+              value={ew.nomor}
+              onChange={e => updateEWallet(i, "nomor", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-md-6 mb-5">
+            <label className="form-label">URL QR Code (opsional)</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="URL QR Code e-wallet"
+              value={ew.qr_code}
+              onChange={e => updateEWallet(i, "qr_code", e.target.value)}
+            />
+          </div>
+          <div className="col-md-6 mb-5">
+            <label className="form-label">URL Logo (opsional)</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="URL logo e-wallet"
+              value={ew.logo}
+              onChange={e => updateEWallet(i, "logo", e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="text-end">
+          <button
+            type="button"
+            onClick={() => removeEWallet(i)}
+            className="btn btn-light-danger btn-sm"
+          >
+            <i className="ki-duotone ki-trash fs-3 me-1">
+              <span className="path1"></span>
+              <span className="path2"></span>
+            </i>
+            Hapus E-Wallet
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
 
                 {/* QRIS */}
-                <div className="mb-8">
-                  <h3 className="fw-bold mb-5">QRIS</h3>
-                  <div className="mb-5">
-                    <label className="form-check form-check-custom form-check-solid">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={gift.qris.enabled}
-                        onChange={e => updateQRIS("enabled", e.target.checked)}
-                      />
-                      <span className="form-check-label fw-semibold">
-                        Aktifkan QRIS
-                      </span>
-                    </label>
-                  </div>
+<div className="card card-flush mb-8">
+  {/* begin::Card header */}
+  <div className="card-header align-items-center">
+    <div className="card-title">
+      <h3 className="fw-bold mb-0">QRIS</h3>
+    </div>
 
-                  {gift.qris.enabled && (
-                    <div className="card card-flush shadow-sm">
-                      <div className="card-body">
-                        <div className="mb-5">
-                          <label className="form-label required">URL Gambar QRIS</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="URL gambar QRIS"
-                            value={gift.qris.image_url}
-                            onChange={e => updateQRIS("image_url", e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="mb-5">
-                          <label className="form-label required">Nama Merchant</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Nama merchant QRIS"
-                            value={gift.qris.merchant_name}
-                            onChange={e => updateQRIS("merchant_name", e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+    {/* Toggle enable */}
+    <div className="card-toolbar">
+      <label className="form-check form-switch form-check-custom form-check-solid">
+        <input
+          className="form-check-input h-20px w-30px"
+          type="checkbox"
+          checked={gift.qris.enabled}
+          onChange={(e) => updateQRIS("enabled", e.target.checked)}
+        />
+        <span className="form-check-label ms-3 fw-semibold">Aktifkan QRIS</span>
+      </label>
+    </div>
+  </div>
+  {/* end::Card header */}
+
+  {/* begin::Card body */}
+  <div className="card-body pt-0">
+    {!gift.qris.enabled && (
+      <div className="text-center py-10">
+        <i className="ki-duotone ki-qr-code fs-3x text-muted mb-3">
+          <span className="path1"></span>
+          <span className="path2"></span>
+        </i>
+        <div className="text-muted fs-6">QRIS belum diaktifkan</div>
+      </div>
+    )}
+
+    {gift.qris.enabled && (
+      <div className="border rounded p-5 border-dashed">
+        <div className="row">
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">URL Gambar QRIS</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="https://…/qris.png"
+              value={gift.qris.image_url}
+              onChange={(e) => updateQRIS("image_url", e.target.value)}
+              required
+            />
+            <div className="form-text">Tempel tautan gambar QRIS berformat PNG/JPG.</div>
+          </div>
+
+          <div className="col-md-6 mb-5">
+            <label className="form-label required">Nama Merchant</label>
+            <input
+              type="text"
+              className="form-control form-control-solid"
+              placeholder="Nama merchant QRIS"
+              value={gift.qris.merchant_name}
+              onChange={(e) => updateQRIS("merchant_name", e.target.value)}
+              required
+            />
+            <div className="form-text">Ditampilkan kepada tamu sebagai pemilik QRIS.</div>
+          </div>
+        </div>
+
+        {/* Preview */}
+        {gift.qris.image_url?.trim() && (
+          <div className="mt-5">
+            <label className="form-label">Pratinjau QRIS</label>
+            <div className="d-flex align-items-center gap-5">
+              <div className="border rounded p-3 bg-light d-inline-flex">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={gift.qris.image_url}
+                  alt="QRIS"
+                  className="rounded"
+                  style={{ width: 160, height: 160, objectFit: "contain" }}
+                />
+              </div>
+              <div className="text-muted">
+                Pastikan QR dapat dipindai dan terlihat jelas.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+  {/* end::Card body */}
+</div>
+
               </>
             )}
 

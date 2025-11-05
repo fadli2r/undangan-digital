@@ -94,9 +94,9 @@ export default function Contact() {
               <div className="mb-8">
                 <h3 className="text-lg font-semibold mb-4">Alamat Kantor</h3>
                 <p className="text-gray-600 mb-4">
-                  Jl. Contoh No.123
+                  Jl. Babadan Rukun 07/31A
                   <br />
-                  Jakarta Selatan, 12345
+                  Surabaya 60179
                   <br />
                   Indonesia
                 </p>
@@ -118,13 +118,13 @@ export default function Contact() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Telepon & WhatsApp</h3>
                   <a
-                    href="tel:+6281234567890"
+                    href="tel:+6281779900078"
                     className="text-blue-600 hover:text-blue-800 block mb-2"
                   >
                     +62 812-3456-7890
                   </a>
                   <a
-                    href="https://wa.me/6281234567890"
+                    href="https://wa.me/6281779900078"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center text-green-600 hover:text-green-800"
@@ -142,7 +142,7 @@ export default function Contact() {
                     href="mailto:info@undangandigital.com"
                     className="text-blue-600 hover:text-blue-800"
                   >
-                    info@undangandigital.com
+                    info@dreamslink.id
                   </a>
                 </div>
 

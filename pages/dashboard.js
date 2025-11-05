@@ -96,7 +96,7 @@ export default function Dashboard() {
   };
 
   const handleViewInvitation = (invitation) => {
-    window.open(`/undangan/${invitation.custom_slug || invitation.slug}`, '_blank');
+    window.open(`/${invitation.custom_slug || invitation.slug}`, '_blank');
   };
 
   const handleDeleteInvitation = (invitation) => {

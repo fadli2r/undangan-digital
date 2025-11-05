@@ -5,9 +5,9 @@ import Invitation from "../../models/Invitation";
 import { templateComponentMap } from "../../data/templates";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import OurStory from "../../components/templates/OurStory";
-import QRCodeGuest from "../../components/templates/QRCodeGuest";
-import AddToCalendar from "../../components/templates/AddToCalendar";
+import OurStory from "../../components/sections/OurStory";
+import QRCodeGuest from "../../components/sections/QRCodeGuest";
+import AddToCalendar from "../../components/sections/AddToCalendar";
 
 /** =========================
  * Helpers (client & server)

@@ -15,8 +15,8 @@ export default function Aside() {
       {/* Brand */}
       <div className="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
         <a href="/admin/dashboard">
-          <img alt="Logo" src="/metronic/media/logos/demo3.svg" className="h-20px logo theme-light-show" />
-          <img alt="Logo" src="/metronic/media/logos/demo3-dark.svg" className="h-20px logo theme-dark-show" />
+          <img alt="Logo" src="/images/dreamslink-b.png" className="h-20px logo theme-light-show" />
+          <img alt="Logo" src="/images/dreamslink-w.png" className="h-20px logo theme-dark-show" />
         </a>
       </div>
 

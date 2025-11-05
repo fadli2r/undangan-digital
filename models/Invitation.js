@@ -4,12 +4,15 @@ import mongoose from "mongoose";
 const RSVPItem = new mongoose.Schema(
   {
     nama: String,
-    status: String, // "Hadir", "Tidak Hadir", "Ragu-ragu"
-    jumlah: { type: Number, default: 1 },
-    waktu: { type: Date, default: Date.now },
+    status: { type: String, enum: ["akan_hadir", "tidak_hadir", "ragu", "hadir"], default: "akan_hadir" },
+    jumlah: { type: Number, default: 1 },       // jumlah yg diisi saat RSVP
+    jumlah_checkin: { type: Number, default: 0 }, // jumlah real checkin
+    waktu: { type: Date, default: Date.now },   // waktu RSVP
+    checkinAt: Date,                            // waktu checkin real
   },
   { _id: false }
 );
+
 
 const UcapanItem = new mongoose.Schema(
   {
@@ -171,25 +174,66 @@ const InvitationSchema = new mongoose.Schema({
   ucapan: [UcapanItem],
 
   // Tamu
-  tamu: [
+tamu: [
     {
       nama: String,
       email: String,
-      kode: String, // kode unik
+      kode: String, // kode unik/qr
+      kontak: String, // nomor telepon
+    kategori: { type: String, default: "" }, // ✅ pakai String (huruf besar)
+
+      // Sinkronisasi RSVP
+      status_rsvp: { type: String, enum: ["hadir", "tidak_hadir", "ragu", ""], default: "" },
+      jumlah_rsvp: { type: Number, default: 0 },
+      pesan_rsvp: { type: String, default: "" },
+      waktu_rsvp: { type: Date },
+
+      // Status check-in (opsional, hanya flag aja)
+      hadir_checkin: { type: Boolean, default: false },
+      waktu_checkin: { type: Date },
+
+      invited: { type: Boolean, default: true }, // ✅ true = dari undangan, false = manual
     },
   ],
+
+eInvitation: {
+    coverImage: { type: String, default: "/images/default-cover.jpg" },
+    font: { type: String, default: "Montserrat" },
+    title: String,
+    topText: String,
+    bottomText: String,
+    greeting: { type: String, default: "TO" },
+    messageText: String,
+    showEventName: { type: Boolean, default: true },
+    showEventTime: { type: Boolean, default: true },
+    showEventLocation: { type: Boolean, default: true },
+    showQRCode: { type: Boolean, default: true },
+    showLink: { type: Boolean, default: true },
+  },
 
   // Stats
   views: { type: Number, default: 0 },
   lastViewed: { type: Date },
 
   // Attendance
-  attendance: [
+attendance: [
     {
-      name: String,
-      timestamp: { type: Date, default: Date.now },
+          name: String,
+    kontak: String,
+    jumlah: { type: Number, default: 1 },
+    timestamp: { type: Date, default: Date.now },
+    photo: String,
+    invited: { type: Boolean, default: true }, // ✅ bedakan manual/undangan
+    manual_note: { type: String, default: "" }, // opsional
+    status: { type: String, default: "hadir" },
     },
   ],
+// Quota WhatsApp Blast
+whatsappQuota: {
+  limit: { type: Number, default: 0 }, // total batas blast
+  used: { type: Number, default: 0 },  // sudah terpakai
+  lastUpdated: { type: Date },         // opsional, untuk reset harian
+},
 
   // Timestamps manual
   createdAt: { type: Date, default: Date.now },

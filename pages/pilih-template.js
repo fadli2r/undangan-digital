@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "../components/layouts/UserLayout";
-import { templateList } from "../data/templates";
+import { defaultTemplateList as templateList } from "../data/templates";
 
 export default function PilihTemplate() {
   const { data: session, status } = useSession();

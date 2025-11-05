@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
-import { templateList } from '../data/templates';
+import { defaultTemplateList as templateList } from "../data/templates";
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import "../styles/globals.css";

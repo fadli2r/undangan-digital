@@ -174,18 +174,7 @@ export default function EditUndangan() {
               </p>
 
               {/* Filter */}
-              <div className="d-flex flex-wrap gap-2 mb-8">
-                <span className="text-gray-800 fw-bold fs-7 me-3 align-self-center">Filter Status:</span>
-                {statusOptions.map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilterStatus(status)}
-                    className={`btn btn-sm ${filterStatus === status ? 'btn-primary' : 'btn-light-primary'}`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
+             
             </div>
           </div>
 
@@ -284,6 +273,10 @@ export default function EditUndangan() {
   <i className="ki-duotone ki-trash fs-3">
     <span className="path1"></span>
     <span className="path2"></span>
+        <span className="path3"></span>
+        <span className="path4"></span>
+        <span className="path5"></span>
+
   </i>
 </button>
 

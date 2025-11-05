@@ -7,23 +7,23 @@ import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 
 // Ringan, boleh static import
-import TwoColumnLayout from './TwoColumnLayout';
+import TwoColumnLayout from '../sections/TwoColumnLayout';
 import PasswordProtection from '../PasswordProtection';
-import CountdownTimer from './CountdownTimer';
-import RSVPForm from './RSVPForm';
-import WeddingWishes from './WeddingWishes';
-import OurStory from './OurStory';
-import AddToCalendar from './AddToCalendar';
-import QRCodeGuest from './QRCodeGuest';
+import CountdownTimer from '../sections/CountdownTimer';
+import RSVPForm from '../sections/RSVPForm';
+import WeddingWishes from '../sections/WeddingWishes';
+import OurStory from '../sections/OurStory';
+import AddToCalendar from '../sections/AddToCalendar';
+import QRCodeGuest from '../sections/QRCodeGuest';
 
 // Berat / browser-only → dynamic import (code-splitting)
-const Gallery = dynamic(() => import('./Gallery'), {
+const Gallery = dynamic(() => import('../sections/Gallery'), {
   ssr: false,
   loading: () => <div className="w-full min-h-[200px]" />,
 });
-const LiveStreaming = dynamic(() => import('./LiveStreaming'), { ssr: false });
-const Maps = dynamic(() => import('./Maps'), { ssr: false });
-const MusicPlayer = dynamic(() => import('./MusicPlayer'), { ssr: false });
+const LiveStreaming = dynamic(() => import('../sections/LiveStreaming'), { ssr: false });
+const Maps = dynamic(() => import('../sections/Maps'), { ssr: false });
+const MusicPlayer = dynamic(() => import('../sections/MusicPlayer'), { ssr: false });
 
 // util aman
 const toDateSafe = (v) => {
@@ -36,6 +36,21 @@ const fmtTanggalID = (date) => date?.toLocaleDateString?.('id-ID', {
   year: 'numeric',
 });
 
+// helper: build URL undangan (dengan ?tamu=...)
+const buildGuestUrl = (slug, guestName) => {
+  try {
+    const base =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/${slug}`
+        : `/${slug}`;
+    if (!guestName) return base;
+    const params = new URLSearchParams({ tamu: guestName });
+    return `${base}?${params.toString()}`;
+  } catch {
+    return `/${slug}`;
+  }
+};
+
 export default function ModernTemplate({ data }) {
   // ===== Guard minimal =====
   const mempelai = data?.mempelai || {};
@@ -45,13 +60,29 @@ export default function ModernTemplate({ data }) {
   const [showHero, setShowHero] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(!data?.privacy?.isPasswordProtected);
 
+  // nama tamu dari query ?tamu=
+  const [guestName, setGuestName] = useState('');
+
+  // baca query param secara aman di client
+  useEffect(() => {
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const tamu = qs.get('tamu') || '';
+      setGuestName(tamu.trim());
+    } catch {
+      setGuestName('');
+    }
+  }, []);
+
   // Background hero fallback
-  const bgImageUrl = useMemo(() =>
-    data?.hero?.background
-    || data?.background_photo
-    || (Array.isArray(data?.galeri) && data.galeri[0])
-    || '/images/bg_couple.jpg'
-  , [data]);
+  const bgImageUrl = useMemo(
+    () =>
+      data?.hero?.background ||
+      data?.background_photo ||
+      (Array.isArray(data?.galeri) && data.galeri[0]) ||
+      '/images/bg_couple.jpg',
+    [data]
+  );
 
   // Password protection
   if (!isAuthenticated) {
@@ -95,16 +126,30 @@ export default function ModernTemplate({ data }) {
   const leftTitle = `${mempelai?.pria || ''} & ${mempelai?.wanita || ''}`;
   const tanggalUtama = toDateSafe(acaraUtama?.tanggal);
 
-  // Satu sumber QR code (pakai yang dikirim lewat data.components kalau ada; fallback ke QRCodeGuest lokal)
-  const QRView = data?.components?.QRCode
-    || (data?.slug && data?.tambahan?.guestName
-        ? <QRCodeGuest slug={data.slug} guestName={data.tambahan.guestName} />
-        : null);
+  // Personalized link untuk QR (kalau ada guestName), fallback ke link umum
+  const guestUrl = buildGuestUrl(data?.slug, guestName || data?.tambahan?.guestName || '');
+
+  // Satu sumber QR code (pakai QRCodeGuest dengan URL personal bila ada)
+  const QRView =
+    data?.slug ? (
+      <div className="mt-4 flex flex-col items-center gap-3">
+        {guestName && (
+          <p className="text-white/90 text-lg">Yth. <span className="font-semibold">{guestName}</span></p>
+        )}
+        <QRCodeGuest slug={data.slug} guestName={guestName} urlOverride={guestUrl} />
+      </div>
+    ) : null;
 
   return (
     <TwoColumnLayout leftBackgroundUrl={bgImageUrl} leftTitle={leftTitle}>
-      {/* Musik (optional) */}
-      {data?.tambahan?.music?.url && <MusicPlayer src={data.tambahan.music.url} autoPlay />}
+      {/* Musik (optional) → gunakan tambahan.musik */}
+      {data?.tambahan?.musik?.url && (
+        <MusicPlayer
+          src={data.tambahan.musik.url}
+          autoPlay={!!data.tambahan.musik.autoplay}
+          type={data.tambahan.musik.type}
+        />
+      )}
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <motion.section
@@ -126,6 +171,11 @@ export default function ModernTemplate({ data }) {
 
           <div className="mt-8">
             <h3 className="text-2xl text-white">Kepada Yth,</h3>
+            {guestName ? (
+              <p className="mt-2 text-white/90 text-lg font-semibold">{guestName}</p>
+            ) : (
+              <p className="mt-2 text-white/80">Bapak/Ibu/Saudara/i</p>
+            )}
             {QRView}
           </div>
 
@@ -346,7 +396,8 @@ export default function ModernTemplate({ data }) {
           <div className="w-full max-w-2xl mx-auto px-4">
             <h2 className="text-4xl font-playfair mb-8">Konfirmasi Kehadiran</h2>
             <p className="text-gray-600 mb-12">Mohon konfirmasi kehadiran Anda</p>
-            <RSVPForm slug={data.slug} />
+            {/* >>> kirim namaTamu agar tersinkron */}
+            <RSVPForm slug={data.slug} namaTamu={guestName || undefined} />
           </div>
         </motion.section>
       )}

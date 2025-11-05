@@ -5,21 +5,21 @@ export default function Footer() {
     <footer className="bg-gray-900 text-gray-300 py-12">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8" style={{ maxWidth: '1200px' }}>
         <div>
-          <img alt="Dreams Logo" src="/images/DreamsWhite.png" className="h-20 mb-4" />
+          <img alt="Dreams Logo" src="/images/dreamslink-w.png" className="h-10 mb-4" />
           <p className="text-gray-400 text-sm">
             Solusi undangan pernikahan digital yang mudah, cepat, dan elegan.
           </p>
-          <p className="text-gray-400 text-sm mt-4">Jl. Contoh No.123, Jakarta</p>
-          <p className="text-gray-400 text-sm">Email: info@undangandigital.com</p>
-          <p className="text-gray-400 text-sm">Telp: +62 812 3456 7890</p>
+          <p className="text-gray-400 text-sm mt-4">Surabaya, Indonesia</p>
+          <p className="text-gray-400 text-sm">Email: info@dreamslink.id</p>
+          <p className="text-gray-400 text-sm">Telp: +62 8177 9900 078</p>
         </div>
 
         <div>
           <h4 className="text-white font-semibold mb-4">Layanan</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/pilih-template" className="hover:text-white transition">Pilih Template</Link></li>
+            <li><Link href="/katalog" className="hover:text-white transition">Pilih Template</Link></li>
             <li><Link href="/buat-undangan" className="hover:text-white transition">Buat Undangan</Link></li>
-            <li><Link href="/paket" className="hover:text-white transition">Paket & Harga</Link></li>
+            <li><Link href="/produk" className="hover:text-white transition">Paket & Harga</Link></li>
             <li><Link href="/faq" className="hover:text-white transition">FAQ</Link></li>
           </ul>
         </div>

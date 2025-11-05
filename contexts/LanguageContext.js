@@ -1,8 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from 'react';
 import { getDefaultLanguage, translate } from '../utils/translations';
 
-const LanguageContext = createContext();
+// Default fallback context
+const LanguageContext = createContext(null);
 
+// Hook untuk mengakses context
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
@@ -11,36 +19,43 @@ export const useLanguage = () => {
   return context;
 };
 
+// Provider
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState('id');
 
   useEffect(() => {
-    // Set default language based on browser/device
-    const defaultLang = getDefaultLanguage();
-    setLanguage(defaultLang);
-    
-    // Save to localStorage for persistence
-    const savedLang = localStorage.getItem('preferred-language');
-    if (savedLang && (savedLang === 'id' || savedLang === 'en')) {
-      setLanguage(savedLang);
+    // ⛔ localStorage tidak tersedia saat SSR
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('preferred-language');
+      if (savedLang && (savedLang === 'id' || savedLang === 'en')) {
+        setLanguage(savedLang);
+      } else {
+        const defaultLang = getDefaultLanguage();
+        setLanguage(defaultLang);
+        localStorage.setItem('preferred-language', defaultLang);
+      }
     }
   }, []);
 
-  const changeLanguage = (newLanguage) => {
-    setLanguage(newLanguage);
-    localStorage.setItem('preferred-language', newLanguage);
+  const changeLanguage = (newLang) => {
+    if (newLang === 'id' || newLang === 'en') {
+      setLanguage(newLang);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('preferred-language', newLang);
+      }
+    }
   };
 
   const t = (key) => translate(key, language);
 
-  const value = {
+  const contextValue = useMemo(() => ({
     language,
     changeLanguage,
-    t
-  };
+    t,
+  }), [language]);
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );

@@ -12,7 +12,7 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <img alt="Dreams Logo" src="/images/DreamsLogo.png" className="h-20" />
+              <img alt="Dreams Logo" src="/images/dreamslink-b.png" className="h-10" />
             </Link>
           </div>
 
@@ -27,8 +27,8 @@ export default function Header() {
             <Link href="/produk" className="text-gray-700 hover:text-blue-600 transition-colors">
               Paket & Harga
             </Link>
-            <Link href="/tentang" className="text-gray-700 hover:text-blue-600 transition-colors">
-              Tentang Kami
+            <Link href="/portofolio" className="text-gray-700 hover:text-blue-600 transition-colors">
+              Portofolio
             </Link>
             <Link href="/kontak" className="text-gray-700 hover:text-blue-600 transition-colors">
               Kontak

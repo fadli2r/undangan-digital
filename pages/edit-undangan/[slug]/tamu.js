@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import Swal from "sweetalert2";
 
 export default function KelolaTamu() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function KelolaTamu() {
   const [loading, setLoading] = useState(true);
   const [undangan, setUndangan] = useState(null);
   const [tamuList, setTamuList] = useState([]);
-  const [form, setForm] = useState({ nama: "", kontak: "" });
+const [form, setForm] = useState({ nama: "", kontak: "", kategori: "" });
   const [editIdx, setEditIdx] = useState(-1); // -1: tambah, >=0: edit
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -39,6 +40,8 @@ export default function KelolaTamu() {
 
         const tamuWithStatus = (res.undangan?.tamu || []).map((tamu) => ({
           ...tamu,
+              kontak: tamu.kontak || "", // ✅ penting!
+
           hadir: attendanceMap.has(String(tamu.nama || "").toLowerCase()),
           waktu_hadir: attendanceMap.get(String(tamu.nama || "").toLowerCase()) || null,
         }));
@@ -81,7 +84,7 @@ async function loadXLSX() {
     }
 
     // strip field non-schema sebelum simpan
-    const payload = newList.map(({ nama, kontak }) => ({ nama, kontak }));
+const payload = newList.map(({ nama, kontak, kategori }) => ({ nama, kontak, kategori }));
 
     const res = await fetch("/api/invitation/update", {
       method: "POST",
@@ -92,8 +95,9 @@ async function loadXLSX() {
     setLoading(false);
     if (res.ok) {
       setTamuList(newList);
-      setForm({ nama: "", kontak: "" });
+      setForm({ nama: "", kontak: "", kategori: "" });
       setEditIdx(-1);
+
       setSuccess("Tamu berhasil disimpan!");
       setTimeout(() => setSuccess(""), 3000);
     } else {
@@ -103,7 +107,7 @@ async function loadXLSX() {
 
   // Edit tamu
   const handleEdit = (idx) => {
-    setForm({ nama: tamuList[idx].nama || "", kontak: tamuList[idx].kontak || "" });
+    setForm({ nama: tamuList[idx].nama || "", kontak: tamuList[idx].kontak || "",kategori: tamuList[idx].kategori || "" });
     setEditIdx(idx);
   };
 
@@ -121,174 +125,319 @@ async function loadXLSX() {
       body: JSON.stringify({ slug, field: { tamu: payload } }),
     });
     setTamuList(newList);
-    setForm({ nama: "", kontak: "" });
+    setForm({ nama: "", kontak: "",kategori: "" });
     setEditIdx(-1);
     setLoading(false);
   };
 
   // ---------- DOWNLOAD TEMPLATE ----------
-  async function downloadTemplateXLSX() {
-    try {
-const XLSX = await loadXLSX();
-      const rows = [
-        ["Nama", "Kontak"],
-        ["Budi Santoso", "081234567890"],
-        ["Sari Ayu", "sari@example.com"],
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Template Tamu");
-      XLSX.writeFile(wb, "template_tamu.xlsx");
-    } catch (e) {
-      // fallback CSV
-      const csv = "Nama,Kontak\nBudi Santoso,081234567890\nSari Ayu,sari@example.com\n";
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "template_tamu.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+async function downloadTemplateXLSX() {
+  try {
+    const XLSX = await loadXLSX();
+    const rows = [
+      ["Nama", "Kontak", "Kategori"], // ✅ tambahkan kolom kategori
+      ["Budi Santoso", "081234567890", "Keluarga Mempelai Pria"],
+      ["Sari Ayu", "sari@example.com", "Keluarga Mempelai Wanita"],
+      ["Reno", "089876543210", "Rekan Kantor"], // contoh tambahan
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template Tamu");
+    XLSX.writeFile(wb, "template_tamu.xlsx");
+  } catch (e) {
+    // fallback CSV
+    const csv =
+      "Nama,Kontak,Kategori\n" +
+      "Budi Santoso,081234567890,Keluarga Mempelai Pria\n" +
+      "Sari Ayu,sari@example.com,Keluarga Mempelai Wanita\n" +
+      "Reno,089876543210,Rekan Kantor\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "template_tamu.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
+}
 
-  // (opsional) export daftar tamu saat ini
-  async function exportCurrentXLSX() {
-    try {
-const XLSX = await loadXLSX();
-      const rows = [["Nama", "Kontak", "Status", "Waktu Check-in"]];
-      tamuList.forEach((t) => {
-        rows.push([
-          t.nama || "",
-          t.kontak || "",
-          t.hadir ? "Sudah Check-in" : "Belum",
-          t.waktu_hadir ? new Date(t.waktu_hadir).toLocaleString("id-ID") : "",
-        ]);
-      });
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Daftar Tamu");
-      XLSX.writeFile(wb, `tamu_${slug || "undangan"}.xlsx`);
-    } catch (e) {
-      const header = "Nama,Kontak,Status,Waktu Check-in\n";
-      const body = tamuList
-        .map(
-          (t) =>
-            `"${(t.nama || "").replace(/"/g, '""')}","${(t.kontak || "").replace(/"/g, '""')}",${
-              t.hadir ? "Sudah Check-in" : "Belum"
-            },"${t.waktu_hadir ? new Date(t.waktu_hadir).toLocaleString("id-ID") : ""}"`
-        )
-        .join("\n");
-      const csv = header + body + "\n";
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `tamu_${slug || "undangan"}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+
+// (opsional) export daftar tamu saat ini
+async function exportCurrentXLSX() {
+  try {
+    const XLSX = await loadXLSX();
+    const rows = [["Nama", "Kontak", "Kategori", "Status", "Waktu Check-in"]];
+    tamuList.forEach((t) => {
+      rows.push([
+        t.nama || "",
+        t.kontak || "",
+        t.kategori || "", // ✅ export kategori
+        t.hadir ? "Sudah Check-in" : "Belum",
+        t.waktu_hadir ? new Date(t.waktu_hadir).toLocaleString("id-ID") : "",
+      ]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Daftar Tamu");
+    XLSX.writeFile(wb, `tamu_${slug || "undangan"}.xlsx`);
+  } catch (e) {
+    const header = "Nama,Kontak,Kategori,Status,Waktu Check-in\n";
+    const body = tamuList
+      .map(
+        (t) =>
+          `"${(t.nama || "").replace(/"/g, '""')}","${(t.kontak || "").replace(/"/g, '""')}","${(t.kategori || "").replace(/"/g, '""')}",${
+            t.hadir ? "Sudah Check-in" : "Belum"
+          },"${t.waktu_hadir ? new Date(t.waktu_hadir).toLocaleString("id-ID") : ""}"`
+      )
+      .join("\n");
+    const csv = header + body + "\n";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tamu_${slug || "undangan"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
+}
 
-  // ---------- IMPORT EXCEL/CSV ----------
-  async function handleFileImport(file) {
-    setImporting(true);
-    setError("");
-    setSuccess("");
-    setImportSummary(null);
+// ---------- IMPORT EXCEL/CSV ----------
+async function handleFileImport(file) {
+  setImporting(true);
+  setError("");
+  setSuccess("");
+  setImportSummary(null);
 
-    try {
-const XLSX = await loadXLSX();
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      // pakai header satu baris
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+  try {
+    const XLSX = await loadXLSX();
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
 
-      if (!rows.length) throw new Error("File kosong");
-      const header = rows[0].map((h) => String(h || "").trim().toLowerCase());
-      // cari kolom nama/kontak
-      const idxNama =
-        header.findIndex((h) => ["nama", "name", "guest", "tamu"].includes(h)) !== -1
-          ? header.findIndex((h) => ["nama", "name", "guest", "tamu"].includes(h))
-          : 0;
-      const idxKontak =
-        header.findIndex((h) => ["kontak", "contact", "phone", "wa", "email"].includes(h)) !== -1
-          ? header.findIndex((h) => ["kontak", "contact", "phone", "wa", "email"].includes(h))
-          : 1;
+    if (!rows.length) throw new Error("File kosong");
+    const header = rows[0].map((h) => String(h || "").trim().toLowerCase());
 
-      const imported = [];
-      const seen = new Set(); // dedup dalam file
-      let skippedEmpty = 0;
-      for (let i = 1; i < rows.length; i++) {
-        const r = rows[i];
-        const nama = String((r[idxNama] ?? "")).trim();
-        const kontak = String((r[idxKontak] ?? "")).trim();
-        if (!nama) {
-          skippedEmpty++;
-          continue;
-        }
-        const key = nama.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        imported.push({ nama, kontak });
+    // cari kolom nama/kontak/kategori
+    const idxNama = header.findIndex((h) => ["nama", "name", "guest", "tamu"].includes(h));
+    const idxKontak = header.findIndex((h) => ["kontak", "contact", "phone", "wa", "email"].includes(h));
+    const idxKategori = header.findIndex((h) => ["kategori", "category", "group"].includes(h));
+
+    const imported = [];
+    const seen = new Set();
+    let skippedEmpty = 0;
+
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const nama = String((r[idxNama >= 0 ? idxNama : 0] ?? "")).trim();
+      const kontak = String((r[idxKontak >= 0 ? idxKontak : 1] ?? "")).trim();
+      const kategori = String((r[idxKategori >= 0 ? idxKategori : 2] ?? "")).trim();
+
+      if (!nama) {
+        skippedEmpty++;
+        continue;
       }
+      const key = nama.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
 
-      // gabung / replace dengan list lama (dedup silang)
-      const base = replaceMode ? [] : tamuList.map(({ nama, kontak }) => ({ nama, kontak }));
-      const existKeys = new Set(base.map((t) => String(t.nama || "").toLowerCase()));
-      const final = [...base];
-      let added = 0;
-      let skippedDup = 0;
-      imported.forEach((t) => {
-        const k = String(t.nama || "").toLowerCase();
-        if (existKeys.has(k)) {
-          skippedDup++;
-        } else {
-          final.push(t);
-          existKeys.add(k);
-          added++;
-        }
-      });
+      imported.push({ nama, kontak, kategori });
+    }
 
-      // simpan ke DB
-      const res = await fetch("/api/invitation/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, field: { tamu: final } }),
-      });
+    // gabung / replace
+    const base = replaceMode ? [] : tamuList.map(({ nama, kontak, kategori }) => ({ nama, kontak, kategori }));
+    const existKeys = new Set(base.map((t) => String(t.nama || "").toLowerCase()));
+    const final = [...base];
+    let added = 0;
+    let skippedDup = 0;
 
-      if (!res.ok) throw new Error("Gagal menyimpan ke server");
+    imported.forEach((t) => {
+      const k = String(t.nama || "").toLowerCase();
+      if (existKeys.has(k)) {
+        skippedDup++;
+      } else {
+        final.push(t);
+        existKeys.add(k);
+        added++;
+      }
+    });
 
-      // update UI, rebuild status hadir (hapus flags lama)
-      const attendanceMap = new Map();
-      (undangan?.attendance || []).forEach((a) => {
-        attendanceMap.set(String(a.name || "").toLowerCase(), a.timestamp);
-      });
-      const finalWithStatus = final.map((t) => ({
-        ...t,
-        hadir: attendanceMap.has(String(t.nama || "").toLowerCase()),
-        waktu_hadir: attendanceMap.get(String(t.nama || "").toLowerCase()) || null,
-      }));
+    // simpan ke DB
+    const res = await fetch("/api/invitation/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, field: { tamu: final } }),
+    });
 
-      setTamuList(finalWithStatus);
-      setImportSummary({
-        totalFile: rows.length - 1,
-        added,
-        skippedDup,
-        skippedEmpty,
-        mode: replaceMode ? "replace" : "append",
-      });
-      setSuccess("Import selesai!");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (e) {
-      console.error(e);
-      setError(e.message || "Gagal mengimpor file");
-    } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    if (!res.ok) throw new Error("Gagal menyimpan ke server");
+
+    // rebuild status hadir
+    const attendanceMap = new Map();
+    (undangan?.attendance || []).forEach((a) => {
+      attendanceMap.set(String(a.name || "").toLowerCase(), a.timestamp);
+    });
+    const finalWithStatus = final.map((t) => ({
+      ...t,
+      hadir: attendanceMap.has(String(t.nama || "").toLowerCase()),
+      waktu_hadir: attendanceMap.get(String(t.nama || "").toLowerCase()) || null,
+    }));
+
+    setTamuList(finalWithStatus);
+    setImportSummary({
+      totalFile: rows.length - 1,
+      added,
+      skippedDup,
+      skippedEmpty,
+      mode: replaceMode ? "replace" : "append",
+    });
+    setSuccess("Import selesai!");
+    setTimeout(() => setSuccess(""), 3000);
+  } catch (e) {
+    console.error(e);
+    setError(e.message || "Gagal mengimpor file");
+  } finally {
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+}
+
+async function handleKirimBlast() {
+  if (!undangan || !tamuList.length) {
+    Swal.fire("Gagal", "Data tamu tidak ditemukan", "error");
+    return;
+  }
+
+  const quota = undangan.whatsappQuota || { limit: 0, used: 0 };
+  const remainingQuota = quota.limit - quota.used;
+
+  if (remainingQuota <= 0) {
+    Swal.fire({
+      icon: "warning",
+      title: "Kuota Habis",
+      text: "Kuota WhatsApp Blast Anda habis. Silakan beli kuota terlebih dahulu.",
+    });
+    return;
+  }
+
+  const instanceId = "01K5S622M1HW35W5659CMDS82S";
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+
+  const rawPhoto = undangan.main_photo?.trim() || "";
+  const isValidImage = rawPhoto && typeof rawPhoto === "string";
+  const mainPhoto = isValidImage
+    ? rawPhoto.startsWith("http")
+      ? rawPhoto
+      : `${baseUrl}${rawPhoto.startsWith("/") ? "" : "/"}${rawPhoto}`
+    : "";
+
+  const type = mainPhoto ? "image" : "text";
+  const image_url = mainPhoto;
+  const apikey = ""; // tidak digunakan
+
+  const validTamu = tamuList.filter(
+    (t) => t.kontak && /^08\d{7,}$/.test(t.kontak)
+  );
+
+  if (!validTamu.length) {
+    Swal.fire("Oops!", "Tidak ada tamu dengan nomor WA valid (08...)", "warning");
+    return;
+  }
+
+  if (validTamu.length > remainingQuota) {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Kuota Tidak Cukup",
+      html: `Kuota WA Anda hanya tersisa <strong>${remainingQuota}</strong>, sedangkan tamu valid <strong>${validTamu.length}</strong>.<br><br>Apakah Anda ingin mengirim hanya ke <strong>${remainingQuota}</strong> tamu pertama?`,
+      showCancelButton: true,
+      confirmButtonText: "Kirim",
+      cancelButtonText: "Batal",
+    });
+
+    if (!result.isConfirmed) {
+      return;
     }
   }
+
+  const tamuTerpilih = validTamu.slice(0, remainingQuota);
+  const phone = tamuTerpilih.map((t) => "62" + t.kontak.slice(1));
+  const fields = tamuTerpilih.map((t) => ({
+    name: t.nama,
+    link: `${baseUrl}/${slug}?tamu=${encodeURIComponent(
+      t.nama.trim().toLowerCase().replace(/\s+/g, "-")
+    )}`,
+  }));
+
+  const mainAcara = undangan.acara?.[0] || {};
+  const tanggalAcara = mainAcara.tanggal
+    ? new Date(mainAcara.tanggal).toLocaleDateString("id-ID", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "";
+
+  const template = `Assalamu'alaikum Wr. Wb.
+
+Kepada Yth.
+Bapak/Ibu/Saudara/i {{name}}
+
+Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:
+
+${undangan.mempelai?.pria || ""}
+&
+${undangan.mempelai?.wanita || ""}
+
+${mainAcara.nama || "Acara Pernikahan"}
+🗓️ ${tanggalAcara}
+⏰ ${mainAcara.waktu || ""}
+📍 ${mainAcara.lokasi || ""}
+${mainAcara.alamat ? `\n${mainAcara.alamat}` : ""}
+
+Untuk detail lengkap dan konfirmasi kehadiran, silakan klik:
+{{link}}
+
+Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+
+Wassalamu'alaikum Wr. Wb.`;
+
+  const payload = {
+    slug, // ⬅️ Tambahkan ini!
+    instance_id: instanceId,
+    phone,
+    template,
+    type,
+    image_url,
+    apikey,
+    fields,
+  };
+
+  try {
+    const res = await fetch("/api/whatsapp/blast", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      Swal.fire("Sukses", "Blast WA berhasil dikirim!", "success");
+    } else {
+      Swal.fire("Gagal", result?.error || "Terjadi kesalahan saat mengirim", "error");
+    }
+  } catch (err) {
+    console.error("❌ Gagal kirim WA:", err);
+    Swal.fire("Error", "Terjadi error saat mengirim WA", "error");
+  }
+}
+
+
 
   if (loading) {
     return (
@@ -332,6 +481,8 @@ const XLSX = await loadXLSX();
               <i className="ki-duotone ki-file-added fs-5 me-2"><span className="path1"></span><span className="path2"></span></i>
               Download Template
             </button>
+            
+
           </div>
         </div>
         <div className="card-body">
@@ -388,76 +539,144 @@ const XLSX = await loadXLSX();
           )}
         </div>
       </div>
-
+      
       {/* Form Card */}
-      <div className="card mb-8">
-        <div className="card-header">
-          <div className="card-title">
-            <h2 className="fw-bold">{editIdx >= 0 ? "Edit Tamu" : "Tambah Tamu"}</h2>
-          </div>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            <div className="row g-5">
-              <div className="col-md-6">
-                <label className="form-label required">Nama Tamu</label>
-                <input
-                  name="nama"
-                  className="form-control"
-                  value={form.nama}
-                  onChange={handleChange}
-                  required
-                  placeholder="Nama tamu (wajib)"
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Kontak (opsional)</label>
-                <input
-                  name="kontak"
-                  className="form-control"
-                  value={form.kontak}
-                  onChange={handleChange}
-                  placeholder="No WA, email, dsb"
-                />
-              </div>
-            </div>
-
-            {success && (
-              <div className="alert alert-success mt-8">
-                <i className="ki-duotone ki-check-circle fs-2 me-2"><span className="path1"></span><span className="path2"></span></i>
-                {success}
-              </div>
-            )}
-
-            {error && (
-              <div className="alert alert-danger mt-8">
-                <i className="ki-duotone ki-cross-circle fs-2 me-2"><span className="path1"></span><span className="path2"></span></i>
-                {error}
-              </div>
-            )}
-
-            <div className="text-center mt-8">
-              <button type="submit" className="btn btn-primary me-3" disabled={loading}>
-                {loading && <span className="spinner-border spinner-border-sm me-2"></span>}
-                {editIdx >= 0 ? "Update Tamu" : "Tambah Tamu"}
-              </button>
-
-              {editIdx >= 0 && (
-                <button
-                  type="button"
-                  className="btn btn-light"
-                  onClick={() => {
-                    setForm({ nama: "", kontak: "" });
-                    setEditIdx(-1);
-                  }}
-                >
-                  Batal Edit
-                </button>
-              )}
-            </div>
-          </form>
+      <div className="row">
+  {/* Kolom kiri: Tambah/Edit Tamu */}
+  <div className="col-md-8 mb-8">
+    <div className="card h-100">
+      <div className="card-header">
+        <div className="card-title">
+          <h2 className="fw-bold">
+            {editIdx >= 0 ? "Edit Tamu" : "Tambah Tamu"}
+          </h2>
         </div>
       </div>
+
+      <div className="card-body">
+        <form onSubmit={handleSubmit}>
+          <div className="row g-5">
+            <div className="col-md-4">
+              <label className="form-label required">Nama Tamu</label>
+              <input
+                name="nama"
+                className="form-control"
+                value={form.nama}
+                onChange={handleChange}
+                required
+                placeholder="Nama tamu (wajib)"
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Kontak (opsional)</label>
+              <input
+                name="kontak"
+                className="form-control"
+                value={form.kontak}
+                onChange={handleChange}
+                placeholder="No WA, email, dsb"
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Kategori</label>
+              <input
+                name="kategori"
+                className="form-control"
+                value={form.kategori || ""}
+                onChange={handleChange}
+                placeholder="Contoh: Keluarga Pria, Kantor BRI"
+              />
+            </div>
+          </div>
+
+          {success && (
+            <div className="alert alert-success mt-6">
+              <i className="ki-duotone ki-check-circle fs-2 me-2">
+                <span className="path1"></span><span className="path2"></span>
+              </i>
+              {success}
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-danger mt-6">
+              <i className="ki-duotone ki-cross-circle fs-2 me-2">
+                <span className="path1"></span><span className="path2"></span>
+              </i>
+              {error}
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <button type="submit" className="btn btn-primary me-3" disabled={loading}>
+              {loading && <span className="spinner-border spinner-border-sm me-2"></span>}
+              {editIdx >= 0 ? "Update Tamu" : "Tambah Tamu"}
+            </button>
+
+            {editIdx >= 0 && (
+              <button
+                type="button"
+                className="btn btn-light"
+                onClick={() => {
+                  setForm({ nama: "", kontak: "", kategori: "" });
+                  setEditIdx(-1);
+                }}
+              >
+                Batal Edit
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {/* Kolom kanan: Kirim Blast + Kuota */}
+  <div className="col-md-4 mb-8">
+    <div className="card h-100">
+      <div className="card-header">
+        <div className="card-title">
+          <h2 className="fw-bold">Kirim Undangan</h2>
+        </div>
+      </div>
+
+      <div className="card-body text-center">
+        <button className="btn btn-success w-100 mb-3" onClick={handleKirimBlast}>
+          <i className="ki-duotone ki-whatsapp fs-4 me-2">
+            <span className="path1"></span><span className="path2"></span>
+          </i>
+          Kirim WA Blast
+        </button>
+
+        <button
+          className="btn btn-light-primary w-100"
+          onClick={() => router.push(`/edit-undangan/${slug}/upgrade`)}
+        >
+          <i className="ki-duotone ki-plus-square fs-5 me-2">
+            <span className="path1"></span><span className="path2"></span>
+          </i>
+          Beli Kuota
+        </button>
+
+        {undangan?.whatsappQuota && (
+          <div className="alert alert-secondary mt-6 py-3 px-4 text-start">
+            <div className="fw-bold mb-1 text-gray-800">WhatsApp Kuota</div>
+            <div className="fs-7 text-gray-600">
+              Tersisa{" "}
+              <strong>
+                {undangan.whatsappQuota.limit - undangan.whatsappQuota.used}
+              </strong>{" "}
+              dari total {undangan.whatsappQuota.limit}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
 
       {/* List Card */}
       <div className="card">
@@ -466,6 +685,7 @@ const XLSX = await loadXLSX();
             <h2 className="fw-bold">Daftar Tamu</h2>
           </div>
         </div>
+
         <div className="card-body">
           {tamuList.length === 0 ? (
             <div className="text-center py-10">
@@ -479,6 +699,8 @@ const XLSX = await loadXLSX();
                   <tr className="fw-bold fs-6 text-gray-800">
                     <th>Nama</th>
                     <th>Kontak</th>
+                        <th>Kategori</th>   {/* ✅ kolom baru */}
+
                     <th>Status</th>
                     <th>Link</th>
                     <th>Aksi</th>
@@ -490,7 +712,7 @@ const XLSX = await loadXLSX();
                       String(tamu.nama || "").trim().toLowerCase().replace(/\s+/g, "-")
                     );
                     const urlBase = typeof window !== "undefined" ? window.location.origin : "";
-                    const linkTamu = `${urlBase}/undangan/${slug}?tamu=${encoded}`;
+                    const linkTamu = `${urlBase}/${slug}?tamu=${encoded}`;
 
                     const mainAcara = undangan.acara?.[0] || {};
                     const tanggalAcara = mainAcara.tanggal
@@ -540,7 +762,10 @@ Wassalamu'alaikum Wr. Wb.`.replace(/^ +/gm, "")
                             <div className="fw-bold">{tamu.nama}</div>
                           </div>
                         </td>
+                        
                         <td>{tamu.kontak || "-"}</td>
+                              <td>{tamu.kategori || "-"}</td> {/* ✅ tampilkan kategori */}
+
                         <td>
                           {tamu.hadir ? (
                             <div>
@@ -578,6 +803,7 @@ Wassalamu'alaikum Wr. Wb.`.replace(/^ +/gm, "")
                             )}
                           </div>
                         </td>
+                        
                         <td>
                           <div className="d-flex gap-2">
                             <button className="btn btn-sm btn-light-warning" onClick={() => handleEdit(idx)}>

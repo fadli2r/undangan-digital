@@ -170,37 +170,52 @@ export default async function handler(req, res) {
           }
 
           if (invitation) {
-            // derive add-on keys: meta.selectedFeatures -> items(feature).key -> order.selectedFeatures
-            let addKeys = toKeys(order?.meta?.selectedFeatures);
-            if (!addKeys.length && Array.isArray(order.items)) {
-              addKeys = toKeys(order.items.filter(it => it?.type === "feature").map(it => it.key));
-            }
-            if (!addKeys.length) {
-              addKeys = toKeys(order.selectedFeatures);
-            }
+  let addKeys = toKeys(order?.meta?.selectedFeatures);
+  if (!addKeys.length && Array.isArray(order.items)) {
+    addKeys = toKeys(order.items.filter(it => it?.type === "feature").map(it => it.key));
+  }
+  if (!addKeys.length) {
+    addKeys = toKeys(order.selectedFeatures);
+  }
 
-            if (addKeys.length) {
-              const curr = toKeys(invitation.allowedFeatures);
-              const merged = Array.from(new Set([...curr, ...addKeys]));
-              invitation.allowedFeatures = merged;
+  if (addKeys.length) {
+    const curr = toKeys(invitation.allowedFeatures);
 
-              // auto enable gift jika ikut terbeli
-              if (merged.includes("gift")) {
-                invitation.gift = invitation.gift || { enabled: false };
-                invitation.gift.enabled = true;
-              }
+    // ⛔️ Jangan masukkan quota WA ke allowedFeatures
+    const keysToAdd = addKeys.filter(k => !k.startsWith("wa-quota-"));
+    const merged = Array.from(new Set([...curr, ...keysToAdd]));
+    invitation.allowedFeatures = merged;
 
-              await invitation.save();
+    // ✅ Auto enable gift
+    if (merged.includes("gift")) {
+      invitation.gift = invitation.gift || { enabled: false };
+      invitation.gift.enabled = true;
+    }
 
-              // tandai konsumsi order upgrade
-              order.used = true;
-              order.invitation_slug = invitation.slug;
+    // ✅ Tambah quota WA
+    for (const key of addKeys) {
+      if (key.startsWith("wa-quota-")) {
+        const qty = parseInt(key.replace("wa-quota-", ""));
+        if (!isNaN(qty) && qty > 0) {
+          invitation.whatsappQuota = invitation.whatsappQuota || { limit: 0, used: 0 };
+          invitation.whatsappQuota.limit += qty;
+          console.log(`[webhook] ✅ WhatsApp quota bertambah +${qty} untuk slug: ${invitation.slug}`);
+        }
+      }
+    }
 
-              console.log("[webhook][addon] ✅ merged features:", addKeys, "->", invitation.slug);
-            }
-          } else {
-            console.warn("[webhook][addon] invitation target not found");
-          }
+    await invitation.save();
+
+    // ✅ Tandai order sudah dipakai
+    order.used = true;
+    order.invitation_slug = invitation.slug;
+
+    console.log("[webhook][addon] ✅ merged features:", addKeys, "->", invitation.slug);
+  }
+} else {
+  console.warn("[webhook][addon] invitation target not found");
+}
+
 
           // Catat Purchase untuk add-on (sekali)
           let Purchase = null;

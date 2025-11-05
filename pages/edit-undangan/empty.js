@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import { templateList } from "../../data/templates";
+import { defaultTemplateList as templateList } from '../../data/templates';
 
 export default function EditUndangan({ undangan }) {
   const { data: session, status } = useSession();

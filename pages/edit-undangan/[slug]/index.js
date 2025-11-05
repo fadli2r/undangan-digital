@@ -120,6 +120,18 @@ export default function EditUndanganIndex() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const rsvpArr = Array.isArray(data?.rsvp) ? data.rsvp : [];
+  const attendanceArr = Array.isArray(data?.attendance) ? data.attendance : [];
+  const wishes = Array.isArray(data?.ucapan) ? data.ucapan.length : 0;
+
+  // breakdown RSVP
+  const rsvpTotal = rsvpArr.length;
+  const rsvpHadir = rsvpArr.filter(x => String(x?.status || '').toLowerCase() === 'hadir').length;
+  const rsvpTidak = rsvpArr.filter(x => String(x?.status || '').toLowerCase() === 'tidak_hadir').length;
+  const rsvpRagu  = rsvpArr.filter(x => String(x?.status || '').toLowerCase() === 'ragu').length;
+
+  // total kehadiran (pakai field jumlah jika ada, fallback 1)
+  const totalKehadiran = attendanceArr.reduce((sum, it) => sum + (Number(it?.jumlah) || 1), 0);
 
   // slug editor state
   const [editingSlug, setEditingSlug] = useState(false);
@@ -418,50 +430,132 @@ export default function EditUndanganIndex() {
 
         {/* Statistik */}
         <div className="col-lg-6">
-          <div className="card h-100">
-            <div className="card-header">
-              <div className="card-title">
-                <h3 className="fw-bold">Statistik Undangan</h3>
-              </div>
-            </div>
-            <div className="card-body">
-              <div className="row g-0">
-                <div className="col-6 text-center border-end pb-5">
-                  <div className="fs-2hx fw-bold text-primary">{data?.views || 0}</div>
-                  <div className="fs-6 fw-semibold text-gray-600">Total Views</div>
-                </div>
-                <div className="col-6 text-center pb-5">
-                  <div className="fs-2hx fw-bold text-success">{Array.isArray(data?.rsvp) ? data.rsvp.length : 0}</div>
-                  <div className="fs-6 fw-semibold text-gray-600">RSVP</div>
-                </div>
-                <div className="col-6 text-center border-end pt-5">
-                  <div className="fs-2hx fw-bold text-warning">{Array.isArray(data?.ucapan) ? data.ucapan.length : 0}</div>
-                  <div className="fs-6 fw-semibold text-gray-600">Ucapan</div>
-                </div>
-                <div className="col-6 text-center pt-5">
-                  <div className="fs-2hx fw-bold text-info">{Array.isArray(data?.attendance) ? data.attendance.length : 0}</div>
-                  <div className="fs-6 fw-semibold text-gray-600">Kehadiran</div>
-                </div>
-              </div>
-            </div>
-            <button
-  type="button"
-  onClick={() => {
-    if (!data?.slug) return;
-    router.push(`/edit-undangan/${encodeURIComponent(data.slug)}/upgrade`);
-  }}
-  className="btn btn-light-warning"
-  title="Upgrade fitur untuk undangan ini"
-  disabled={!data?.slug}
->
-  <i className="ki-duotone ki-flash fs-2 me-1">
-    <span className="path1"></span><span className="path2"></span>
-  </i>
-  Upgrade Fitur
-</button>
+<div className="card card-xl-stretch mb-xl-8 h-100">
+      {/* Body */}
+      <div className="card-body p-0">
+        {/* Header berwarna */}
+        <div className="px-9 pt-7 card-rounded h-275px w-100 bg-primary">
+          <div className="d-flex flex-stack">
+            <h3 className="m-0 text-white fw-bold fs-3">Statistik Undangan</h3>
 
-
+            {/* Tombol Upgrade */}
+            <div className="ms-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!data?.slug) return;
+                  router.push(`/edit-undangan/${encodeURIComponent(data.slug)}/upgrade`);
+                }}
+                className="btn btn-sm btn-light-warning fw-bold"
+                title="Upgrade fitur untuk undangan ini"
+                disabled={!data?.slug}
+              >
+                <i className="ki-duotone ki-flash fs-2 me-1">
+                  <span className="path1"></span><span className="path2"></span>
+                </i>
+                Upgrade Fitur
+              </button>
+            </div>
           </div>
+
+          {/* Highlight utama */}
+          <div className="d-flex text-center flex-column text-white pt-8">
+            <span className="fw-semibold fs-7">Total Kehadiran</span>
+            <span className="fw-bold fs-2x pt-1">{totalKehadiran}</span>
+          </div>
+        </div>
+
+        {/* Items (kartu putih mengambang) */}
+        <div
+          className="bg-body shadow-sm card-rounded mx-9 mb-9 px-6 py-9 position-relative z-index-1"
+          style={{ marginTop: '-100px' }}
+        >
+          {/* Views */}
+          <div className="d-flex align-items-center mb-6">
+            <div className="symbol symbol-45px w-40px me-5">
+              <span className="symbol-label bg-lighten">
+                <i className="ki-duotone ki-eye fs-1">
+                  <span className="path1"></span><span className="path2"></span>
+                </i>
+              </span>
+            </div>
+            <div className="d-flex align-items-center flex-wrap w-100">
+              <div className="mb-1 pe-3 flex-grow-1">
+                <div className="fs-5 text-gray-800 fw-bold">Total Views</div>
+                <div className="text-gray-500 fw-semibold fs-7">Jumlah kunjungan undangan</div>
+              </div>
+              <div className="d-flex align-items-center">
+                <div className="fw-bold fs-2 text-primary pe-1">{Number(data?.views || 0)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* RSVP */}
+          <div className="d-flex align-items-center mb-6">
+            <div className="symbol symbol-45px w-40px me-5">
+              <span className="symbol-label bg-lighten">
+                <i className="ki-duotone ki-calendar fs-1">
+                  <span className="path1"></span><span className="path2"></span>
+                </i>
+              </span>
+            </div>
+            <div className="d-flex align-items-center flex-wrap w-100">
+              <div className="mb-1 pe-3 flex-grow-1">
+                <div className="fs-5 text-gray-800 fw-bold">RSVP</div>
+                <div className="text-gray-500 fw-semibold fs-7">
+                  Hadir: <span className="text-success fw-bold">{rsvpHadir}</span> &nbsp;•&nbsp; Tidak: <span className="text-danger fw-bold">{rsvpTidak}</span> &nbsp;•&nbsp; Ragu: <span className="text-warning fw-bold">{rsvpRagu}</span>
+                </div>
+              </div>
+              <div className="d-flex align-items-center">
+                <div className="fw-bold fs-2 text-success pe-1">{rsvpTotal}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Ucapan */}
+          <div className="d-flex align-items-center mb-6">
+            <div className="symbol symbol-45px w-40px me-5">
+              <span className="symbol-label bg-lighten">
+                <i className="ki-duotone ki-message-text-2 fs-1">
+                  <span className="path1"></span><span className="path2"></span>
+                </i>
+              </span>
+            </div>
+            <div className="d-flex align-items-center flex-wrap w-100">
+              <div className="mb-1 pe-3 flex-grow-1">
+                <div className="fs-5 text-gray-800 fw-bold">Ucapan</div>
+                <div className="text-gray-500 fw-semibold fs-7">Total pesan & doa</div>
+              </div>
+              <div className="d-flex align-items-center">
+                <div className="fw-bold fs-2 text-warning pe-1">{wishes}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Kehadiran */}
+          <div className="d-flex align-items-center">
+            <div className="symbol symbol-45px w-40px me-5">
+              <span className="symbol-label bg-lighten">
+                <i className="ki-duotone ki-user-tick fs-1">
+                  <span className="path1"></span><span className="path2"></span>
+                </i>
+              </span>
+            </div>
+            <div className="d-flex align-items-center flex-wrap w-100">
+              <div className="mb-1 pe-3 flex-grow-1">
+                <div className="fs-5 text-gray-800 fw-bold">Kehadiran</div>
+                <div className="text-gray-500 fw-semibold fs-7">Total orang yang sudah check-in</div>
+              </div>
+              <div className="d-flex align-items-center">
+                <div className="fw-bold fs-2 text-info pe-1">{totalKehadiran}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* /Items */}
+      </div>
+      {/* /Body */}
+    </div>
         </div>
       </div>
 
@@ -479,29 +573,27 @@ export default function EditUndanganIndex() {
 
         <h3 className="text-gray-900 fw-bold mb-3">QR Code Scanner</h3>
         <div className="text-gray-700 fw-semibold fs-6 mb-5">
-          Scan QR code untuk melihat siapa saja yang sudah membuka undangan
+          Scan QR code untuk mencatat kehadiran tamu secara digital
         </div>
 
         {(() => {
-          // izinkan jika salah satu feature key ini ada di paket
-          const canScan = ["scanner", "attendance", "analytics"].some((k) =>
+          const canScan = ["guestbook", "attendance", "analytics"].some((k) =>
             typeof isAllowed === "function" ? isAllowed(k) : false
           );
 
           return canScan ? (
-            <button
-              type="button"
-              onClick={openScanner}
+            <a
+              href={`/buku-tamu/${slug}`}
               className="btn btn-success"
-              aria-label="Buka Scanner QR"
+              aria-label="Buka Buku Tamu"
             >
-              <i className="ki-duotone ki-scan-barcode fs-2">
+              <i className="ki-duotone ki-scan-barcode fs-2 me-2">
                 <span className="path1"></span><span className="path2"></span>
                 <span className="path3"></span><span className="path4"></span>
                 <span className="path5"></span><span className="path6"></span>
               </i>
-              Buka Scanner QR
-            </button>
+              Buka Buku Tamu
+            </a>
           ) : (
             <button
               type="button"
@@ -521,6 +613,7 @@ export default function EditUndanganIndex() {
     </div>
   </div>
 </div>
+
 
 
       {/* Menu Navigation (gating per paket; yang tidak allowed = disabled & tidak bisa diklik) */}

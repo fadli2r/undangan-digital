@@ -117,22 +117,31 @@ export default async function handler(req, res) {
       }
 
       // 2) Hitung fitur yang benar² perlu di-upgrade (exclude yang sudah ada)
-      const reqKeys = toKeys(selectedFeatures);
-      if (reqKeys.length === 0) {
-        return res.status(400).json({ message: "selectedFeatures tidak boleh kosong untuk upgrade" });
-      }
+const reqKeys = toKeys(selectedFeatures);
+if (reqKeys.length === 0) {
+  return res.status(400).json({ message: "selectedFeatures tidak boleh kosong untuk upgrade" });
+}
 
-      const includedNow = new Set(
-        toKeys([
-          ...(Array.isArray(inv?.packageId?.featureKeys) ? inv.packageId.featureKeys : []),
-          ...(Array.isArray(inv?.allowedFeatures) ? inv.allowedFeatures : []),
-        ])
-      );
+// Khusus quota WA: fitur yang mengandung 'wa-quota-' bisa dibeli berkali-kali
+const alwaysAllowKeys = reqKeys.filter((k) => k.startsWith("wa-quota-"));
 
-      const addOnKeys = reqKeys.filter((k) => !includedNow.has(k));
-      if (addOnKeys.length === 0) {
-        return res.status(400).json({ message: "Semua fitur yang dipilih sudah termasuk dalam paket saat ini" });
-      }
+// Fitur lain: filter yang belum termasuk
+const includedNow = new Set(
+  toKeys([
+    ...(Array.isArray(inv?.packageId?.featureKeys) ? inv.packageId.featureKeys : []),
+    ...(Array.isArray(inv?.allowedFeatures) ? inv.allowedFeatures : []),
+  ])
+);
+
+const uniqueKeys = reqKeys.filter((k) => !includedNow.has(k) && !k.startsWith("wa-quota-"));
+
+// Gabungkan semua yang valid
+const addOnKeys = [...uniqueKeys, ...alwaysAllowKeys];
+
+if (addOnKeys.length === 0) {
+  return res.status(400).json({ message: "Semua fitur yang dipilih sudah termasuk dalam paket saat ini" });
+}
+
 
       const feats = await Feature.find({ key: { $in: addOnKeys }, active: true }).lean();
       const foundKeys = new Set(feats.map((f) => String(f.key).toLowerCase()));
@@ -152,8 +161,19 @@ export default async function handler(req, res) {
         meta: { source: "upgrade", invitationId: inv._id },
       }));
 
-      amount = items.reduce((sum, it) => sum + Number(it.unitPrice || 0) * Number(it.qty || 1), 0);
-      if (!(amount > 0)) return res.status(400).json({ message: "Nominal pembayaran tidak valid" });
+      // Hitung total normal
+amount = items.reduce((sum, it) => sum + Number(it.unitPrice || 0) * Number(it.qty || 1), 0);
+
+// Jika frontend mengirim total final (setelah diskon), pakai itu
+if (req.body.amount && Number(req.body.amount) > 0) {
+  console.log(`[create-invoice] ⚙️ Override amount dari frontend: ${req.body.amount}`);
+  amount = Number(req.body.amount);
+}
+
+if (!(amount > 0)) {
+  return res.status(400).json({ message: "Nominal pembayaran tidak valid" });
+}
+
 
       // 4) Deskripsi & redirect
       const keysLabel = addOnKeys.join(", ");
@@ -254,8 +274,17 @@ export default async function handler(req, res) {
         }
       }
 
-      amount = items.reduce((sum, it) => sum + Number(it.unitPrice || 0) * Number(it.qty || 1), 0);
-      if (!(amount > 0)) return res.status(400).json({ message: "Nominal pembayaran tidak valid" });
+      // Hitung total normal
+amount = items.reduce((sum, it) => sum + Number(it.unitPrice || 0) * Number(it.qty || 1), 0);
+
+// Jika frontend kirim total akhir (misal setelah diskon kupon), override di sini
+if (req.body.amount && Number(req.body.amount) > 0) {
+  console.log(`[create-invoice] ⚙️ Override amount dari frontend: ${req.body.amount}`);
+  amount = Number(req.body.amount);
+}
+
+if (!(amount > 0)) return res.status(400).json({ message: "Nominal pembayaran tidak valid" });
+
 
       // --- Meta dari onboarding (utamakan onboardingData)
       const slugFromDomain = sanitizeSlug(onboardingData?.slug || onboardingData?.domain || "");
@@ -323,6 +352,7 @@ export default async function handler(req, res) {
 
     const resp = await axios.post(
       "https://api.xendit.co/v2/invoices",
+      
       {
         external_id,
         amount,

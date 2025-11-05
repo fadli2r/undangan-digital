@@ -13,36 +13,33 @@ export default function UserLayout({ children }) {
   const scriptsReadyRef = useRef(false);
 
   // ==== Auth + Onboarding gate (tanpa fetch API) ====
-  useEffect(() => {
-    if (status === "loading") return;
+useEffect(() => {
+  if (status === "loading") return;
 
-    // Belum login -> ke /login
-    if (status === "unauthenticated") {
-      router.replace("/login");
+  if (status === "unauthenticated") {
+    router.replace("/login");
+    return;
+  }
+
+  if (status === "authenticated") {
+    const isAdmin = !!session?.user?.isAdmin;
+    const completed = !!session?.user?.onboardingCompleted;
+    const isOnboardingRoute = router.pathname.startsWith("/onboarding");
+
+    if (!isAdmin && !completed && !isOnboardingRoute) {
+      router.replace("/onboarding");
       return;
     }
 
-    if (status === "authenticated") {
-      const isAdmin = !!session?.user?.isAdmin;
-      const completed = !!session?.user?.onboardingCompleted;
-      const isOnboardingRoute = router.pathname.startsWith("/onboarding");
-
-      // Hanya user biasa yang dicek onboardingnya
-    if (!session.user.isAdmin && session.user.onboardingCompleted === false) {
-        router.replace("/onboarding");
-        return;
-      }
-
-      // Lolos gate
-      setCheckingOnboarding(false);
-    }
-  }, [
-    status,
-    session?.user?.isAdmin,
-    session?.user?.onboardingCompleted,
-    router.pathname,
-    router,
-  ]);
+    setCheckingOnboarding(false);
+  }
+}, [
+  status,
+  session?.user?.isAdmin,
+  session?.user?.onboardingCompleted,
+  router.pathname,
+  router,
+]);
 
   // ==== Init komponen Metronic setelah lolos gate ====
   useEffect(() => {
@@ -76,15 +73,22 @@ export default function UserLayout({ children }) {
     }
   };
 const getSubtitle = () => {
+    const path = router.asPath || router.pathname; // ✅ pastikan path terdefinisi
+
+  if (path.startsWith("/edit-undangan/")) {
+  return "Edit sesuka kamu ya";
+}
     switch (router.pathname) {
       case "/dashboard":
         return "Welcome to your dashboard";
       case "/edit-undangan":
         return "Kelola dan edit undangan Anda";
+
       case "/paket":
         return "Lihat paket yang tersedia";
       case "/support-center":
         return "Butuh bantuan? Hubungi support kami";
+
       default:
         return "Selamat datang di aplikasi undangan digital";
     }
@@ -121,8 +125,8 @@ const getSubtitle = () => {
             {/* Brand */}
             <div className="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
               <Link href="/dashboard" className="d-flex align-items-center">
-                <img alt="Logo" src="/images/logo-black.png" className="h-20px logo theme-light-show" />
-              <img alt="Logo" src="images/logo-white.png" className="h-20px logo theme-dark-show" />
+                <img alt="Logo" src="/images/dreamslink-b.png" className="h-20px logo theme-light-show" />
+              <img alt="Logo" src="/images/dreamslink-w.png" className="h-20px logo theme-dark-show" />
               </Link>
             </div>
 
@@ -160,7 +164,7 @@ const getSubtitle = () => {
                   <div className="menu-item">
                     <Link className={`menu-link ${router.pathname === "/support-center" ? "active" : ""}`} href="/support-center">
                       <span className="menu-icon">
-                        <i className="ki-duotone ki-support fs-2"><span className="path1"></span><span className="path2"></span></i>
+                        <i className="ki-duotone ki-question fs-2"><span className="path1"></span><span className="path2"></span></i>
                       </span>
                       <span className="menu-title">Support Center</span>
                     </Link>
@@ -239,8 +243,8 @@ const getSubtitle = () => {
                     <i className="ki-duotone ki-abstract-14 fs-1 mt-1"><span className="path1"></span><span className="path2"></span></i>
                   </div>
                   <a href="/dashboard" className="d-flex align-items-center ms-3">
-<img alt="Logo" src="/images/logo-black.png" className="h-20px logo theme-light-show" />
-              <img alt="Logo" src="images/logo-white.png" className="h-20px logo theme-dark-show" />                  </a>
+<img alt="Logo" src="/images/dreamslink-b.png" className="h-20px logo theme-light-show" />
+              <img alt="Logo" src="/images/dreamslink-w.png" className="h-20px logo theme-dark-show" />                  </a>
                 </div>
 
                 {/* Topbar buttons */}

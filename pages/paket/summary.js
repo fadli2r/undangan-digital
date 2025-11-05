@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import UserLayout from "../../components/layouts/UserLayout";
+import Swal from "sweetalert2";
 
 export default function PaketSummary() {
   const router = useRouter();
@@ -58,13 +59,7 @@ export default function PaketSummary() {
       if (data.paket) {
         setPaket(data.paket);
         
-        // Show success message if discount applied
-        if (data.message) {
-          setSuccess(data.message);
-        } else {
-          setSuccess("");
-        }
-        
+  
         // Check for coupon errors and show them
         const couponErrors = data.paket.discounts?.filter(d => d.error);
         if (couponErrors?.length > 0) {
@@ -83,6 +78,90 @@ export default function PaketSummary() {
       setLoading(false);
     }
   };
+// Tambahkan fungsi ini di dalam komponen
+const handleValidateCode = async (type) => {
+  setError("");
+  setSuccess("");
+
+  const promoCode = type === "promo" ? promo : "";
+  const referralCode = type === "referral" ? referral : "";
+
+  if (!user) {
+    Swal.fire({
+      icon: "warning",
+      title: "Login diperlukan",
+      text: "Silakan login terlebih dahulu untuk validasi kode.",
+      confirmButtonColor: "#50cd89",
+    });
+    return;
+  }
+
+  if (!paketId) return;
+
+  try {
+    setLoading(true);
+    const params = new URLSearchParams();
+    params.set("id", paketId);
+    if (promoCode) params.set("promoCode", promoCode);
+    if (referralCode) params.set("referralCode", referralCode);
+    if (user?.email) params.set("userEmail", user.email);
+
+    const res = await fetch(`/api/paket/detail?${params.toString()}`);
+    const data = await res.json();
+
+    if (data.paket) {
+      setPaket(data.paket);
+
+      const appliedDiscounts = data.paket.discounts?.filter(d => d.amount > 0) || [];
+      const failedDiscounts = data.paket.discounts?.filter(d => d.error) || [];
+
+      if (appliedDiscounts.length > 0) {
+        const msg = appliedDiscounts
+          .map(
+            (d) => `Kode <b>${d.code}</b> berhasil diterapkan! Hemat Rp ${d.amount.toLocaleString("id-ID")}`
+          )
+          .join("<br>");
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          html: msg,
+          confirmButtonColor: "#50cd89",
+        });
+      } else if (failedDiscounts.length > 0) {
+        Swal.fire({
+          icon: "error",
+          title: "Kode tidak valid",
+          text: failedDiscounts[0].error,
+          confirmButtonColor: "#f1416c",
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Tidak ada diskon",
+          text: "Kode tidak memberikan potongan harga.",
+          confirmButtonColor: "#50cd89",
+        });
+      }
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Kode tidak valid",
+        text: data.message || "Kode promo/referral tidak dapat digunakan.",
+        confirmButtonColor: "#f1416c",
+      });
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: "error",
+      title: "Gagal",
+      text: "Terjadi kesalahan saat memvalidasi kode.",
+      confirmButtonColor: "#f1416c",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // initial + when paketId changes
   useEffect(() => {
@@ -90,26 +169,22 @@ export default function PaketSummary() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paketId]);
 
-  // re-fetch when codes change (debounced)
-  useEffect(() => {
-    if (!paketId) return;
-    const t = setTimeout(() => { fetchPaketDetails(); }, 500);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryParams]);
 
- const handlePayNow = async () => {
+
+const handlePayNow = async () => {
   setSubmitting(true);
   setError("");
   setSuccess("");
 
   let email = session?.user?.email || "";
   let name = session?.user?.name || "";
+
   if (typeof window !== "undefined" && !email) {
     const u = JSON.parse(localStorage.getItem("user") || "{}");
     email = u.email || "";
     name = u.name || "";
   }
+
   if (!email) {
     setError("Silakan login terlebih dahulu");
     setSubmitting(false);
@@ -117,15 +192,26 @@ export default function PaketSummary() {
   }
 
   try {
+    // ✅ Hitung total final (setelah diskon)
+    const basePrice = Number(paket?.finalPrice ?? paket?.price ?? 0);
+
+    const totalAkhir = basePrice; // kamu bisa tambahkan fitur tambahan lain di sini nanti
+
+    // kirim payload ke server
     const res = await fetch("/api/payment/create-invoice", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        paket: paketId,    // biar server resolve Package
+        paket: paketId,
         email,
         name,
-        // minta server redirect ke /buat-undangan?orderId=...
-        successPath: "/buat-undangan"
+        amount: totalAkhir, // ✅ kirim total ke server!
+        successPath: "/buat-undangan",
+        onboardingData: {
+          promoCode: promo || "",
+          referralCode: referral || "",
+          fromSummary: true,
+        },
       }),
     });
 
@@ -138,6 +224,7 @@ export default function PaketSummary() {
   } catch (err) {
     setError("Terjadi kesalahan sistem");
   }
+
   setSubmitting(false);
 };
 
@@ -261,7 +348,7 @@ export default function PaketSummary() {
                     {paket.originalPrice ? (
                       <>
                         <div className="fs-2 fw-bold text-primary">
-                          Rp {paket.finalPrice?.toLocaleString("id-ID")}
+                          Rp {paket.price?.toLocaleString("id-ID")}
                         </div>
                         <div className="text-muted text-decoration-line-through">
                           Rp {paket.originalPrice?.toLocaleString("id-ID")}
@@ -305,107 +392,115 @@ export default function PaketSummary() {
                 </div>
               </div>
               <div className="card-body">
-                <div className="row g-5">
-                  <div className="col-md-6">
-                    <label className="form-label">Kode Promo</label>
-                    <div className="position-relative">
-                      <input
-                        type="text"
-                        value={promo}
-                        onChange={(e) => {
-                          setPromo(e.target.value.toUpperCase());
-                          setError(""); // Clear error when typing
-                          setSuccess(""); // Clear success when typing
-                        }}
-                        className={`form-control ${
-                          paket?.discounts?.find(d => d.type === 'promo' && d.error) ? 'is-invalid' : 
-                          paket?.discounts?.find(d => d.type === 'promo' && d.amount > 0) ? 'is-valid' : ''
-                        }`}
-                        placeholder="Masukkan kode promo"
-                        autoComplete="off"
-                        disabled={!user}
-                      />
-                      {paket?.discounts?.find(d => d.type === 'promo' && d.amount > 0) && (
-                        <div className="position-absolute top-50 end-0 translate-middle-y me-3">
-                          <i className="ki-duotone ki-check-circle fs-2 text-success">
-                            <span className="path1"></span>
-                            <span className="path2"></span>
-                          </i>
-                        </div>
-                      )}
-                    </div>
-                    {paket?.discounts?.find(d => d.type === 'promo' && d.error) && (
-                      <div className="text-danger fs-7 mt-1">
-                        {paket.discounts.find(d => d.type === 'promo' && d.error).error}
-                      </div>
-                    )}
-                    {paket?.discounts?.find(d => d.type === 'promo' && d.amount > 0) && (
-                      <div className="text-success fs-7 mt-1">
-                        ✅ Hemat Rp {paket.discounts.find(d => d.type === 'promo' && d.amount > 0).amount.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Kode Referral</label>
-                    <div className="position-relative">
-                      <input
-                        type="text"
-                        value={referral}
-                        onChange={(e) => {
-                          setReferral(e.target.value.toUpperCase());
-                          setError(""); // Clear error when typing
-                          setSuccess(""); // Clear success when typing
-                        }}
-                        className={`form-control ${
-                          paket?.discounts?.find(d => d.type === 'referral' && d.error) ? 'is-invalid' : 
-                          paket?.discounts?.find(d => d.type === 'referral' && d.amount > 0) ? 'is-valid' : ''
-                        }`}
-                        placeholder="Masukkan kode referral"
-                        autoComplete="off"
-                        disabled={!user}
-                      />
-                      {paket?.discounts?.find(d => d.type === 'referral' && d.amount > 0) && (
-                        <div className="position-absolute top-50 end-0 translate-middle-y me-3">
-                          <i className="ki-duotone ki-check-circle fs-2 text-success">
-                            <span className="path1"></span>
-                            <span className="path2"></span>
-                          </i>
-                        </div>
-                      )}
-                    </div>
-                    {paket?.discounts?.find(d => d.type === 'referral' && d.error) && (
-                      <div className="text-danger fs-7 mt-1">
-                        {paket.discounts.find(d => d.type === 'referral' && d.error).error}
-                      </div>
-                    )}
-                    {paket?.discounts?.find(d => d.type === 'referral' && d.amount > 0) && (
-                      <div className="text-success fs-7 mt-1">
-                        ✅ Hemat Rp {paket.discounts.find(d => d.type === 'referral' && d.amount > 0).amount.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {!user && (
-                  <div className="alert alert-warning d-flex align-items-center mt-3" role="alert">
-                    <i className="ki-duotone ki-information fs-2 me-3">
-                      <span className="path1"></span>
-                      <span className="path2"></span>
-                      <span className="path3"></span>
-                    </i>
-                    <div>
-                      Silakan login terlebih dahulu untuk menggunakan kode promo atau referral
-                    </div>
-                  </div>
-                )}
-                
-                <div className="text-muted fs-7 mt-3">
-                  {user ? 
-                    "Kode akan diterapkan otomatis beberapa detik setelah Anda mengetik." :
-                    "Login diperlukan untuk validasi kode kupon."
-                  }
-                </div>
-              </div>
+  <div className="row g-5">
+    {/* ======== KODE PROMO ======== */}
+    <div className="col-md-6">
+      <label className="form-label">Kode Promo</label>
+      <div className="input-group">
+        <input
+          type="text"
+          value={promo}
+          onChange={(e) => setPromo(e.target.value.toUpperCase())}
+          className={`form-control ${
+            paket?.discounts?.find(d => d.type === 'promo' && d.error)
+              ? 'is-invalid'
+              : paket?.discounts?.find(d => d.type === 'promo' && d.amount > 0)
+              ? 'is-valid'
+              : ''
+          }`}
+          placeholder="Masukkan kode promo"
+          autoComplete="off"
+          disabled={!user}
+        />
+        <button
+          className="btn btn-light-primary"
+          type="button"
+          disabled={!promo || !user || loading}
+          onClick={() => handleValidateCode("promo")}
+        >
+          {loading ? (
+            <span className="spinner-border spinner-border-sm"></span>
+          ) : (
+            "Validasi"
+          )}
+        </button>
+      </div>
+
+      {paket?.discounts?.find(d => d.type === 'promo' && d.error) && (
+        <div className="text-danger fs-7 mt-1">
+          {paket.discounts.find(d => d.type === 'promo' && d.error).error}
+        </div>
+      )}
+      {paket?.discounts?.find(d => d.type === 'promo' && d.amount > 0) && (
+        <div className="text-success fs-7 mt-1">
+          ✅ Hemat Rp{" "}
+          {paket.discounts
+            .find(d => d.type === 'promo' && d.amount > 0)
+            .amount.toLocaleString()}
+        </div>
+      )}
+    </div>
+
+    {/* ======== KODE REFERRAL ======== */}
+    <div className="col-md-6">
+      <label className="form-label">Kode Referral</label>
+      <div className="input-group">
+        <input
+          type="text"
+          value={referral}
+          onChange={(e) => setReferral(e.target.value.toUpperCase())}
+          className={`form-control ${
+            paket?.discounts?.find(d => d.type === 'referral' && d.error)
+              ? 'is-invalid'
+              : paket?.discounts?.find(d => d.type === 'referral' && d.amount > 0)
+              ? 'is-valid'
+              : ''
+          }`}
+          placeholder="Masukkan kode referral"
+          autoComplete="off"
+          disabled={!user}
+        />
+        <button
+          className="btn btn-light-primary"
+          type="button"
+          disabled={!referral || !user || loading}
+          onClick={() => handleValidateCode("referral")}
+        >
+          {loading ? (
+            <span className="spinner-border spinner-border-sm"></span>
+          ) : (
+            "Validasi"
+          )}
+        </button>
+      </div>
+
+      {paket?.discounts?.find(d => d.type === 'referral' && d.error) && (
+        <div className="text-danger fs-7 mt-1">
+          {paket.discounts.find(d => d.type === 'referral' && d.error).error}
+        </div>
+      )}
+      {paket?.discounts?.find(d => d.type === 'referral' && d.amount > 0) && (
+        <div className="text-success fs-7 mt-1">
+          ✅ Hemat Rp{" "}
+          {paket.discounts
+            .find(d => d.type === 'referral' && d.amount > 0)
+            .amount.toLocaleString()}
+        </div>
+      )}
+    </div>
+  </div>
+
+  {!user && (
+    <div className="alert alert-warning d-flex align-items-center mt-4" role="alert">
+      <i className="ki-duotone ki-information fs-2 me-3">
+        <span className="path1"></span>
+        <span className="path2"></span>
+      </i>
+      <div>Silakan login terlebih dahulu untuk menggunakan kode promo atau referral</div>
+    </div>
+  )}
+</div>
+
             </div>
           </div>
 
@@ -418,14 +513,28 @@ export default function PaketSummary() {
                 </div>
               </div>
               <div className="card-body">
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Harga Paket</span>
-                  <span>
-                    {paket.originalPrice
-                      ? `Rp ${paket.originalPrice?.toLocaleString("id-ID")}`
-                      : `Rp ${paket.finalPrice?.toLocaleString("id-ID")}`}
-                  </span>
-                </div>
+                <div className="d-flex justify-content-between mb-3 align-items-center">
+  <span className="fw-semibold text-gray-700">Harga Paket</span>
+  <div className="text-end">
+    {/* Jika ada harga asli dan harga final lebih rendah */}
+    {paket.originalPrice && paket.originalPrice > (paket.finalPrice ?? paket.price) ? (
+      <>
+        <div className="text-muted text-decoration-line-through fs-7">
+          Rp {paket.originalPrice.toLocaleString("id-ID")}
+        </div>
+        <div className="fw-bold text-primary fs-5">
+          Rp {(paket.price).toLocaleString("id-ID")}
+        </div>
+      </>
+    ) : (
+      // Kalau tidak ada diskon, tampilkan satu harga saja
+      <div className="fw-bold text-primary fs-5">
+        Rp {(paket.finalPrice ?? paket.price).toLocaleString("id-ID")}
+      </div>
+    )}
+  </div>
+</div>
+
 
                 {!!paket.discounts?.length &&
                   paket.discounts

@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { templateList } from "../../../data/templates";
+import { useEffect, useState, useMemo } from "react";
+import { defaultTemplateList as templateList } from "../../../data/templates";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 
@@ -13,25 +13,37 @@ export default function Desain() {
   const [undangan, setUndangan] = useState(null);
   const [success, setSuccess] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Ambil data undangan (untuk tahu template yang sedang dipakai)
+  // 🔄 Ambil data undangan
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     fetch(`/api/invitation/detail?slug=${slug}`)
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         setUndangan(res.undangan);
         setSelectedTemplate(res.undangan?.template || "");
         setLoading(false);
       })
-      .catch(err => {
+      .catch(() => {
         setError("Gagal load data undangan");
         setLoading(false);
       });
   }, [slug]);
 
-  // Fungsi update template
+  // 🔍 Filter hasil pencarian
+  const filteredTemplates = useMemo(() => {
+    if (!searchQuery) return templateList;
+    const q = searchQuery.toLowerCase();
+    return templateList.filter(
+      (tpl) =>
+        tpl.name.toLowerCase().includes(q) ||
+        tpl.description.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  // 🧭 Fungsi update template
   const handleChangeTemplate = async (tpl) => {
     setLoading(true);
     setError("");
@@ -39,7 +51,7 @@ export default function Desain() {
     const res = await fetch("/api/invitation/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug, field: { template: tpl } })
+      body: JSON.stringify({ slug, field: { template: tpl } }),
     });
     if (res.ok) {
       setSelectedTemplate(tpl);
@@ -97,6 +109,23 @@ export default function Desain() {
           </div>
         </div>
         <div className="card-body">
+          {/* 🔍 Search Bar */}
+          <div className="mb-4">
+            <div className="input-group">
+              <span className="input-group-text bg-white">
+                <i className="fas fa-search text-muted"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Cari template berdasarkan nama atau deskripsi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Info Template Aktif */}
           <div className="mb-6">
             <div className="d-flex align-items-center">
               <span className="fw-bold me-3">Template sekarang:</span>
@@ -126,24 +155,32 @@ export default function Desain() {
             </div>
           )}
 
-          {/* List Template */}
+          {/* 🖼️ List Template */}
           <div className="row g-6 g-xl-9">
-            {templateList.map((tpl) => (
+            {filteredTemplates.map((tpl) => (
               <div key={tpl.slug} className="col-md-6 col-lg-4">
-                <div className={`card card-flush h-100 ${selectedTemplate === tpl.slug ? "border-primary" : ""}`}>
+                <div
+                  className={`card card-flush h-100 ${
+                    selectedTemplate === tpl.slug ? "border-primary" : ""
+                  }`}
+                >
                   <div className="card-header pt-7">
                     <div className="card-title">
-                      <img 
-                        src={tpl.thumbnail} 
-                        alt={tpl.name} 
-                        className="w-100 h-150px object-fit-cover rounded" 
+                      <img
+                        src={tpl.thumbnail}
+                        alt={tpl.name}
+                        className="w-100 h-150px object-fit-cover rounded"
                       />
                     </div>
                   </div>
                   <div className="card-body pt-0 text-center">
-                    <div className="fs-4 fw-bold text-gray-900 mb-2">{tpl.name}</div>
-                    <div className="fs-6 fw-semibold text-gray-600 mb-4">{tpl.description}</div>
-                    
+                    <div className="fs-4 fw-bold text-gray-900 mb-2">
+                      {tpl.name}
+                    </div>
+                    <div className="fs-6 fw-semibold text-gray-600 mb-4">
+                      {tpl.description}
+                    </div>
+
                     {selectedTemplate === tpl.slug && (
                       <div className="badge badge-light-success mb-3">
                         <i className="ki-duotone ki-check fs-2 me-1">
@@ -153,11 +190,11 @@ export default function Desain() {
                         Template Aktif
                       </div>
                     )}
-                    
+
                     <button
                       className={`btn w-100 ${
-                        selectedTemplate === tpl.slug 
-                          ? "btn-light-secondary" 
+                        selectedTemplate === tpl.slug
+                          ? "btn-light-secondary"
                           : "btn-primary"
                       }`}
                       onClick={() => handleChangeTemplate(tpl.slug)}
@@ -166,12 +203,22 @@ export default function Desain() {
                       {loading && (
                         <span className="spinner-border spinner-border-sm me-2"></span>
                       )}
-                      {selectedTemplate === tpl.slug ? "Sedang Digunakan" : "Pilih Template"}
+                      {selectedTemplate === tpl.slug
+                        ? "Sedang Digunakan"
+                        : "Pilih Template"}
                     </button>
                   </div>
                 </div>
               </div>
             ))}
+
+            {/* 🔍 Jika tidak ada hasil */}
+            {filteredTemplates.length === 0 && (
+              <div className="text-center text-muted py-10">
+                <i className="fas fa-search fa-2x mb-3"></i>
+                <p>Tidak ada template yang cocok dengan pencarian.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

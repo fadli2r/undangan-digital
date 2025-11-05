@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "@/components/layouts/UserLayout";
-import { templateList } from "@/data/templates";
+import { defaultTemplateList as templateList } from "../data/templates";
 
 const EDIT_PATH = (slug) => `/edit-undangan/${slug}`;
 
@@ -249,7 +249,6 @@ export default function BuatUndangan() {
   if (!effectiveOrderId) {
     return (
       <UserLayout>
-        <div className="container py-10">
           <div className="alert alert-warning d-flex align-items-center p-8">
             <i className="ki-duotone ki-information-5 fs-2hx text-warning me-4">
               <span className="path1"></span><span className="path2"></span>
@@ -269,7 +268,6 @@ export default function BuatUndangan() {
               </div>
             </div>
           </div>
-        </div>
       </UserLayout>
     );
   }

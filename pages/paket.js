@@ -328,7 +328,7 @@ export default function Paket() {
               <div className="text-gray-700 fw-semibold fs-6 mb-5">
                 Tim customer service kami siap membantu Anda 24/7
               </div>
-              <a href="https://wa.me/your-number" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href="https://wa.me/+358113651127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 <i className="ki-duotone ki-message-text fs-2">
                   <span className="path1"></span><span className="path2"></span><span className="path3"></span>
                 </i>

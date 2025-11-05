@@ -1,25 +1,27 @@
 'use client';
+import { useRouter } from "next/router";
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import TwoColumnLayout from './TwoColumnLayout';
-import GiftConfirmation from './GiftConfirmation';
-import MusicPlayer from './MusicPlayer';
-import CountdownTimer from './CountdownTimer';
-import Maps from './Maps';
-import RSVPForm from './RSVPForm';
-import WeddingWishes from './WeddingWishes';
-import OurStory from './OurStory';
-import AddToCalendar from './AddToCalendar';
-import QRCodeGuest from './QRCodeGuest';
-import LiveStreaming from './LiveStreaming';
-import Gallery from './Gallery';
+import TwoColumnLayout from '../sections/TwoColumnLayout';
+import GiftConfirmation from '../sections/GiftConfirmation';
+import MusicPlayer from '../sections/MusicPlayer';
+import CountdownTimer from '../sections/CountdownTimer';
+import Maps from '../sections/Maps';
+import RSVPForm from '../sections/RSVPForm';
+import WeddingWishes from '../sections/WeddingWishes';
+import OurStory from '../sections/OurStory';
+import AddToCalendar from '../sections/AddToCalendar';
+import QRCodeGuest from '../sections/QRCodeGuest';
+import LiveStreaming from '../sections/LiveStreaming';
+import Gallery from '../sections/Gallery';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function ClassicTemplate({ data }) {
   const [showHero, setShowHero] = useState(false);
   const { language, changeLanguage, t } = useLanguage();
+const [guestName, setGuestName] = useState('');
 
   // URL background untuk splash/full-screen sebelum masuk undangan
   const bgImageUrl = '/images/bg_couple.jpg';
@@ -31,7 +33,15 @@ export default function ClassicTemplate({ data }) {
       document.body.style.overflow = previousOverflow;
     };
   }, []);
-
+useEffect(() => {
+  try {
+    const qs = new URLSearchParams(window.location.search);
+    const tamu = qs.get('tamu') || '';
+    setGuestName(tamu.trim());
+  } catch {
+    setGuestName('');
+  }
+}, []);
   if (!showHero) {
     return (
       <section
@@ -90,62 +100,66 @@ export default function ClassicTemplate({ data }) {
         </div>
 
         {/* Hero Section */}
-        <motion.section
-          id="hero"
-          className="relative w-full h-screen bg-cover bg-center"
-          style={{ backgroundImage: `url(${bgImageUrl})` }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { duration: 0.8 } }}
-        >
-          <div className="absolute inset-0 bg-black/25"></div>
-          <div className="relative z-10 px-6 py-16 text-center">
-            <h1 className="text-6xl font-serif text-white">
-              {language === 'id' ? 'Undangan Pernikahan' : 'The Wedding of'}
-            </h1>
-            <h2 className="mt-4 text-6xl font-serif text-white">
-              {data.mempelai.pria} &amp; {data.mempelai.wanita}
-            </h2>
-            <p className="mt-6 text-xl text-white">
-              {new Date(data.acara_utama.tanggal).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
+       <motion.section
+  id="hero"
+  className="relative w-full h-screen bg-cover bg-center"
+  style={{ backgroundImage: `url(${bgImageUrl})` }}
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1, transition: { duration: 0.8 } }}
+>
+  <div className="absolute inset-0 bg-black/25"></div>
+  <div className="relative z-10 px-6 py-16 text-center">
+    <h1 className="text-6xl font-serif text-white">
+      {language === "id" ? "Undangan Pernikahan" : "The Wedding of"}
+    </h1>
+    <h2 className="mt-4 text-6xl font-serif text-white">
+      {data.mempelai.pria} &amp; {data.mempelai.wanita}
+    </h2>
+    <p className="mt-6 text-xl text-white">
+      {new Date(data.acara_utama.tanggal).toLocaleDateString(
+        language === "id" ? "id-ID" : "en-US",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }
+      )}
+    </p>
 
-            <div className="mt-8">
-              <h3 className="text-2xl text-white">
-                {language === 'id' ? 'Kepada Yth,' : 'Dear,'}
-              </h3>
-              {data.components?.QRCode}
-              <h4 className="mt-2 text-xl text-white">
-                {data.tambahan?.guestName || (language === 'id' ? 'Nama Tamu' : 'Guest Name')}
-              </h4>
-            </div>
+    <div className="mt-8">
+      <h3 className="text-2xl text-white">
+        {language === "id" ? "Kepada Yth," : "Dear,"}
+      </h3>
+      <h4 className="mt-2 text-xl text-white font-semibold">
+        {guestName || data.tambahan?.guestName || 
+          (language === "id" ? "Nama Tamu" : "Guest Name")}
+      </h4>
+    </div>
 
-            {(data.slug && data.tambahan?.guestName) && (
-              <div className="mt-6 flex justify-center">
-                <QRCodeGuest
-                  slug={data.slug}
-                  guestName={data.tambahan.guestName}
-                />
-              </div>
-            )}
+    {data.slug && (guestName || data.tambahan?.guestName) && (
+      <div className="mt-6 flex justify-center">
+        <QRCodeGuest
+          slug={data.slug}
+          guestName={guestName || data.tambahan?.guestName}
+        />
+      </div>
+    )}
 
-            {data.tambahan?.qr_code_url && (
-              <div className="mt-6 flex justify-center">
-                <Image
-                  src={data.tambahan.qr_code_url}
-                  alt="QR Code Undangan"
-                  width={150}
-                  height={150}
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
-            )}
-          </div>
-        </motion.section>
+    {data.tambahan?.qr_code_url && (
+      <div className="mt-6 flex justify-center">
+        <Image
+          src={data.tambahan.qr_code_url}
+          alt="QR Code Undangan"
+          width={150}
+          height={150}
+          className="rounded-lg shadow-lg"
+        />
+      </div>
+    )}
+  </div>
+</motion.section>
+
 
         {/* We Found Love Section */}
         <motion.section
@@ -519,31 +533,36 @@ export default function ClassicTemplate({ data }) {
         )}
 
         {/* RSVP */}
-        {!data.hideRSVP && (
-          <motion.section
-            className="py-16 flex flex-col items-center text-center"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 },
-            }}
-          >
-            <div className="w-full max-w-2xl mx-auto px-4">
-              <h2 className="text-4xl font-serif mb-8">
-                {language === 'id' ? 'Konfirmasi Kehadiran' : 'RSVP'}
-              </h2>
-              <p className="text-gray-600 mb-12">
-                {language === 'id' 
-                  ? 'Mohon konfirmasi kehadiran Anda di acara pernikahan kami'
-                  : 'Please confirm your attendance at our wedding'
-                }
-              </p>
-              <RSVPForm slug={data.slug} language={language} />
-            </div>
-          </motion.section>
-        )}
+        {/* RSVP */}
+{!data.hideRSVP && (
+  <motion.section
+    className="py-16 flex flex-col items-center text-center"
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true, amount: 0.3 }}
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0 },
+    }}
+  >
+    <div className="w-full max-w-2xl mx-auto px-4">
+      <h2 className="text-4xl font-serif mb-8">
+        {language === 'id' ? 'Konfirmasi Kehadiran' : 'RSVP'}
+      </h2>
+      <p className="text-gray-600 mb-12">
+        {language === 'id' 
+          ? 'Mohon konfirmasi kehadiran Anda di acara pernikahan kami'
+          : 'Please confirm your attendance at our wedding'
+        }
+      </p>
+
+      {/* ✅ pass slug & tamu */}
+                  <RSVPForm slug={data.slug} namaTamu={guestName || undefined} />
+
+    </div>
+  </motion.section>
+)}
+
 
         {/* Footer */}
         <motion.footer

@@ -292,9 +292,8 @@ export default function SupportCenter() {
                 <div className="card-body py-12">
                   <div className="mb-5 fw-bold">Butuh bantuan lanjut?</div>
                   <div className="d-flex flex-wrap justify-content-center gap-3">
-                    <Link href="mailto:support@viding.co" className="btn btn-primary px-6">Email Support</Link>
-                    <Link href="https://wa.me/6281234567890" className="btn btn-success px-6" target="_blank">WhatsApp</Link>
-                    <Link href="/ticket/new" className="btn btn-light px-6">Buka Tiket</Link>
+                    <Link href="mailto:support@dreamslink.id" className="btn btn-primary px-6">Email Support</Link>
+                    <Link href="https://wa.me/628113651127" className="btn btn-success px-6" target="_blank">WhatsApp</Link>
                   </div>
                 </div>
               </div>

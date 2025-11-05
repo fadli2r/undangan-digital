@@ -1,0 +1,144 @@
+/* File: components/BottomNav.module.css */
+
+.navigation {
+  /* ✅ Variabel dari :root dipindahkan ke sini agar valid di CSS Module */
+  --clr-bg: rgba(223, 223, 223, 0.7); /* hijau transparan */
+;
+  --clr-active: #29fd53;
+  --item-width: 70px;
+  --transition-speed: 0.5s; /* Kecepatan transisi bisa ditambahkan di sini */
+
+  width: calc(var(--item-width) * 5);
+  height: var(--item-width);
+  background: #e8e8e8;
+  border-radius: 20px;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur; /* efek blur tembus background */  transition: var(--transition-speed) ease;
+
+}
+
+.navigation ul {
+  display: flex;
+  width: 100%;
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  position: relative;
+  width: var(--item-width);
+  height: var(--item-width);
+  z-index: 2;
+  cursor: pointer;
+}
+
+.list a {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  text-align: center;
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(20px);
+}
+
+.icon {
+  position: relative;
+  display: block;
+  line-height: 75px;
+  font-size: 1.5em;
+  text-align: center;
+  transition: var(--transition-speed) ease;
+  color: #000;
+}
+
+.list.active .icon {
+  transform: translateY(-32px);
+}
+
+.text {
+  position: absolute;
+  color: var(--clr-bg);
+  font-weight: 400;
+  font-size: 0.75em;
+  letter-spacing: 0.05em;
+  transition: var(--transition-speed) ease;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.list.active .text {
+  opacity: 1;
+  transform: translateY(10px);
+}
+
+.indicator {
+  position: absolute;
+  top: -50%;
+  left: 0;
+  width: var(--item-width);
+  height: var(--item-width);
+  border-radius: 50%;
+background: rgba(223, 223, 223, 0.7); /* hijau transparan */
+  border: 6px solid transparent;
+  backdrop-filter: blur(6px); /* efek blur tembus background */  transition: var(--transition-speed) ease;
+  z-index: 1;
+
+}
+
+.indicator::before {
+  content: none;
+  position: absolute;
+  top: 50%;
+  left: -22px;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border-top-right-radius: 20px;
+  box-shadow: 1px -10px 0 0 rgba(41, 253, 83, 0.7);
+    backdrop-filter: blur(6px); /* efek blur tembus background */  transition: var(--transition-speed) ease;
+
+}
+
+.indicator::after {
+  content: none;
+  position: absolute;
+  top: 50%;
+  right: -22px;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border-top-left-radius: 20px;
+  box-shadow: -1px -10px 0 0 rgba(41, 253, 83, 0.7);
+    backdrop-filter: blur(6px); /* efek blur tembus background */  transition: var(--transition-speed) ease;
+
+}
+
+.list:nth-child(1).active ~ .indicator {
+  transform: translateX(calc(var(--item-width) * 0));
+}
+.list:nth-child(2).active ~ .indicator {
+  transform: translateX(calc(var(--item-width) * 1));
+}
+.list:nth-child(3).active ~ .indicator {
+  transform: translateX(calc(var(--item-width) * 2));
+}
+.list:nth-child(4).active ~ .indicator {
+  transform: translateX(calc(var(--item-width) * 3));
+}
+.list:nth-child(5).active ~ .indicator {
+  transform: translateX(calc(var(--item-width) * 4));
+}

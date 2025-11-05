@@ -14,71 +14,86 @@ export default function EditOurStory() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Fetch existing our_story data
+  // ✅ Fetch existing our_story data
   useEffect(() => {
     if (!slug) return;
+
     fetch(`/api/invitation/detail?slug=${slug}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         const ourStory = data.undangan?.our_story || {};
         setMainPhotoUrl(ourStory.main_photo || "");
         setTitle(ourStory.title || "");
-        setStories(ourStory.stories && ourStory.stories.length > 0 ? ourStory.stories : [{ heading: "", content: "" }]);
-      });
+        setStories(
+          ourStory.stories && ourStory.stories.length > 0
+            ? ourStory.stories
+            : [{ heading: "", content: "" }]
+        );
+      })
+      .catch(() => setMessage("Gagal memuat data Our Story"));
   }, [slug]);
 
+  // ✅ Ubah data cerita
   const handleStoryChange = (index, field, value) => {
-    const newStories = [...stories];
-    newStories[index][field] = value;
-    setStories(newStories);
+    const updated = [...stories];
+    updated[index][field] = value;
+    setStories(updated);
   };
 
-  const addStory = () => {
-    setStories([...stories, { heading: "", content: "" }]);
-  };
+  // ✅ Tambah cerita baru
+  const addStory = () => setStories([...stories, { heading: "", content: "" }]);
 
+  // ✅ Hapus cerita
   const removeStory = (index) => {
-    if (stories.length === 1) return; // At least one story
-    const newStories = stories.filter((_, i) => i !== index);
-    setStories(newStories);
+    if (stories.length === 1) return;
+    setStories(stories.filter((_, i) => i !== index));
   };
 
+  // ✅ Ganti file foto utama (preview dulu)
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setMainPhotoFile(file);
-    // Preview image
+    const file = e.target.files?.[0];
     if (file) {
+      setMainPhotoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setMainPhotoUrl(reader.result);
-      };
+      reader.onloadend = () => setMainPhotoUrl(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const uploadFile = async () => {
-    if (!mainPhotoFile) return mainPhotoUrl; // No new file, keep existing URL
+  // ✅ Upload foto utama ke API
+const uploadFile = async () => {
+  if (!mainPhotoFile) return mainPhotoUrl; // Tidak ada file baru
 
-    const formData = new FormData();
-    formData.append("file", mainPhotoFile);
+  const formData = new FormData();
+  formData.append("file", mainPhotoFile);
 
-    const res = await fetch("/api/invitation/upload.galeri", {
+  try {
+    const res = await fetch("/api/invitation/upload-our-story-photo", {
       method: "POST",
       body: formData,
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      return data.url; // Assuming API returns { url: "uploaded_file_url" }
-    } else {
-      throw new Error("Upload gagal");
-    }
-  };
+    const data = await res.json();
+    console.log("🔍 Upload response:", data);
 
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || "Upload gagal");
+    }
+
+    return data.path;
+  } catch (err) {
+    console.error("❌ Upload file error:", err);
+    throw new Error("Gagal mengupload foto utama. Pastikan file valid (max 5MB).");
+  }
+};
+
+
+  // ✅ Submit data Our Story
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setMessage("Menyimpan data...");
+
     try {
       const uploadedUrl = await uploadFile();
 
@@ -91,45 +106,52 @@ export default function EditOurStory() {
             our_story: {
               main_photo: uploadedUrl,
               title,
-              stories
-            }
-          }
+              stories,
+            },
+          },
         }),
       });
+
       if (res.ok) {
-        setMessage("Our Story berhasil disimpan.");
+        setMessage("✅ Our Story berhasil disimpan.");
       } else {
-        setMessage("Gagal menyimpan Our Story.");
+        setMessage("❌ Gagal menyimpan Our Story.");
       }
-    } catch (error) {
-      setMessage("Gagal mengupload foto utama.");
+    } catch (err) {
+      console.error("Upload error:", err);
+      setMessage("❌ Gagal mengupload foto utama.");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMessage(""), 2500);
     }
-    setLoading(false);
   };
 
   return (
     <UserLayout>
       <BackButton />
-      <div className="card">
-        <div className="card-header">
+      <div className="card shadow-sm">
+        <div className="card-header border-0">
           <div className="card-title">
-            <h2 className="fw-bold">Edit Our Story</h2>
+            <h2 className="fw-bold mb-0">Edit Our Story</h2>
           </div>
         </div>
+
         <div className="card-body">
           <form onSubmit={handleSubmit}>
+            {/* Judul */}
             <div className="mb-8">
               <label className="form-label required">Judul</label>
               <input
                 type="text"
                 value={title}
-                onChange={e => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 className="form-control"
                 placeholder="Contoh: Kisah Cinta Kami"
                 required
               />
             </div>
 
+            {/* Foto utama */}
             <div className="mb-8">
               <label className="form-label">Foto Utama</label>
               <input
@@ -138,30 +160,34 @@ export default function EditOurStory() {
                 onChange={handleFileChange}
                 className="form-control mb-3"
               />
+
               {mainPhotoUrl && (
                 <div className="text-center">
-                  <img 
-                    src={mainPhotoUrl} 
-                    alt="Preview Foto Utama" 
-                    className="rounded w-300px h-200px object-fit-cover border"
+                  <img
+                    src={mainPhotoUrl}
+                    alt="Preview Foto Utama"
+                    className="rounded border shadow-sm object-cover"
+                    style={{
+                      width: "300px",
+                      height: "400px",
+                      objectFit: "cover",
+                      borderRadius: "12px",
+                    }}
                   />
                 </div>
               )}
             </div>
 
+            {/* Cerita */}
             <div className="mb-8">
               <div className="d-flex justify-content-between align-items-center mb-5">
-                <label className="form-label fw-bold">Cerita</label>
+                <label className="form-label fw-bold fs-5">Daftar Cerita</label>
                 <button
                   type="button"
                   onClick={addStory}
                   className="btn btn-light-primary btn-sm"
                 >
-                  <i className="ki-duotone ki-plus fs-2">
-                    <span className="path1"></span>
-                    <span className="path2"></span>
-                  </i>
-                  Tambah Cerita
+                  <i className="ki-duotone ki-plus fs-2 me-1"></i> Tambah Cerita
                 </button>
               </div>
 
@@ -179,17 +205,12 @@ export default function EditOurStory() {
                           className="btn btn-icon btn-light-danger btn-sm"
                           title="Hapus cerita"
                         >
-                          <i className="ki-duotone ki-trash fs-2">
-                            <span className="path1"></span>
-                            <span className="path2"></span>
-                            <span className="path3"></span>
-                            <span className="path4"></span>
-                            <span className="path5"></span>
-                          </i>
+                          <i className="ki-duotone ki-trash fs-2"></i>
                         </button>
                       )}
                     </div>
                   </div>
+
                   <div className="card-body">
                     <div className="mb-5">
                       <label className="form-label required">Judul Cerita</label>
@@ -197,7 +218,9 @@ export default function EditOurStory() {
                         type="text"
                         placeholder="Contoh: Pertemuan Pertama"
                         value={story.heading}
-                        onChange={e => handleStoryChange(index, "heading", e.target.value)}
+                        onChange={(e) =>
+                          handleStoryChange(index, "heading", e.target.value)
+                        }
                         className="form-control"
                         required
                       />
@@ -207,7 +230,9 @@ export default function EditOurStory() {
                       <textarea
                         placeholder="Ceritakan momen spesial Anda..."
                         value={story.content}
-                        onChange={e => handleStoryChange(index, "content", e.target.value)}
+                        onChange={(e) =>
+                          handleStoryChange(index, "content", e.target.value)
+                        }
                         className="form-control"
                         rows={4}
                         required
@@ -218,21 +243,27 @@ export default function EditOurStory() {
               ))}
             </div>
 
+            {/* Pesan */}
             {message && (
-              <div className={`alert ${message.includes('berhasil') ? 'alert-success' : 'alert-danger'} mb-8`}>
-                <i className={`ki-duotone ${message.includes('berhasil') ? 'ki-check-circle' : 'ki-cross-circle'} fs-2 me-2`}>
-                  <span className="path1"></span>
-                  <span className="path2"></span>
-                </i>
+              <div
+                className={`alert ${
+                  message.includes("✅")
+                    ? "alert-success"
+                    : message.includes("❌")
+                    ? "alert-danger"
+                    : "alert-info"
+                } mb-8`}
+              >
                 {message}
               </div>
             )}
 
+            {/* Tombol simpan */}
             <div className="text-center">
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary"
+                className="btn btn-primary px-8 py-3 fw-bold"
               >
                 {loading && (
                   <span className="spinner-border spinner-border-sm me-2"></span>

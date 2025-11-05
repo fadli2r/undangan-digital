@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source:
-          '/:slug((?!api|_next|static|public|assets|dashboard|login|support-center|paket|edit-undangan|buat-undangan|onboarding|admin|orders|scanner).*)',
+          '/:slug((?!api|_next|static|public|assets|dashboard|login|support-center|paket|edit-undangan|buat-undangan|preview|onboarding|admin|orders|profile|scanner|buku-tamu).*)',
         destination: '/undangan/:slug',
       },
     ];

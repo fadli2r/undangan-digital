@@ -77,8 +77,8 @@ export default function AdminLayout({ children }) {
           {/* begin::Brand */}
           <div className="aside-logo flex-column-auto px-9 mb-9" id="kt_aside_logo">
             <Link href="/admin" className="d-inline-flex align-items-center">
-              <img alt="Logo" src="/metronic/assets/media/logos/demo3.svg" className="h-20px logo theme-light-show" />
-              <img alt="Logo" src="/metronic/assets/media/logos/demo3-dark.svg" className="h-20px logo theme-dark-show" />
+              <img alt="Logo" src="/images/dreamslink-b.png" className="h-20px logo theme-light-show" />
+              <img alt="Logo" src="/images/dreamslink-w.png" className="h-20px logo theme-dark-show" />
             </Link>
           </div>
           {/* end::Brand */}
@@ -222,7 +222,25 @@ export default function AdminLayout({ children }) {
                     <span className="menu-title">Coupons</span>
                   </Link>
                 </div>
+                <div className="menu-item">
+                  <Link
+                    href="/admin/templates"
+                    className={`menu-link ${
+                      router.pathname.startsWith("/admin/templates") ? "active" : ""
+                    }`}
+                  >
+                    <span className="menu-icon">
+                      <i className="ki-duotone ki-code fs-2">
+                        <span className="path1" />
+                        <span className="path2" />
+                                                <span className="path3" />
+                        <span className="path4" />
 
+                      </i>
+                    </span>
+                    <span className="menu-title">Template</span>
+                  </Link>
+                </div>
                 <div className="menu-item">
                   <Link
                     href="/admin/settings"
@@ -424,8 +442,8 @@ export default function AdminLayout({ children }) {
                   <i className="ki-duotone ki-abstract-14 fs-1 mt-1"><span className="path1"/><span className="path2"/></i>
                 </div>
                 <Link href="/admin" className="d-flex align-items-center">
-                  <img alt="Logo" src="/metronic/assets/media/logos/demo3.svg" className="theme-light-show h-20px" />
-                  <img alt="Logo" src="/metronic/assets/media/logos/demo3-dark.svg" className="theme-dark-show h-20px" />
+                  <img alt="Logo" src="/images/dreamslink-b.png" className="theme-light-show h-20px" />
+                  <img alt="Logo" src="/images/dreamslink-w.png" className="theme-dark-show h-20px" />
                 </Link>
               </div>
 

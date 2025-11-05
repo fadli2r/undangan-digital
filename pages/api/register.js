@@ -1,65 +1,77 @@
-import dbConnect from '../../utils/db';
-import User from '../../models/User';
+import dbConnect from "@/utils/db";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, message: "Method not allowed" });
+  }
 
   try {
     await dbConnect();
 
     const { email, password, name, phone } = req.body;
 
-    // Validasi input dasar
+    // 🧠 Validasi input
     if (!email || !password || !name || !phone) {
       return res.status(400).json({
-        message: "Nama, email, nomor HP, dan password wajib diisi",
+        ok: false,
+        message: "Nama, email, nomor HP, dan password wajib diisi.",
       });
     }
 
-    // Validasi panjang password
     if (password.length < 6) {
       return res.status(400).json({
-        message: "Password minimal 6 karakter",
+        ok: false,
+        message: "Password minimal 6 karakter.",
       });
     }
 
-    // Validasi nomor HP (angka + minimal panjang)
     const phoneRegex = /^[0-9]{9,15}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({
-        message: "Nomor HP tidak valid (hanya angka, 9-15 digit)",
+        ok: false,
+        message: "Nomor HP tidak valid (hanya angka, 9–15 digit).",
       });
     }
 
-    // Cek jika email sudah terdaftar
+    // 🔍 Cek email sudah terdaftar
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
-        message: "Email sudah terdaftar",
+        ok: false,
+        message: "Email sudah terdaftar.",
       });
     }
 
-    // Simpan user baru
+    // 🔐 Hash password sebelum simpan
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // 🧩 Simpan user baru
     const newUser = await User.create({
       name,
       email: email.toLowerCase(),
       phone,
-      password, // diasumsikan akan di-hash oleh middleware mongoose
+      password: hashedPassword,
+      role: "user",
       isOAuthUser: false,
     });
 
-    // Hapus password dari response
+    // 🚫 Jangan kirim password ke client
     const userResponse = newUser.toObject();
     delete userResponse.password;
 
     return res.status(201).json({
-      message: "Berhasil daftar",
+      ok: true,
+      message: "Berhasil daftar.",
       user: userResponse,
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("❌ Registration error:", error);
     return res.status(500).json({
-      message: "Terjadi kesalahan server",
+      ok: false,
+      message: "Terjadi kesalahan server.",
+      error: error.message,
     });
   }
 }

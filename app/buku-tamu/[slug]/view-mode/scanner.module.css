@@ -1,0 +1,97 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.title {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  color: #333;
+}
+
+.scannerWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1; /* Kotak responsif */
+  background: #000;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Pastikan kamera video isi penuh */
+.scannerWrapper > div,
+.scannerWrapper video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+/* Hapus shading default bawaan html5-qrcode */
+.scannerWrapper :global(#qr-shaded-region),
+.scannerWrapper :global(#qr-shaded-region > div) {
+  display: none !important;
+}
+
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* biar nggak ganggu klik */
+}
+
+/* Kotak viewfinder */
+.viewfinder {
+  width: 70%;
+  height: 70%;
+  position: relative;
+  border-radius: 0.5rem;
+}
+
+/* Corner putih */
+.corner {
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  border-color: white;
+  border-style: solid;
+}
+
+.topLeft { top: -2px; left: -2px; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 8px; }
+.topRight { top: -2px; right: -2px; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 8px; }
+.bottomLeft { bottom: -2px; left: -2px; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 8px; }
+.bottomRight { bottom: -2px; right: -2px; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 8px; }
+
+/* Garis scan animasi */
+.scanLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, transparent, #00ff85, transparent);
+  box-shadow: 0 0 15px #00ff85;
+  animation: scanAnimation 3s infinite alternate ease-in-out;
+}
+
+@keyframes scanAnimation {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(100% - 3px)); }
+}
+
+.helpText {
+  color: white;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}

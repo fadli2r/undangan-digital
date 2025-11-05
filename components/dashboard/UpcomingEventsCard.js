@@ -110,7 +110,7 @@ export default function UpcomingEventsCard({ events = [], loading = false }) {
                         </i>
                       </a>
                       <a 
-                        href={`/undangan/${event.custom_slug || event.slug}`}
+                        href={`/${event.custom_slug || event.slug}`}
                         target="_blank"
                         className="btn btn-icon btn-sm btn-light-info"
                         title="Lihat"

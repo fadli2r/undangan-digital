@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "../../components/layouts/UserLayout";
 import OnboardingStepper from "../../components/onboarding/OnboardingStepper";
+import Swal from "sweetalert2";
 
 // helper: sanitasi slug (backup jika localStorage lama belum punya slug)
 function toSlug(raw) {
@@ -58,6 +59,78 @@ export default function OnboardingSummary() {
   }, [data?.packageId]);
 
   const toIDR = (n) => `Rp ${Number(n || 0).toLocaleString("id-ID")}`;
+async function handleValidateCode(type) {
+  if (!paket || !user) {
+    Swal.fire({
+      icon: "warning",
+      title: "Login diperlukan",
+      text: "Silakan login terlebih dahulu untuk memvalidasi kode.",
+      confirmButtonColor: "#50cd89"
+    });
+    return;
+  }
+
+  const promoCode = type === "promo" ? promo : "";
+  const referralCode = type === "referral" ? referral : "";
+
+  try {
+    setLoading(true);
+    setError("");
+
+    const params = new URLSearchParams();
+    params.set("id", data.packageId);
+    if (promoCode) params.set("promoCode", promoCode);
+    if (referralCode) params.set("referralCode", referralCode);
+    if (user?.email) params.set("userEmail", user.email);
+
+    const res = await fetch(`/api/paket/detail?${params.toString()}`);
+    const result = await res.json();
+
+    if (result.paket) {
+      setPaket(result.paket);
+      const appliedDiscounts = result.paket.discounts?.filter(d => d.amount > 0) || [];
+
+      if (appliedDiscounts.length > 0) {
+        const msg = appliedDiscounts
+          .map(
+            (d) =>
+              `Kode <b>${d.code}</b> berhasil diterapkan! Hemat Rp ${d.amount.toLocaleString("id-ID")}`
+          )
+          .join("<br>");
+        Swal.fire({
+          icon: "success",
+          title: "Berhasil!",
+          html: msg,
+          confirmButtonColor: "#50cd89"
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Kode tidak valid",
+          text: result.message || "Kode promo atau referral tidak dapat digunakan.",
+          confirmButtonColor: "#f1416c"
+        });
+      }
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Kode tidak valid",
+        text: result.message || "Kode promo atau referral tidak dapat digunakan.",
+        confirmButtonColor: "#f1416c"
+      });
+    }
+  } catch (e) {
+    Swal.fire({
+      icon: "error",
+      title: "Terjadi kesalahan",
+      text: "Gagal memvalidasi kode promo/referral",
+      confirmButtonColor: "#f1416c"
+    });
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   const pricing = useMemo(() => {
     const base = Number(paket?.finalPrice ?? paket?.price ?? 0);
@@ -67,53 +140,71 @@ export default function OnboardingSummary() {
     return { base, customDomain, donation, total };
   }, [paket?.finalPrice, paket?.price, data?.useCustomDomain, data?.oneTree]);
 
-  async function handleBayar() {
-    if (!paket || !user || !data) return;
-    setSubmitting(true);
-    setError("");
+ async function handleBayar() {
+  if (!paket || !user || !data) return;
+  setSubmitting(true);
+  setError("");
 
-    // pakai slug bersih dari storage
-    const safeSlug = toSlug(data.slug || data.domain);
+  const safeSlug = toSlug(data.slug || data.domain);
 
-    const payload = {
-      packageId: paket?._id ?? paket?.id ?? null,
-      paket: paket?.slug ?? paket?._id ?? paket?.name ?? null,
-      email: user.email,
-      name: user.name,
-      onboardingData: {
-        pria: data.pria,
-        wanita: data.wanita,
-        phone: data.phone,
-        tanggal: data.tanggal,
-        lokasi: data.lokasi,
-        domain: data.domain,          // tetap kirim aslinya kalau kamu butuh tampilkan kembali
-        slug: data.domain,            // ← ini penting
-        useCustomDomain: data.useCustomDomain,
-        oneTree: data.oneTree,
-        referral: referral || data.referral || "",
-        promoCode: promo || "",
-        fromOnboarding: true,
-      },
-    };
+  // hitung total akhir (sesuai tampilan ringkasan)
+  const totalAkhir =
+    (paket?.finalPrice ?? paket?.price ?? 0) +
+    (data?.useCustomDomain ? 300000 : 0) +
+    (data?.oneTree ? 10000 : 0);
 
-    try {
-      const res = await fetch("/api/payment/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (res.ok && json.invoice_url) {
-        window.location.href = json.invoice_url;
-      } else {
-        throw new Error(json.message || "Gagal membuat invoice");
-      }
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
+  const payload = {
+    packageId: paket?._id ?? paket?.id ?? null,
+    paket: paket?.slug ?? paket?._id ?? paket?.name ?? null,
+    email: user.email,
+    name: user.name,
+
+    // kirim total harga agar Xendit invoice sesuai
+    amount: totalAkhir,
+
+    onboardingData: {
+      pria: data.pria,
+      wanita: data.wanita,
+      phone: data.phone,
+      tanggal: data.tanggal,
+      lokasi: data.lokasi,
+      domain: data.domain,
+      slug: data.domain,
+      useCustomDomain: data.useCustomDomain,
+      oneTree: data.oneTree,
+      referral: referral || data.referral || "",
+      promoCode: promo || "",
+      fromOnboarding: true,
+    },
+  };
+
+  try {
+    const res = await fetch("/api/payment/create-invoice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+    if (res.ok && json.invoice_url) {
+      // arahkan ke Xendit invoice
+      window.location.href = json.invoice_url;
+    } else {
+      throw new Error(json.message || "Gagal membuat invoice");
     }
+  } catch (e) {
+    setError(e.message);
+    Swal.fire({
+      icon: "error",
+      title: "Gagal Membuat Invoice",
+      text: e.message || "Terjadi kesalahan saat membuat invoice.",
+      confirmButtonColor: "#f1416c",
+    });
+  } finally {
+    setSubmitting(false);
   }
+}
+
 
   if (loading || status === "loading") {
     return (
@@ -145,7 +236,6 @@ export default function OnboardingSummary() {
 
   return (
     <UserLayout>
-      <div className="container py-10">
         <OnboardingStepper current="summary" />
 
         <div className="d-flex flex-wrap align-items-center justify-content-between mb-6">
@@ -222,94 +312,204 @@ export default function OnboardingSummary() {
             </div>
 
             {/* Kode Promo & Referral */}
-            <div className="card">
-              <div className="card-header border-0">
-                <h3 className="card-title fw-bold text-gray-800">Kode Promo & Referral</h3>
-              </div>
-              <div className="card-body pt-0">
-                <div className="row g-6">
-                  <div className="col-md-6">
-                    <label className="form-label">Kode Promo</label>
-                    <input
-                      type="text"
-                      className="form-control form-control-solid"
-                      value={promo}
-                      onChange={(e) => setPromo(e.target.value.toUpperCase())}
-                      placeholder="MASUKKAN KODE (opsional)"
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Kode Referral</label>
-                    <input
-                      type="text"
-                      className="form-control form-control-solid"
-                      value={referral}
-                      onChange={(e) => setReferral(e.target.value.toUpperCase())}
-                      placeholder="MASUKKAN KODE (opsional)"
-                    />
-                  </div>
-                </div>
-                <div className="form-text mt-3">
-                  * Diskon dari kode promo/referral akan diterapkan saat pembayaran jika valid.
-                </div>
-              </div>
-            </div>
+            {/* Kode Promo & Referral */}
+<div className="card">
+  <div className="card-header border-0">
+    <h3 className="card-title fw-bold text-gray-800">Kode Promo & Referral</h3>
+  </div>
+
+  <div className="card-body pt-0">
+    <div className="row g-6">
+      {/* ====== PROMO ====== */}
+      <div className="col-md-6">
+        <label className="form-label">Kode Promo</label>
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control form-control-solid"
+            value={promo}
+            onChange={(e) => setPromo(e.target.value.toUpperCase())}
+            placeholder="MASUKKAN KODE (opsional)"
+          />
+          <button
+            type="button"
+            className="btn btn-light-primary"
+            disabled={!promo || loading}
+            onClick={() => handleValidateCode("promo")}
+          >
+            {loading ? (
+              <span className="spinner-border spinner-border-sm"></span>
+            ) : (
+              "Validasi"
+            )}
+          </button>
+        </div>
+
+        {paket?.discounts?.find((d) => d.type === "promo" && d.error) && (
+          <div className="text-danger fs-7 mt-1">
+            {paket.discounts.find((d) => d.type === "promo" && d.error).error}
+          </div>
+        )}
+        {paket?.discounts?.find((d) => d.type === "promo" && d.amount > 0) && (
+          <div className="text-success fs-7 mt-1">
+            ✅ Hemat Rp{" "}
+            {paket.discounts
+              .find((d) => d.type === "promo" && d.amount > 0)
+              .amount.toLocaleString()}
+          </div>
+        )}
+      </div>
+
+      {/* ====== REFERRAL ====== */}
+      <div className="col-md-6">
+        <label className="form-label">Kode Referral</label>
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control form-control-solid"
+            value={referral}
+            onChange={(e) => setReferral(e.target.value.toUpperCase())}
+            placeholder="MASUKKAN KODE (opsional)"
+          />
+          <button
+            type="button"
+            className="btn btn-light-primary"
+            disabled={!referral || loading}
+            onClick={() => handleValidateCode("referral")}
+          >
+            {loading ? (
+              <span className="spinner-border spinner-border-sm"></span>
+            ) : (
+              "Validasi"
+            )}
+          </button>
+        </div>
+
+        {paket?.discounts?.find((d) => d.type === "referral" && d.error) && (
+          <div className="text-danger fs-7 mt-1">
+            {paket.discounts.find((d) => d.type === "referral" && d.error).error}
+          </div>
+        )}
+        {paket?.discounts?.find((d) => d.type === "referral" && d.amount > 0) && (
+          <div className="text-success fs-7 mt-1">
+            ✅ Hemat Rp{" "}
+            {paket.discounts
+              .find((d) => d.type === "referral" && d.amount > 0)
+              .amount.toLocaleString()}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div className="form-text mt-3 text-muted">
+      * Gunakan tombol Validasi untuk memeriksa kode promo/referral Anda.
+    </div>
+  </div>
+</div>
+
           </div>
 
           {/* Ringkasan pembayaran */}
-          <div className="col-xl-4">
-            <div className="card card-flush sticky-top">
-              <div className="card-header border-0">
-                <div className="card-title">
-                  <h3 className="fw-bold">Ringkasan Pembayaran</h3>
-                </div>
-              </div>
-              <div className="card-body pt-0">
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Harga Paket</span>
-                  <div>
-                    {paket?.originalPrice && paket.originalPrice > (paket.finalPrice ?? paket.price) && (
-                      <span className="text-muted text-decoration-line-through me-2">
-                        {toIDR(paket.originalPrice)}
-                      </span>
-                    )}
-                    <strong className="text-primary">
-                      {toIDR(paket?.finalPrice ?? paket?.price)}
-                    </strong>
-                  </div>
-                </div>
+<div className="col-xl-4">
+  <div className="card card-flush sticky-top">
+    <div className="card-header border-0">
+      <div className="card-title">
+        <h3 className="fw-bold">Ringkasan Pembayaran</h3>
+      </div>
+    </div>
 
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Custom Domain</span>
-                  <span>{toIDR(pricing.customDomain)}</span>
-                </div>
+    <div className="card-body pt-0">
+      <div className="d-flex justify-content-between mb-3">
+        <span>Harga Paket</span>
+        <div>
+          {paket?.originalPrice &&
+            paket.originalPrice > (paket.finalPrice ?? paket.price) && (
+              <span className="text-muted text-decoration-line-through me-2">
+                {toIDR(paket.originalPrice)}
+              </span>
+            )}
+          <strong className="text-primary">
+            {toIDR(paket?.price)}
+          </strong>
+        </div>
+      </div>
 
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Donasi One Tree</span>
-                  <span>{toIDR(pricing.donation)}</span>
-                </div>
+      <div className="d-flex justify-content-between mb-3">
+        <span>Custom Domain</span>
+        <span>{toIDR(pricing.customDomain)}</span>
+      </div>
 
-                <div className="separator my-4"></div>
+      <div className="d-flex justify-content-between mb-3">
+        <span>Donasi One Tree</span>
+        <span>{toIDR(pricing.donation)}</span>
+      </div>
 
-                <div className="d-flex justify-content-between fs-5 fw-bold">
-                  <span>Total</span>
-                  <span>{toIDR(pricing.total)}</span>
-                </div>
-              </div>
-
-              <div className="card-footer d-flex justify-content-end gap-3">
-                <button type="button" className="btn btn-light" onClick={() => router.push("/onboarding/data")}>
-                  Kembali
-                </button>
-                <button type="button" className="btn btn-success" onClick={handleBayar} disabled={submitting}>
-                  {submitting ? (<><span className="spinner-border spinner-border-sm me-2" />Memproses...</>) : "Bayar Sekarang"}
-                </button>
-              </div>
+      {/* ✅ Tampilkan potongan (tanpa menghitung ulang total) */}
+      {!!paket?.discounts?.length &&
+        paket.discounts
+          .filter((d) => d.amount > 0)
+          .map((d, i) => (
+            <div
+              key={i}
+              className="d-flex justify-content-between mb-2 text-success"
+            >
+              <span>
+                <i className="ki-duotone ki-discount fs-4 me-2">
+                  <span className="path1"></span>
+                  <span className="path2"></span>
+                </i>
+                Diskon {d.name || (d.type === "promo" ? "Promo" : "Referral")}{" "}
+                ({d.code})
+              </span>
+              <span>- {toIDR(d.amount)}</span>
             </div>
-          </div>
+          ))}
+
+      <div className="separator my-4"></div>
+
+      {/* ✅ Total yang benar */}
+      <div className="d-flex justify-content-between fs-5 fw-bold">
+        <span>Total</span>
+        <span>
+          {toIDR(
+            (paket?.finalPrice ?? paket?.price ?? 0) +
+              pricing.customDomain +
+              pricing.donation
+          )}
+        </span>
+      </div>
+    </div>
+
+    <div className="card-footer d-flex justify-content-end gap-3">
+      <button
+        type="button"
+        className="btn btn-light"
+        onClick={() => router.push("/onboarding/data")}
+      >
+        Kembali
+      </button>
+      <button
+        type="button"
+        className="btn btn-success"
+        onClick={handleBayar}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" />
+            Memproses...
+          </>
+        ) : (
+          "Bayar Sekarang"
+        )}
+      </button>
+    </div>
+  </div>
+</div>
+
+
         </div>
 
-      </div>
     </UserLayout>
   );
 }
