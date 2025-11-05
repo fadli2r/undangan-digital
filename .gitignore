@@ -40,7 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Large media files (keep folders but ignore large files)
+# --- Media rules ---
+# Biarkan semua aset di public/images ikut ke repo
+# (hapus aturan lama yg meng-ignore public/images/**)
+
+# Kalau mau tetap ignore upload berat dari user:
 public/uploads/*.jpg
 public/uploads/*.jpeg
 public/uploads/*.png
@@ -49,16 +53,3 @@ public/uploads/*/*.jpg
 public/uploads/*/*.jpeg
 public/uploads/*/*.png
 public/uploads/*/*.webp
-public/images/*.jpg
-public/images/*.jpeg
-public/images/*.png
-public/images/*.webp
-public/images/*/*.jpg
-public/images/*/*.jpeg
-public/images/*/*.png
-public/images/*/*.webp
-
-# Keep placeholder and small images
-!public/images/template-*.jpg
-!public/images/testimonial*.jpg
-!public/images/bg_couple.jpg

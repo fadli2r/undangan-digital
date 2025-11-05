@@ -347,8 +347,25 @@ if (!(amount > 0)) return res.status(400).json({ message: "Nominal pembayaran ti
     // ===================================================================
     // Buat invoice Xendit
     // ===================================================================
-    const apiKey = process.env.XENDIT_API_KEY || process.env.XENDIT_SECRET_KEY;
-    if (!apiKey) return res.status(500).json({ message: "XENDIT_API_KEY belum di-set" });
+    const apiKey =
+  (process.env.XENDIT_SECRET_KEY ?? process.env.XENDIT_API_KEY ?? "").trim();
+
+if (!apiKey) {
+  return res.status(500).json({ message: "XENDIT_SECRET_KEY belum di-set" });
+}
+
+// Validasi cepat: harus secret, bukan public
+if (!/^xnd_(development|production)_/i.test(apiKey)) {
+  return res.status(500).json({
+    message: "XENDIT_SECRET_KEY format tidak valid. Harus secret key (xnd_development_ / xnd_production_)."
+  });
+}
+
+// (Opsional) log 12 char pertama untuk cek kebaca (hapus di produksi)
+console.log("[create-invoice] XENDIT_SECRET_KEY prefix:", apiKey.slice(0, 12));
+
+// Authorization Basic <base64(secret:)>
+const basicAuth = Buffer.from(`${apiKey}:`).toString("base64");
 
     const resp = await axios.post(
       "https://api.xendit.co/v2/invoices",
@@ -369,7 +386,8 @@ if (!(amount > 0)) return res.status(400).json({ message: "Nominal pembayaran ti
         })),
         invoice_duration: 3600,
       },
-      { auth: { username: apiKey, password: "" }, headers: { "Content-Type": "application/json" } }
+      { auth: { username: apiKey, password: "" }, headers: { "Content-Type": "application/json",      "Authorization": `Basic ${basicAuth}`,
+ } }
     );
 
     const data = resp?.data || {};
