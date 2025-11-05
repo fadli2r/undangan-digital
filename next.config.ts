@@ -26,8 +26,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source:
-          '/:slug((?!api|_next|static|public|assets|dashboard|login|support-center|paket|edit-undangan|buat-undangan|preview|onboarding|admin|orders|profile|scanner|buku-tamu).*)',
+
+          source:
+  '/:slug((?!api|_next|static|public|assets|images|dashboard|login|support-center|paket|edit-undangan|buat-undangan|preview|onboarding|admin|orders|profile|scanner|buku-tamu|favicon\\.ico|robots\\.txt|sitemap\\.xml|manifest\\.webmanifest|icon\\.png|apple-touch-icon\\.png|.*\\..*).*)',
+
         destination: '/undangan/:slug',
       },
     ];
