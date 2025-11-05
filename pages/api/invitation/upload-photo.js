@@ -1,84 +1,55 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import path from 'path';
+// pages/api/.../upload-photos.js
+import formidable from "formidable";
+import { uploadToStorage } from "../../../utils/storage"; // ⬅️ adapter Cloudinary/local
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false, sizeLimit: "20mb" }, // wajib matikan parser & set limit
 };
 
+// Parse multipart ke /tmp (satu-satunya folder writeable di Vercel)
+function parseForm(req) {
+  return new Promise((resolve, reject) => {
+    const form = formidable({
+      uploadDir: "/tmp",
+      keepExtensions: true,
+      multiples: false, // ganti true jika mau multi-upload
+      maxFileSize: 20 * 1024 * 1024, // 20MB; set 5MB jika mau persis seperti sebelumnya
+      filter: ({ mimetype }) => !!mimetype && mimetype.startsWith("image/"),
+    });
+    form.parse(req, (err, fields, files) => (err ? reject(err) : resolve([fields, files])));
+  });
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+  if (req.method !== "POST") return res.status(405).json({ message: "Method not allowed" });
 
   try {
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public/uploads/photos');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const [fields, files] = await parseForm(req);
 
-    const form = formidable({
-      uploadDir: uploadDir,
-      keepExtensions: true,
-      maxFileSize: 5 * 1024 * 1024, // 5MB
-      filename: (name, ext, part, form) => {
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(2, 15);
-        return `${timestamp}_${randomString}${ext}`;
+    // field file di FE: "photo"
+    const raw = files.photo;
+    const uploadedFile = Array.isArray(raw) ? raw[0] : raw;
+    if (!uploadedFile) return res.status(400).json({ message: "No file uploaded" });
+
+    // Upload via adapter (Vercel => Cloudinary, lokal => public/uploads)
+    // folder rapi: "photos" (bisa ubah ke `photos/${fields.slug}` kalau perlu)
+    const url = await uploadToStorage(uploadedFile, "photos");
+
+    // bikin filename dari URL (nama file tanpa query)
+    const filename = (() => {
+      try {
+        const u = new URL(url);
+        const base = u.pathname.split("/").pop() || "";
+        // hapus ekstensi dari Cloudinary public_id (kadang tidak ada ekstensi)
+        return base.split("?")[0];
+      } catch {
+        return url.split("/").pop() || "uploaded";
       }
-    });
+    })();
 
-    const [fields, files] = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) {
-          console.error('Form parse error:', err);
-          reject(err);
-        } else {
-          resolve([fields, files]);
-        }
-      });
-    });
-
-    console.log('Files received:', files);
-
-    const file = files.photo;
-    if (!file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    // Handle both single file and array of files
-    const uploadedFile = Array.isArray(file) ? file[0] : file;
-    console.log('Uploaded file:', uploadedFile);
-    
-    if (!uploadedFile.filepath && !uploadedFile.path) {
-      console.error('No file path found in:', uploadedFile);
-      return res.status(400).json({ message: 'File path not found' });
-    }
-
-    // Get the file path
-    const filePath = uploadedFile.filepath || uploadedFile.path;
-    console.log('File path:', filePath);
-    
-    // Get the filename from the path
-    const filename = path.basename(filePath);
-    
-    // Return the path that can be used in <img src="...">
-    const publicPath = `/uploads/photos/${filename}`;
-    console.log('Public path:', publicPath);
-
-    return res.status(200).json({
-      path: publicPath,
-      filename: filename
-    });
+    return res.status(200).json({ path: url, filename });
   } catch (error) {
-    console.error('Upload error:', error);
-    return res.status(500).json({ 
-      message: 'Error uploading file', 
-      error: error.message 
-    });
+    console.error("[upload-photos] error:", error?.message || error);
+    return res.status(500).json({ message: "Error uploading file", error: error?.message || "UNKNOWN" });
   }
 }

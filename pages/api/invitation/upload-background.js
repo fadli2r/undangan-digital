@@ -1,76 +1,59 @@
+// pages/api/invitation/upload-background-photo.js
 import formidable from "formidable";
-import fs from "fs";
-import path from "path";
 import dbConnect from "../../../lib/dbConnect";
 import Invitation from "../../../models/Invitation";
+import { uploadToStorage, deleteFromStorage } from "../../../utils/storage";
 
-// Disable bodyParser for file uploads
 export const config = {
-  api: { bodyParser: false }
+  api: { bodyParser: false, sizeLimit: "20mb" }, // Vercel: wajib bodyParser: false
 };
+
+// Promisify formidable.parse — file TEMPORER ditaruh di /tmp (writeable di Vercel)
+function parseForm(req) {
+  return new Promise((resolve, reject) => {
+    const form = formidable({
+      uploadDir: "/tmp",            // ✅ pakai /tmp, bukan public/
+      keepExtensions: true,
+      multiples: false,
+      maxFileSize: 5 * 1024 * 1024, // 5MB (samakan dengan kebutuhanmu)
+      filter: ({ mimetype }) => !!mimetype && mimetype.includes("image"),
+    });
+    form.parse(req, (err, fields, files) => (err ? reject(err) : resolve([fields, files])));
+  });
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    // Create uploads directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "background-photos");
-    fs.mkdirSync(uploadDir, { recursive: true });
+    const [fields, files] = await parseForm(req);
 
-    const form = formidable({
-      uploadDir,
-      keepExtensions: true,
-      maxFileSize: 2 * 1024 * 1024, // 2MB
-      filter: function ({name, originalFilename, mimetype}) {
-        // Accept only images
-        return mimetype && mimetype.includes("image");
-      }
-    });
+    const file = Array.isArray(files.foto) ? files.foto[0] : files.foto;
+    if (!file) return res.status(400).json({ error: "No file uploaded" });
 
-    try {
-      const [fields, files] = await form.parse(req);
+    const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
+    if (!slug) return res.status(400).json({ error: "Slug is required" });
 
-      const file = Array.isArray(files.foto) ? files.foto[0] : files.foto;
-      if (!file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
+    // ⬇️ Upload via adapter (Vercel => Cloudinary, lokal => public/uploads)
+    // Biar rapi, simpan per undangan: background-photos/<slug>
+    const url = await uploadToStorage(file, `background-photos/${slug}`);
 
-      const url = `/uploads/background-photos/${path.basename(file.filepath)}`;
+    // Update ke MongoDB
+    await dbConnect();
+    const invitation = await Invitation.findOne({ slug });
+    if (!invitation) return res.status(404).json({ error: "Invitation not found" });
 
-      // Connect to database and update invitation
-      await dbConnect();
-      const slug = Array.isArray(fields.slug) ? fields.slug[0] : fields.slug;
-      
-      if (!slug) {
-        return res.status(400).json({ error: "Slug is required" });
-      }
-
-      const invitation = await Invitation.findOne({ slug });
-      if (!invitation) {
-        return res.status(404).json({ error: "Invitation not found" });
-      }
-
-      // Delete old photo if exists
-      if (invitation.background_photo) {
-        const oldPath = path.join(process.cwd(), "public", invitation.background_photo);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
-        }
-      }
-
-      // Update invitation with new photo URL
-      invitation.background_photo = url;
-      await invitation.save();
-
-      res.status(200).json({ url });
-      
-    } catch (parseError) {
-      console.error('Form parse error:', parseError);
-      res.status(500).json({ error: "Gagal memproses file" });
+    // Hapus background lama (Cloudinary / lokal) jika ada
+    if (invitation.background_photo) {
+      try { await deleteFromStorage(invitation.background_photo); } catch { /* ignore */ }
     }
 
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: "Gagal upload file" });
+    invitation.background_photo = url;
+    await invitation.save();
+
+    return res.status(200).json({ url });
+  } catch (e) {
+    console.error("[upload-background-photo] error:", e?.message || e);
+    return res.status(500).json({ error: "Gagal upload file" });
   }
 }
