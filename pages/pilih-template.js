@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "../components/layouts/UserLayout";
 import { defaultTemplateList as templateList } from "../data/templates";
+import SeoHead from '@/components/SeoHead';
 
 export default function PilihTemplate() {
   const { data: session, status } = useSession();
@@ -61,6 +62,11 @@ export default function PilihTemplate() {
   
   if (!user) return (
     <UserLayout>
+      <SeoHead
+        title="Pilih Template - Dreamslink"
+        description="Pilih template undangan digital dari koleksi premium kami."
+        canonical="/pilih-template"
+      />
       <div className="d-flex justify-content-center align-items-center min-h-300px">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>

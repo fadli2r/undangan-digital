@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import UserLayout from "@/components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function EInvitationSettings() {
   const router = useRouter();
@@ -60,6 +61,11 @@ export default function EInvitationSettings() {
   if (loading || !form) {
     return (
       <UserLayout>
+      <SeoHead
+        title="E-Invitation Settings - Dreamslink"
+        description="Kelola pengaturan e-invitation undangan Anda."
+        canonical="/edit-undangan/[slug]/einvitation"
+      />
         <div className="p-6">Loading...</div>
       </UserLayout>
     );

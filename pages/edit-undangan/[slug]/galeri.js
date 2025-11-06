@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import { showAlert, showToast } from "../../../utils/sweetAlert";
+import SeoHead from '@/components/SeoHead';
 
 export default function Galeri() {
   const router = useRouter();
@@ -140,6 +141,11 @@ export default function Galeri() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Kelola Galeri Foto - Dreamslink"
+        description="Upload dan kelola galeri foto undangan Anda."
+        canonical="/edit-undangan/[slug]/galeri"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

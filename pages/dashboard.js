@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import UserLayout from "../components/layouts/UserLayout";
+import SeoHead from '@/components/SeoHead';
 
 // Import komponen dashboard yang baru
 import {
@@ -109,6 +110,11 @@ export default function Dashboard() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Dashboard - Dreamslink"
+        description="Dashboard pengelolaan undangan digital Anda."
+        canonical="/dashboard"
+      />
       {/* Header Section */}
       <div className="d-flex flex-wrap flex-stack mb-6">
         <h3 className="fw-bold my-2">

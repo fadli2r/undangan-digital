@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import UserLayout from "../components/layouts/UserLayout";
+import SeoHead from '@/components/SeoHead';
 
 // ---------- helpers ----------
 const toArray = (v) => (Array.isArray(v) ? v : []);
@@ -140,6 +141,11 @@ export default function Paket() {
   if (status === "loading" || !session) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Pilih Paket - Dreamslink"
+        description="Pilih paket undangan digital yang sesuai kebutuhan Anda."
+        canonical="/paket"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

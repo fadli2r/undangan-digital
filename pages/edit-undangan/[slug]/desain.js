@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { defaultTemplateList as templateList } from "../../../data/templates";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function Desain() {
   const router = useRouter();
@@ -68,6 +69,11 @@ export default function Desain() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Ubah Desain Template - Dreamslink"
+        description="Ganti template dan desain undangan digital Anda."
+        canonical="/edit-undangan/[slug]/desain"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

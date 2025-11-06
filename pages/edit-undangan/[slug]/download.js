@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import DownloadFeatures from "../../../components/DownloadFeaturesFixed";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function Download() {
   const router = useRouter();
@@ -35,6 +36,11 @@ export default function Download() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Download & Export - Dreamslink"
+        description="Download undangan dalam format PDF atau export data."
+        canonical="/edit-undangan/[slug]/download"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

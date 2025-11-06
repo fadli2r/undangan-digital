@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 // ----- REPLACE komponen GiftConfirmationList lama kamu dengan ini -----
 
 function GiftConfirmationList({ slug }) {
@@ -247,6 +248,11 @@ export default function Gift() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Amplop Digital - Dreamslink"
+        description="Kelola pengaturan amplop digital dan rekening."
+        canonical="/edit-undangan/[slug]/gift"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

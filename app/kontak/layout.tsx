@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Kontak Kami - Dreamslink Invitation",
-  description:
-    "Hubungi kami untuk pertanyaan seputar undangan digital atau bantuan teknis.",
+  description: "Hubungi kami untuk pertanyaan seputar undangan digital atau bantuan teknis.",
+  keywords: "kontak dreamslink, hubungi kami, customer service undangan digital",
   openGraph: {
     title: "Kontak Kami - Dreamslink Invitation",
     description:
@@ -17,6 +17,10 @@ export const metadata: Metadata = {
     title: "Kontak Kami - Dreamslink Invitation",
     description:
       "Hubungi kami untuk pertanyaan seputar undangan digital atau bantuan teknis.",
+  },
+    robots: {
+    index: true,
+    follow: true,
   },
   alternates: {
     canonical: "/kontak",

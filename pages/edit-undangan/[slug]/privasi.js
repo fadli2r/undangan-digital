@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import Link from "next/link";
+import SeoHead from '@/components/SeoHead';
 
 export default function PrivacySettings() {
   const router = useRouter();
@@ -87,6 +88,11 @@ export default function PrivacySettings() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Pengaturan Privasi - Dreamslink"
+        description="Kelola privasi dan keamanan undangan Anda."
+        canonical="/edit-undangan/[slug]/privasi"
+      />
       <BackButton />
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">

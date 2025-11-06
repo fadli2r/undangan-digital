@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function EditOurStory() {
   const router = useRouter();
@@ -128,6 +129,11 @@ const uploadFile = async () => {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Our Story - Dreamslink"
+        description="Ceritakan kisah perjalanan cinta Anda."
+        canonical="/edit-undangan/[slug]/ourstory"
+      />
       <BackButton />
       <div className="card shadow-sm">
         <div className="card-header border-0">

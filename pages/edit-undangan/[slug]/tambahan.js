@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import UserLayout from "@/components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import { showAlert } from "@/utils/sweetAlert";
+import SeoHead from '@/components/SeoHead';
 
 export default function EditTambahan() {
   const router = useRouter();
@@ -157,6 +158,11 @@ export default function EditTambahan() {
   if (!slug || loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Informasi Tambahan - Dreamslink"
+        description="Kelola informasi tambahan undangan Anda."
+        canonical="/edit-undangan/[slug]/tambahan"
+      />
         <div className="d-flex justify-content-center align-items-center py-20">
           <div className="spinner-border text-primary" role="status" />
         </div>

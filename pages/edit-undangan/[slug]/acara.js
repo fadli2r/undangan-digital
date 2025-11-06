@@ -4,6 +4,7 @@ import Link from "next/link";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import { showAlert } from "@/utils/sweetAlert";
+import SeoHead from '@/components/SeoHead';
 
 export default function Acara() {
   const router = useRouter();
@@ -251,6 +252,11 @@ export default function Acara() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Edit Informasi Acara - Dreamslink"
+        description="Kelola informasi acara pernikahan Anda."
+        canonical={`/edit-undangan/${slug}/acara`}
+      />
       <BackButton />
       <div className="card">
         <div className="card-header">

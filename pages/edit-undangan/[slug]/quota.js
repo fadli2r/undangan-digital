@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import UserLayout from "../../../components/layouts/UserLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function QuotaPage() {
   const router = useRouter();
@@ -59,6 +60,11 @@ export default function QuotaPage() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Kuota WhatsApp - Dreamslink"
+        description="Kelola kuota WhatsApp blast undangan."
+        canonical="/edit-undangan/[slug]/quota"
+      />
       <div className="container mt-10">
         <h2 className="mb-6 fw-bold">Kuota WhatsApp Blast</h2>
 

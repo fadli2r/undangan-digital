@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function ListUcapan() {
   const router = useRouter();
@@ -38,6 +39,11 @@ export default function ListUcapan() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Daftar Ucapan - Dreamslink"
+        description="Lihat ucapan dan doa dari tamu."
+        canonical="/edit-undangan/[slug]/ucapan"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

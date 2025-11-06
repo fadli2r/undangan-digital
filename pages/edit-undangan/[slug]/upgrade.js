@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import UserLayout from "@/components/layouts/UserLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function UpgradeFiturPage() {
   const router = useRouter();
@@ -116,6 +117,11 @@ export default function UpgradeFiturPage() {
   if (status === "loading" || loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Upgrade Fitur - Dreamslink"
+        description="Upgrade fitur undangan Anda."
+        canonical="/edit-undangan/[slug]/upgrade"
+      />
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
           <div className="spinner-border text-primary" />
         </div>

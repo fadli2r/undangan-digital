@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
+import SeoHead from '@/components/SeoHead';
 
 export default function ListRSVP() {
   const router = useRouter();
@@ -70,6 +71,11 @@ export default function ListRSVP() {
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Daftar RSVP - Dreamslink"
+        description="Lihat dan kelola konfirmasi kehadiran tamu."
+        canonical="/edit-undangan/[slug]/rsvp"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

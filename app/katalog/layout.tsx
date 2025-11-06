@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Katalog Template Undangan Digital - Pilih Desain Terbaik",
-  description:
-    "Jelajahi koleksi template undangan digital premium kami. Lebih dari 100+ desain unik untuk pernikahan, ulang tahun, dan acara spesial lainnya.",
+  description: "Jelajahi koleksi template undangan digital premium kami. Lebih dari 100+ desain unik untuk pernikahan, ulang tahun, dan acara spesial lainnya.",
+  keywords: "katalog undangan, template undangan digital, desain undangan, undangan pernikahan",
   openGraph: {
     title: "Katalog Template Undangan Digital - Pilih Desain Terbaik",
     description:
@@ -17,6 +17,10 @@ export const metadata: Metadata = {
     title: "Katalog Template Undangan Digital - Pilih Desain Terbaik",
     description:
       "Jelajahi koleksi template undangan digital premium kami. Lebih dari 100+ desain unik untuk pernikahan, ulang tahun, dan acara spesial lainnya.",
+  },
+    robots: {
+    index: true,
+    follow: true,
   },
   alternates: {
     canonical: "/katalog",

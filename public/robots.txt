@@ -1,0 +1,36 @@
+# robots.txt untuk Dreamslink
+# https://dreamslink.id
+
+User-agent: *
+Allow: /
+Allow: /katalog
+Allow: /kontak
+Allow: /portofolio
+Allow: /produk
+Allow: /tentang
+Allow: /paket
+Allow: /undangan/
+
+# Disallow private/admin pages
+Disallow: /admin/
+Disallow: /api/
+Disallow: /edit-undangan/
+Disallow: /dashboard
+Disallow: /profile/
+Disallow: /buku-tamu/
+Disallow: /scanner/
+Disallow: /preview/
+Disallow: /login
+Disallow: /register
+Disallow: /onboarding/
+
+# Disallow query parameters untuk menghindari duplicate content
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /*?*page=
+
+# Sitemap
+Sitemap: https://dreamslink.id/sitemap.xml
+
+# Crawl-delay (opsional, untuk menghindari overload)
+Crawl-delay: 1

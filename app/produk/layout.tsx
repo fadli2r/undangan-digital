@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Paket & Harga - Dreamslink Invitation",
-  description:
-    "Pilih paket terbaik untuk undangan digital Anda. Hemat hingga 20% dengan paket tahunan. Cocok untuk kebutuhan pribadi maupun profesional.",
+  description: "Pilih paket terbaik untuk undangan digital Anda. Hemat hingga 20% dengan paket tahunan. Cocok untuk kebutuhan pribadi maupun profesional.",
+  keywords: "paket undangan digital, harga undangan, produk undangan",
   openGraph: {
     title: "Paket & Harga - Dreamslink Invitation",
     description:

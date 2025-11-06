@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import Swal from "sweetalert2";
+import SeoHead from '@/components/SeoHead';
 
 export default function KelolaTamu() {
   const router = useRouter();
@@ -442,6 +443,11 @@ Wassalamu'alaikum Wr. Wb.`;
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Kelola Daftar Tamu - Dreamslink"
+        description="Kelola daftar tamu undangan Anda."
+        canonical="/edit-undangan/[slug]/tamu"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>

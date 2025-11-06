@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
 import { showAlert, showToast } from "@/utils/sweetAlert";
+import SeoHead from '@/components/SeoHead';
 
 export default function Mempelai() {
   const router = useRouter();
@@ -147,6 +148,11 @@ const [error, setError] = useState("");
   if (loading) {
     return (
       <UserLayout>
+      <SeoHead
+        title="Informasi Mempelai - Dreamslink"
+        description="Edit informasi mempelai pria dan wanita."
+        canonical="/edit-undangan/[slug]/mempelai"
+      />
         <div className="d-flex justify-content-center align-items-center min-h-300px">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
