@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../components/layouts/AdminLayout';
+import SeoHead from '@/components/SeoHead';
 
 export default function CreateUser() {
   const router = useRouter();
@@ -160,6 +161,12 @@ export default function CreateUser() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Tambah Pengguna Baru - Dreamslink"
+        description="Halaman untuk menambahkan pengguna baru di panel admin."
+        noindex
+        canonical="/admin/users/new"
+      />
       <div className="card">
         <div className="card-header border-0 pt-6">
           <div className="card-title">

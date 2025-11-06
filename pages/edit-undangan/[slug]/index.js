@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import UserLayout from "@/components/layouts/UserLayout";
 import { useSession } from "next-auth/react";
+import SeoHead from '@/components/SeoHead';
 
 // --- helper ---
 const normalizeSlug = (s) =>
@@ -286,6 +287,11 @@ export default function EditUndanganIndex() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title={`Edit ${data?.mempelai?.pria || ''} & ${data?.mempelai?.wanita || ''} - Dreamslink`}
+        description="Kelola konten undangan digital Anda. Edit informasi, lihat statistik, dan bagikan kepada tamu."
+        canonical={`/edit-undangan/${slug}`}
+      />
       {/* Begin::Header */}
       <div className="card card-flush mb-9">
         <div className="card-header pt-8">
@@ -571,7 +577,7 @@ export default function EditUndanganIndex() {
           <span className="path5"></span><span className="path6"></span>
         </i>
 
-        <h3 className="text-gray-900 fw-bold mb-3">QR Code Scanner</h3>
+        <h3 className="text-gray-900 fw-bold mb-3">Buku Tamu Digital</h3>
         <div className="text-gray-700 fw-semibold fs-6 mb-5">
           Scan QR code untuk mencatat kehadiran tamu secara digital
         </div>

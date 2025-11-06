@@ -1,6 +1,6 @@
 // pages/api/invitation/upload-galeri.js
 import formidable from "formidable";
-import { uploadToStorage } from "../../../utils/storage"; // ⬅️ pakai adapter, bukan fs/path
+import { uploadToStorage } from "@/utils/storage"; // ⬅️ pakai adapter, bukan fs/path
 
 // Wajib: matikan bodyParser & set limit
 export const config = {

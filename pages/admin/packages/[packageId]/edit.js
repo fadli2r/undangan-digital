@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import AdminLayout from "../../../../components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function EditPackage() {
   const router = useRouter();
@@ -239,6 +240,12 @@ export default function EditPackage() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Edit Paket - Dreamslink"
+        description="Halaman untuk mengedit paket undangan di panel admin."
+        noindex
+        canonical="/admin/packages/edit"
+      />
       <div className="d-flex flex-column gap-5">
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>

@@ -1,15 +1,16 @@
 // pages/admin/settings/index.js
-import { useEffect, useState } from 'react';
-import AdminLayout from '@/components/layouts/AdminLayout';
+import { useEffect, useMemo, useState } from "react";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
     general: {
-      siteName: '',
-      siteDescription: '',
-      contactEmail: '',
-      supportPhone: '',
-      whatsappNumber: '',
+      siteName: "",
+      siteDescription: "",
+      contactEmail: "",
+      supportPhone: "",
+      whatsappNumber: "",
     },
     features: {
       allowRegistration: true,
@@ -23,27 +24,32 @@ export default function AdminSettings() {
       maxPhotosPerGallery: 20,
     },
     payment: {
-      xenditApiKey: '',
-      xenditWebhookToken: '',
+      xenditApiKey: "",
+      xenditWebhookToken: "",
       enableSandbox: true,
     },
     email: {
-      smtpHost: '',
+      smtpHost: "",
       smtpPort: 587,
-      smtpUser: '',
-      smtpPassword: '',
-      fromEmail: '',
-      fromName: '',
+      smtpUser: "",
+      smtpPassword: "",
+      fromEmail: "",
+      fromName: "",
     },
     social: {
-      facebookUrl: '',
-      instagramUrl: '',
-      twitterUrl: '',
-      youtubeUrl: '',
+      facebookUrl: "",
+      instagramUrl: "",
+      twitterUrl: "",
+      youtubeUrl: "",
+    },
+    seo: {
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
     },
   });
 
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState("general");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -60,23 +66,24 @@ export default function AdminSettings() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch('/api/admin/settings', {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/settings", {
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       });
 
-      // Redirect jika tidak authorized
       if (res.status === 401) {
-        if (typeof window !== 'undefined') window.location.replace('/admin/login');
+        if (typeof window !== "undefined")
+          window.location.replace("/admin/login");
         return;
       }
 
-      if (!res.ok) throw new Error('Failed to fetch settings');
+      if (!res.ok) throw new Error("Failed to fetch settings");
 
       const data = await res.json();
-      if (data?.settings) setSettings((prev) => normalizeSettings(prev, data.settings));
+      if (data?.settings)
+        setSettings((prev) => normalizeSettings(prev, data.settings));
     } catch (e) {
-      setError(e?.message || 'Failed to fetch settings');
+      setError(e?.message || "Failed to fetch settings");
     } finally {
       setLoading(false);
     }
@@ -91,6 +98,7 @@ export default function AdminSettings() {
       payment: { ...prev.payment, ...(incoming.payment || {}) },
       email: { ...prev.email, ...(incoming.email || {}) },
       social: { ...prev.social, ...(incoming.social || {}) },
+      seo: { ...prev.seo, ...(incoming.seo || {}) },
     };
   }
 
@@ -99,24 +107,25 @@ export default function AdminSettings() {
       setSaving(true);
       setError(null);
 
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/settings", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ settings }),
       });
 
       if (res.status === 401) {
-        if (typeof window !== 'undefined') window.location.replace('/admin/login');
+        if (typeof window !== "undefined")
+          window.location.replace("/admin/login");
         return;
       }
 
-      if (!res.ok) throw new Error('Failed to save settings');
+      if (!res.ok) throw new Error("Failed to save settings");
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 2500);
     } catch (e) {
-      setError(e?.message || 'Failed to save settings');
+      setError(e?.message || "Failed to save settings");
     } finally {
       setSaving(false);
     }
@@ -129,13 +138,25 @@ export default function AdminSettings() {
     }));
   }
 
-  // ---------- UI Helpers ----------
+  // ---------- Helpers (SEO) ----------
+  const titleLen = useMemo(
+    () => (settings.seo.metaTitle || "").trim().length,
+    [settings.seo.metaTitle]
+  );
+  const descLen = useMemo(
+    () => (settings.seo.metaDescription || "").trim().length,
+    [settings.seo.metaDescription]
+  );
+
+  const titleOk = titleLen >= 30 && titleLen <= 60; // rekomendasi umum
+  const descOk = descLen >= 70 && descLen <= 160;
+
   const NavItem = ({ id, icon, title, desc }) => (
     <div
       role="button"
       onClick={() => setActiveTab(id)}
       className={`d-flex flex-stack py-4 px-4 rounded border mb-3 ${
-        activeTab === id ? 'bg-light-primary border-primary' : 'bg-body'
+        activeTab === id ? "bg-light-primary border-primary" : "bg-body"
       }`}
     >
       <div className="d-flex align-items-center">
@@ -149,45 +170,6 @@ export default function AdminSettings() {
         </div>
       </div>
       <i className="ki-duotone ki-right fs-2 text-gray-500"></i>
-    </div>
-  );
-
-  const HeaderBar = () => (
-    <div className="d-flex flex-wrap align-items-center justify-content-between mb-6">
-      <div className="d-flex flex-column">
-        <h1 className="fs-2hx text-gray-900 fw-bold">Settings</h1>
-        <div className="text-muted">Kelola konfigurasi platform dan preferensi sistem.</div>
-      </div>
-      <div className="d-flex gap-3">
-        <button
-          type="button"
-          className="btn btn-light"
-          onClick={fetchSettings}
-          disabled={loading || saving}
-        >
-          Reset
-        </button>
-        <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
-          {saving ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              Saving...
-            </>
-          ) : (
-            <>
-              <i className="ki-duotone ki-check fs-2 me-2">
-                <span className="path1"></span>
-                <span className="path2"></span>
-              </i>
-              Save Changes
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 
@@ -206,11 +188,19 @@ export default function AdminSettings() {
 
   return (
     <AdminLayout>
-
+      <SeoHead
+        title="Pengaturan - Dreamslink"
+        description="Halaman pengaturan sistem di panel admin."
+        noindex
+        canonical="/admin/settings"
+      />
       {/* Alerts */}
       {success && (
         <div className="alert alert-success d-flex align-items-center p-5 mb-6">
-          <i className="ki-duotone ki-shield-tick fs-2hx text-success me-4"><span className="path1"></span><span className="path2"></span></i>
+          <i className="ki-duotone ki-shield-tick fs-2hx text-success me-4">
+            <span className="path1"></span>
+            <span className="path2"></span>
+          </i>
           <div className="d-flex flex-column">
             <h4 className="mb-1 text-success">Saved</h4>
             <span>Settings saved successfully.</span>
@@ -219,7 +209,10 @@ export default function AdminSettings() {
       )}
       {error && (
         <div className="alert alert-danger d-flex align-items-center p-5 mb-6">
-          <i className="ki-duotone ki-information-5 fs-2hx text-danger me-4"><span className="path1"></span><span className="path2"></span></i>
+          <i className="ki-duotone ki-information-5 fs-2hx text-danger me-4">
+            <span className="path1"></span>
+            <span className="path2"></span>
+          </i>
           <div className="d-flex flex-column">
             <h4 className="mb-1 text-danger">Error</h4>
             <span>{error}</span>
@@ -241,12 +234,48 @@ export default function AdminSettings() {
             data-kt-sticky-top="150px"
           >
             <div className="card-body">
-              <NavItem id="general"  icon="ki-setting-2"    title="General"  desc="Nama situs, deskripsi, kontak" />
-              <NavItem id="features" icon="ki-toggle-on"    title="Features" desc="Opsi fitur dan izin" />
-              <NavItem id="limits"   icon="ki-chart-simple" title="Limits"   desc="Batasan undangan & galeri" />
-              <NavItem id="payment"  icon="ki-credit-cart"  title="Payment"  desc="Xendit & sandbox" />
-              <NavItem id="email"    icon="ki-message-text-2" title="Email"  desc="SMTP & pengirim" />
-              <NavItem id="social"   icon="ki-facebook"     title="Social"   desc="Tautan media sosial" />
+              <NavItem
+                id="general"
+                icon="ki-setting-2"
+                title="General"
+                desc="Nama situs, deskripsi, kontak"
+              />
+              <NavItem
+                id="features"
+                icon="ki-toggle-on"
+                title="Features"
+                desc="Opsi fitur dan izin"
+              />
+              <NavItem
+                id="limits"
+                icon="ki-chart-simple"
+                title="Limits"
+                desc="Batasan undangan & galeri"
+              />
+              <NavItem
+                id="payment"
+                icon="ki-credit-cart"
+                title="Payment"
+                desc="Xendit & sandbox"
+              />
+              <NavItem
+                id="email"
+                icon="ki-message-text-2"
+                title="Email"
+                desc="SMTP & pengirim"
+              />
+              <NavItem
+                id="social"
+                icon="ki-facebook"
+                title="Social"
+                desc="Tautan media sosial"
+              />
+              <NavItem
+                id="seo"
+                icon="ki-rocket"
+                title="SEO"
+                desc="Meta title, description, keywords"
+              />
             </div>
           </div>
         </div>
@@ -254,7 +283,7 @@ export default function AdminSettings() {
         {/* Content */}
         <div className="col-xl-9">
           {/* General */}
-          {activeTab === 'general' && (
+          {activeTab === "general" && (
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">General</h3>
@@ -262,52 +291,88 @@ export default function AdminSettings() {
               <div className="card-body pt-0">
                 <div className="row g-6">
                   <div className="col-md-6 fv-row">
-                    <label className="required fs-6 fw-semibold mb-2">Site Name</label>
+                    <label className="required fs-6 fw-semibold mb-2">
+                      Site Name
+                    </label>
                     <input
                       type="text"
                       className="form-control form-control-solid"
                       value={settings.general.siteName}
-                      onChange={(e) => handleInput('general', 'siteName', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("general", "siteName", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Contact Email</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Contact Email
+                    </label>
                     <input
                       type="email"
                       className="form-control form-control-solid"
                       value={settings.general.contactEmail}
-                      onChange={(e) => handleInput('general', 'contactEmail', e.target.value)}
+                      onChange={(e) =>
+                        handleInput(
+                          "general",
+                          "contactEmail",
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                 </div>
                 <div className="row g-6 mt-0">
                   <div className="col-12 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Site Description</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Site Description
+                    </label>
                     <textarea
                       rows={3}
                       className="form-control form-control-solid"
                       value={settings.general.siteDescription}
-                      onChange={(e) => handleInput('general', 'siteDescription', e.target.value)}
+                      onChange={(e) =>
+                        handleInput(
+                          "general",
+                          "siteDescription",
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                 </div>
                 <div className="row g-6 mt-0">
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Support Phone</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Support Phone
+                    </label>
                     <input
                       type="tel"
                       className="form-control form-control-solid"
                       value={settings.general.supportPhone}
-                      onChange={(e) => handleInput('general', 'supportPhone', e.target.value)}
+                      onChange={(e) =>
+                        handleInput(
+                          "general",
+                          "supportPhone",
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">WhatsApp Number</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      WhatsApp Number
+                    </label>
                     <input
                       type="tel"
                       className="form-control form-control-solid"
                       value={settings.general.whatsappNumber}
-                      onChange={(e) => handleInput('general', 'whatsappNumber', e.target.value)}
+                      onChange={(e) =>
+                        handleInput(
+                          "general",
+                          "whatsappNumber",
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -316,7 +381,7 @@ export default function AdminSettings() {
           )}
 
           {/* Features */}
-          {activeTab === 'features' && (
+          {activeTab === "features" && (
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">Features</h3>
@@ -324,24 +389,24 @@ export default function AdminSettings() {
               <div className="card-body pt-0">
                 {[
                   {
-                    key: 'allowRegistration',
-                    title: 'Allow User Registration',
-                    desc: 'Allow new users to register on the platform',
+                    key: "allowRegistration",
+                    title: "Allow User Registration",
+                    desc: "Allow new users to register on the platform",
                   },
                   {
-                    key: 'requireEmailVerification',
-                    title: 'Require Email Verification',
-                    desc: 'Users must verify their email before accessing features',
+                    key: "requireEmailVerification",
+                    title: "Require Email Verification",
+                    desc: "Users must verify their email before accessing features",
                   },
                   {
-                    key: 'enablePaymentGateway',
-                    title: 'Enable Payment Gateway',
-                    desc: 'Allow users to make payments for premium features',
+                    key: "enablePaymentGateway",
+                    title: "Enable Payment Gateway",
+                    desc: "Allow users to make payments for premium features",
                   },
                   {
-                    key: 'enableSocialLogin',
-                    title: 'Enable Social Login',
-                    desc: 'Allow users to login with Google, Facebook, etc.',
+                    key: "enableSocialLogin",
+                    title: "Enable Social Login",
+                    desc: "Allow users to login with Google, Facebook, etc.",
                   },
                 ].map((item) => (
                   <div key={item.key}>
@@ -355,7 +420,13 @@ export default function AdminSettings() {
                           className="form-check-input"
                           type="checkbox"
                           checked={!!settings.features[item.key]}
-                          onChange={(e) => handleInput('features', item.key, e.target.checked)}
+                          onChange={(e) =>
+                            handleInput(
+                              "features",
+                              item.key,
+                              e.target.checked
+                            )
+                          }
                         />
                       </div>
                     </div>
@@ -367,7 +438,7 @@ export default function AdminSettings() {
           )}
 
           {/* Limits */}
-          {activeTab === 'limits' && (
+          {activeTab === "limits" && (
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">Limits</h3>
@@ -375,35 +446,53 @@ export default function AdminSettings() {
               <div className="card-body pt-0">
                 <div className="row g-6">
                   <div className="col-md-4 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Max Invitations Per User</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Max Invitations Per User
+                    </label>
                     <input
                       type="number"
                       className="form-control form-control-solid"
                       value={settings.limits.maxInvitationsPerUser}
                       onChange={(e) =>
-                        handleInput('limits', 'maxInvitationsPerUser', parseInt(e.target.value || '0', 10))
+                        handleInput(
+                          "limits",
+                          "maxInvitationsPerUser",
+                          parseInt(e.target.value || "0", 10)
+                        )
                       }
                     />
                   </div>
                   <div className="col-md-4 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Max Guests Per Invitation</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Max Guests Per Invitation
+                    </label>
                     <input
                       type="number"
                       className="form-control form-control-solid"
                       value={settings.limits.maxGuestsPerInvitation}
                       onChange={(e) =>
-                        handleInput('limits', 'maxGuestsPerInvitation', parseInt(e.target.value || '0', 10))
+                        handleInput(
+                          "limits",
+                          "maxGuestsPerInvitation",
+                          parseInt(e.target.value || "0", 10)
+                        )
                       }
                     />
                   </div>
                   <div className="col-md-4 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Max Photos Per Gallery</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Max Photos Per Gallery
+                    </label>
                     <input
                       type="number"
                       className="form-control form-control-solid"
                       value={settings.limits.maxPhotosPerGallery}
                       onChange={(e) =>
-                        handleInput('limits', 'maxPhotosPerGallery', parseInt(e.target.value || '0', 10))
+                        handleInput(
+                          "limits",
+                          "maxPhotosPerGallery",
+                          parseInt(e.target.value || "0", 10)
+                        )
                       }
                     />
                   </div>
@@ -413,29 +502,43 @@ export default function AdminSettings() {
           )}
 
           {/* Payment */}
-          {activeTab === 'payment' && (
+          {activeTab === "payment" && (
             <div className="card">
               <div className="card-header border-0">
-                <h3 className="card-title fw-bold text-gray-800">Payment (Xendit)</h3>
+                <h3 className="card-title fw-bold text-gray-800">
+                  Payment (Xendit)
+                </h3>
               </div>
               <div className="card-body pt-0">
                 <div className="row g-6">
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Xendit API Key</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Xendit API Key
+                    </label>
                     <input
                       type="password"
                       className="form-control form-control-solid"
                       value={settings.payment.xenditApiKey}
-                      onChange={(e) => handleInput('payment', 'xenditApiKey', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("payment", "xenditApiKey", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">Xendit Webhook Token</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      Xendit Webhook Token
+                    </label>
                     <input
                       type="password"
                       className="form-control form-control-solid"
                       value={settings.payment.xenditWebhookToken}
-                      onChange={(e) => handleInput('payment', 'xenditWebhookToken', e.target.value)}
+                      onChange={(e) =>
+                        handleInput(
+                          "payment",
+                          "xenditWebhookToken",
+                          e.target.value
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -443,14 +546,22 @@ export default function AdminSettings() {
                 <div className="d-flex flex-stack">
                   <div className="d-flex flex-column">
                     <div className="fs-6 fw-semibold">Enable Sandbox Mode</div>
-                    <div className="fs-7 text-muted">Use sandbox environment for testing</div>
+                    <div className="fs-7 text-muted">
+                      Use sandbox environment for testing
+                    </div>
                   </div>
                   <div className="form-check form-switch form-check-custom form-check-solid">
                     <input
                       className="form-check-input"
                       type="checkbox"
                       checked={settings.payment.enableSandbox}
-                      onChange={(e) => handleInput('payment', 'enableSandbox', e.target.checked)}
+                      onChange={(e) =>
+                        handleInput(
+                          "payment",
+                          "enableSandbox",
+                          e.target.checked
+                        )
+                      }
                     />
                   </div>
                 </div>
@@ -459,7 +570,7 @@ export default function AdminSettings() {
           )}
 
           {/* Email */}
-          {activeTab === 'email' && (
+          {activeTab === "email" && (
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">Email (SMTP)</h3>
@@ -472,7 +583,9 @@ export default function AdminSettings() {
                       type="text"
                       className="form-control form-control-solid"
                       value={settings.email.smtpHost}
-                      onChange={(e) => handleInput('email', 'smtpHost', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("email", "smtpHost", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
@@ -481,27 +594,41 @@ export default function AdminSettings() {
                       type="number"
                       className="form-control form-control-solid"
                       value={settings.email.smtpPort}
-                      onChange={(e) => handleInput('email', 'smtpPort', parseInt(e.target.value || '0', 10))}
+                      onChange={(e) =>
+                        handleInput(
+                          "email",
+                          "smtpPort",
+                          parseInt(e.target.value || "0", 10)
+                        )
+                      }
                     />
                   </div>
                 </div>
                 <div className="row g-6 mt-0">
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">SMTP Username</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      SMTP Username
+                    </label>
                     <input
                       type="text"
                       className="form-control form-control-solid"
                       value={settings.email.smtpUser}
-                      onChange={(e) => handleInput('email', 'smtpUser', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("email", "smtpUser", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
-                    <label className="fs-6 fw-semibold mb-2">SMTP Password</label>
+                    <label className="fs-6 fw-semibold mb-2">
+                      SMTP Password
+                    </label>
                     <input
                       type="password"
                       className="form-control form-control-solid"
                       value={settings.email.smtpPassword}
-                      onChange={(e) => handleInput('email', 'smtpPassword', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("email", "smtpPassword", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -512,7 +639,9 @@ export default function AdminSettings() {
                       type="email"
                       className="form-control form-control-solid"
                       value={settings.email.fromEmail}
-                      onChange={(e) => handleInput('email', 'fromEmail', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("email", "fromEmail", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
@@ -521,7 +650,9 @@ export default function AdminSettings() {
                       type="text"
                       className="form-control form-control-solid"
                       value={settings.email.fromName}
-                      onChange={(e) => handleInput('email', 'fromName', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("email", "fromName", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -530,7 +661,7 @@ export default function AdminSettings() {
           )}
 
           {/* Social */}
-          {activeTab === 'social' && (
+          {activeTab === "social" && (
             <div className="card">
               <div className="card-header border-0">
                 <h3 className="card-title fw-bold text-gray-800">Social Media</h3>
@@ -543,7 +674,9 @@ export default function AdminSettings() {
                       type="url"
                       className="form-control form-control-solid"
                       value={settings.social.facebookUrl}
-                      onChange={(e) => handleInput('social', 'facebookUrl', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("social", "facebookUrl", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
@@ -552,7 +685,9 @@ export default function AdminSettings() {
                       type="url"
                       className="form-control form-control-solid"
                       value={settings.social.instagramUrl}
-                      onChange={(e) => handleInput('social', 'instagramUrl', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("social", "instagramUrl", e.target.value)
+                      }
                     />
                   </div>
                 </div>
@@ -563,7 +698,9 @@ export default function AdminSettings() {
                       type="url"
                       className="form-control form-control-solid"
                       value={settings.social.twitterUrl}
-                      onChange={(e) => handleInput('social', 'twitterUrl', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("social", "twitterUrl", e.target.value)
+                      }
                     />
                   </div>
                   <div className="col-md-6 fv-row">
@@ -572,8 +709,109 @@ export default function AdminSettings() {
                       type="url"
                       className="form-control form-control-solid"
                       value={settings.social.youtubeUrl}
-                      onChange={(e) => handleInput('social', 'youtubeUrl', e.target.value)}
+                      onChange={(e) =>
+                        handleInput("social", "youtubeUrl", e.target.value)
+                      }
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SEO */}
+          {activeTab === "seo" && (
+            <div className="card">
+              <div className="card-header border-0">
+                <h3 className="card-title fw-bold text-gray-800">
+                  SEO (Global Meta)
+                </h3>
+              </div>
+              <div className="card-body pt-0">
+                <div className="row g-6">
+                  <div className="col-12 fv-row">
+                    <label className="required fs-6 fw-semibold mb-2">
+                      Meta Title
+                    </label>
+                    <input
+                      type="text"
+                      className={`form-control ${
+                        titleOk ? "form-control-solid" : "is-invalid"
+                      }`}
+                      value={settings.seo.metaTitle}
+                      onChange={(e) =>
+                        handleInput("seo", "metaTitle", e.target.value)
+                      }
+                      placeholder="Contoh: Undangan Digital Elegan & Modern - Dreamslink"
+                    />
+                    <div className="d-flex justify-content-between mt-2">
+                      <small
+                        className={`${
+                          titleOk ? "text-muted" : "text-danger"
+                        }`}
+                      >
+                        {titleLen} chars {titleOk ? "(OK)" : "(30–60 disarankan)"}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="col-12 fv-row">
+                    <label className="required fs-6 fw-semibold mb-2">
+                      Meta Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      className={`form-control ${
+                        descOk ? "form-control-solid" : "is-invalid"
+                      }`}
+                      value={settings.seo.metaDescription}
+                      onChange={(e) =>
+                        handleInput("seo", "metaDescription", e.target.value)
+                      }
+                      placeholder="Contoh: Buat undangan pernikahan digital yang elegan, mudah dipakai, dan siap dibagikan."
+                    />
+                    <div className="d-flex justify-content-between mt-2">
+                      <small
+                        className={`${
+                          descOk ? "text-muted" : "text-danger"
+                        }`}
+                      >
+                        {descLen} chars{" "}
+                        {descOk ? "(OK)" : "(70–160 disarankan)"}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="col-12 fv-row">
+                    <label className="fs-6 fw-semibold mb-2">Meta Keywords</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-solid"
+                      value={settings.seo.metaKeywords}
+                      onChange={(e) =>
+                        handleInput("seo", "metaKeywords", e.target.value)
+                      }
+                      placeholder="Pisahkan dengan koma: undangan digital, undangan pernikahan, wedding invitation"
+                    />
+                    <small className="text-muted">
+                      *Keywords tidak sepenting dulu, tapi masih berguna untuk
+                      beberapa mesin pencari.
+                    </small>
+                  </div>
+                </div>
+
+                {/* Preview kecil ala Google */}
+                <div className="separator my-6"></div>
+                <div className="p-5 border rounded bg-light">
+                  <div className="mb-2 text-success fs-7">
+                    dreamslink.id › …
+                  </div>
+                  <div className="mb-1 fw-bold fs-5">
+                    {settings.seo.metaTitle || settings.general.siteName || "Title preview"}
+                  </div>
+                  <div className="text-muted">
+                    {settings.seo.metaDescription ||
+                      "Deskripsi halaman akan tampil di sini sebagai preview snippet."}
                   </div>
                 </div>
               </div>
@@ -582,13 +820,27 @@ export default function AdminSettings() {
 
           {/* Bottom bar Save (nice UX) */}
           <div className="d-flex justify-content-end mt-6">
-            <button type="button" className="btn btn-light me-3" onClick={fetchSettings} disabled={loading || saving}>
+            <button
+              type="button"
+              className="btn btn-light me-3"
+              onClick={fetchSettings}
+              disabled={loading || saving}
+            >
               Reset
             </button>
-            <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleSave}
+              disabled={saving}
+            >
               {saving ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   Saving...
                 </>
               ) : (

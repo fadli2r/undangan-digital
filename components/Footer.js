@@ -62,7 +62,7 @@ export default function Footer() {
       </div>
 
       <div className="mt-12 border-t border-gray-800 pt-6 text-center text-gray-500 text-sm">
-        &copy; {new Date().getFullYear()} Undangan Digital. All rights reserved.
+        &copy; {new Date().getFullYear()} GDK Indonesia. All rights reserved.
       </div>
     </footer>
   );

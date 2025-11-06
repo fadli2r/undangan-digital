@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import Swal from "sweetalert2";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function EditTemplatePage() {
   const router = useRouter();
@@ -141,9 +142,12 @@ export default function EditTemplatePage() {
 
   return (
     <AdminLayout>
-      <Head>
-        <title>Edit Template - Digital Invitation</title>
-      </Head>
+      <SeoHead
+        title="Edit Template - Dreamslink"
+        description="Halaman untuk mengedit template undangan di panel admin."
+        noindex
+        canonical="/admin/templates/edit"
+      />
 
       <div className="card">
         <div className="card-header border-0 pt-6 d-flex justify-content-between align-items-center">

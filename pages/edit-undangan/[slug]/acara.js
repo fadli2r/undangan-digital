@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import UserLayout from "../../../components/layouts/UserLayout";
 import BackButton from "@/components/BackButton";
-import { showAlert, showToast } from "@/utils/sweetAlert";
+import { showAlert } from "@/utils/sweetAlert";
 
 export default function Acara() {
   const router = useRouter();
@@ -16,7 +16,8 @@ export default function Acara() {
   const [form, setForm] = useState({
     nama: "",
     tanggal: "",
-    waktu: "",
+    waktuMulai: "",
+    waktuSelesai: "",
     lokasi: "",
     alamat: "",
   });
@@ -24,13 +25,46 @@ export default function Acara() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  // --- Utils waktu (kompat dengan field lama `waktu`) ---
+  const normalizeTimes = (item) => {
+    // Jika sudah pakai field baru, pakai itu
+    if (item?.waktuMulai || item?.waktuSelesai) {
+      return {
+        waktuMulai: item.waktuMulai || "",
+        waktuSelesai: item.waktuSelesai || "",
+      };
+    }
+    // Kompat lama: parse "10:00" atau "10:00 - 12:00" / "10:00–12:00"
+    const raw = String(item?.waktu || "").replace(/\s/g, "");
+    if (!raw) return { waktuMulai: "", waktuSelesai: "" };
+    const sepIdx = raw.indexOf("-") >= 0 ? raw.indexOf("-") : raw.indexOf("–");
+    if (sepIdx > 0) {
+      const start = raw.slice(0, sepIdx);
+      const end = raw.slice(sepIdx + 1);
+      return { waktuMulai: start || "", waktuSelesai: end || "" };
+    }
+    return { waktuMulai: raw, waktuSelesai: "" };
+  };
+
+  const makeWaktuLabel = (mulai, selesai) => {
+    if (mulai && selesai) return `${mulai} – ${selesai}`;
+    if (mulai && !selesai) return `${mulai} – selesai`;
+    return "";
+  };
+
+  const waktuDisplay = (item) => {
+    const { waktuMulai, waktuSelesai } = normalizeTimes(item);
+    const label = makeWaktuLabel(waktuMulai, waktuSelesai);
+    return label || (item?.waktu || "—");
+  };
+
   // Fetch data undangan
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     fetch(`/api/invitation/detail?slug=${slug}`)
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         if (res.undangan) {
           setUndangan(res.undangan);
           setAcaraList(res.undangan?.acara || []);
@@ -38,43 +72,49 @@ export default function Acara() {
         }
         setLoading(false);
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch((err) => {
+        console.error("Error:", err);
         setLoading(false);
       });
   }, [slug]);
 
   // Handle input
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   // Format tanggal untuk display
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString('id-ID', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateStr).toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   // Simpan acara baru / edit acara
   const handleSubmit = async (e) => {
     e.preventDefault();
-    showAlert.loading('Menyimpan...', 'Mohon tunggu sebentar');
+    setSuccess("");
+    setError("");
+    showAlert.loading("Menyimpan...", "Mohon tunggu sebentar");
 
     try {
+      const waktu = makeWaktuLabel(form.waktuMulai, form.waktuSelesai);
       const acaraData = {
-        ...form,
-        tanggal: new Date(form.tanggal).toISOString()
+        nama: form.nama,
+        tanggal: new Date(form.tanggal).toISOString(),
+        waktu, // label gabungan utk kompat tampilan lama
+        waktuMulai: form.waktuMulai || "",
+        waktuSelesai: form.waktuSelesai || "",
+        lokasi: form.lokasi,
+        alamat: form.alamat,
       };
 
-      let newList = [...acaraList];
-      if (editIndex >= 0) {
-        newList[editIndex] = acaraData;
-      } else {
-        newList.push(acaraData);
-      }
+      const newList = [...acaraList];
+      if (editIndex >= 0) newList[editIndex] = acaraData;
+      else newList.push(acaraData);
 
       const res = await fetch("/api/invitation/update", {
         method: "POST",
@@ -84,24 +124,39 @@ export default function Acara() {
 
       if (res.ok) {
         setAcaraList(newList);
-        setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
+        setForm({
+          nama: "",
+          tanggal: "",
+          waktuMulai: "",
+          waktuSelesai: "",
+          lokasi: "",
+          alamat: "",
+        });
         setEditIndex(-1);
-        showAlert.success('Berhasil!', 'Acara berhasil disimpan');
+        setSuccess("Acara berhasil disimpan");
+        showAlert.success("Berhasil!", "Acara berhasil disimpan");
       } else {
-        showAlert.error('Gagal!', 'Gagal menyimpan acara');
+        setError("Gagal menyimpan acara");
+        showAlert.error("Gagal!", "Gagal menyimpan acara");
       }
     } catch (error) {
-      console.error('Update error:', error);
-      showAlert.error('Error!', 'Gagal menyimpan acara: ' + error.message);
+      console.error("Update error:", error);
+      setError(error.message);
+      showAlert.error("Error!", "Gagal menyimpan acara: " + error.message);
     }
   };
 
   // Edit acara
   const handleEdit = (idx) => {
-    const acara = acaraList[idx];
+    const ac = acaraList[idx];
+    const { waktuMulai, waktuSelesai } = normalizeTimes(ac);
     setForm({
-      ...acara,
-      tanggal: acara.tanggal ? new Date(acara.tanggal).toISOString().split('T')[0] : ""
+      nama: ac.nama || "",
+      tanggal: ac.tanggal ? new Date(ac.tanggal).toISOString().split("T")[0] : "",
+      waktuMulai,
+      waktuSelesai,
+      lokasi: ac.lokasi || "",
+      alamat: ac.alamat || "",
     });
     setEditIndex(idx);
   };
@@ -109,33 +164,38 @@ export default function Acara() {
   // Hapus acara
   const handleDelete = async (idx) => {
     showAlert.confirm(
-      'Hapus Acara',
-      'Apakah Anda yakin ingin menghapus acara ini?',
-      'Ya, Hapus',
-      'Batal',
+      "Hapus Acara",
+      "Apakah Anda yakin ingin menghapus acara ini?",
+      "Ya, Hapus",
+      "Batal",
       async (result) => {
         if (result.isConfirmed) {
-          showAlert.loading('Menghapus...', 'Mohon tunggu sebentar');
+          showAlert.loading("Menghapus...", "Mohon tunggu sebentar");
           const newList = acaraList.filter((_, i) => i !== idx);
-          
           try {
             const res = await fetch("/api/invitation/update", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ slug, field: { acara: newList } }),
             });
-            
             if (res.ok) {
               setAcaraList(newList);
-              setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
+              setForm({
+                nama: "",
+                tanggal: "",
+                waktuMulai: "",
+                waktuSelesai: "",
+                lokasi: "",
+                alamat: "",
+              });
               setEditIndex(-1);
-              showAlert.success('Berhasil!', 'Acara berhasil dihapus');
+              showAlert.success("Berhasil!", "Acara berhasil dihapus");
             } else {
-              showAlert.error('Gagal!', 'Gagal menghapus acara');
+              showAlert.error("Gagal!", "Gagal menghapus acara");
             }
           } catch (error) {
-            console.error('Delete error:', error);
-            showAlert.error('Error!', 'Gagal menghapus acara: ' + error.message);
+            console.error("Delete error:", error);
+            showAlert.error("Error!", "Gagal menghapus acara: " + error.message);
           }
         }
       }
@@ -144,27 +204,22 @@ export default function Acara() {
 
   // Set acara utama
   const handleSetUtama = async (acara) => {
-    showAlert.loading('Menyimpan...', 'Mohon tunggu sebentar');
-    
+    showAlert.loading("Menyimpan...", "Mohon tunggu sebentar");
     try {
       const res = await fetch("/api/invitation/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          field: { acara_utama: acara }
-        }),
+        body: JSON.stringify({ slug, field: { acara_utama: acara } }),
       });
-
       if (res.ok) {
         setAcaraUtama(acara);
-        showAlert.success('Berhasil!', 'Acara utama berhasil diperbarui');
+        showAlert.success("Berhasil!", "Acara utama berhasil diperbarui");
       } else {
-        showAlert.error('Gagal!', 'Gagal mengatur acara utama');
+        showAlert.error("Gagal!", "Gagal mengatur acara utama");
       }
     } catch (err) {
-      console.error('Update error:', err);
-      showAlert.error('Error!', 'Gagal mengatur acara utama: ' + err.message);
+      console.error("Update error:", err);
+      showAlert.error("Error!", "Gagal mengatur acara utama: " + err.message);
     }
   };
 
@@ -203,6 +258,7 @@ export default function Acara() {
             <h2 className="fw-bold">Informasi Acara</h2>
           </div>
         </div>
+
         <div className="card-body">
           {/* Form tambah/edit acara */}
           <form onSubmit={handleSubmit} className="mb-8">
@@ -218,6 +274,7 @@ export default function Acara() {
                   placeholder="Contoh: Akad, Resepsi"
                 />
               </div>
+
               <div className="col-md-6">
                 <label className="form-label required">Tanggal</label>
                 <input
@@ -229,17 +286,32 @@ export default function Acara() {
                   required
                 />
               </div>
-              <div className="col-md-6">
-                <label className="form-label required">Waktu</label>
+
+              <div className="col-md-3">
+                <label className="form-label required">Waktu Mulai</label>
                 <input
-                  name="waktu"
+                  name="waktuMulai"
+                  type="time"
                   className="form-control"
-                  value={form.waktu}
+                  value={form.waktuMulai}
                   onChange={handleChange}
                   required
-                  placeholder="Contoh: 10:00"
                 />
               </div>
+
+              <div className="col-md-3">
+                <label className="form-label">Waktu Selesai</label>
+                <input
+                  name="waktuSelesai"
+                  type="time"
+                  className="form-control"
+                  value={form.waktuSelesai}
+                  onChange={handleChange}
+                  placeholder="(opsional)"
+                />
+                <div className="form-text">Kosongkan jika acaranya sampai selesai</div>
+              </div>
+
               <div className="col-md-6">
                 <label className="form-label required">Lokasi</label>
                 <input
@@ -251,6 +323,7 @@ export default function Acara() {
                   placeholder="Contoh: Masjid Al-Falah"
                 />
               </div>
+
               <div className="col-12">
                 <label className="form-label required">Alamat Lengkap</label>
                 <textarea
@@ -267,42 +340,37 @@ export default function Acara() {
 
             {success && (
               <div className="alert alert-success mt-4">
-                <i className="ki-duotone ki-check-circle fs-2 me-2">
-                  <span className="path1"></span>
-                  <span className="path2"></span>
-                </i>
+                <i className="ki-duotone ki-check-circle fs-2 me-2" />
                 {success}
               </div>
             )}
-            
+
             {error && (
               <div className="alert alert-danger mt-4">
-                <i className="ki-duotone ki-cross-circle fs-2 me-2">
-                  <span className="path1"></span>
-                  <span className="path2"></span>
-                </i>
+                <i className="ki-duotone ki-cross-circle fs-2 me-2" />
                 {error}
               </div>
             )}
 
             <div className="mt-5">
-              <button
-                type="submit"
-                className="btn btn-primary me-3"
-                disabled={loading}
-              >
-                {loading && (
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                )}
+              <button type="submit" className="btn btn-primary me-3" disabled={loading}>
+                {loading && <span className="spinner-border spinner-border-sm me-2" />}
                 {editIndex >= 0 ? "Update Acara" : "Tambah Acara"}
               </button>
-              
+
               {editIndex >= 0 && (
                 <button
                   type="button"
                   className="btn btn-light"
                   onClick={() => {
-                    setForm({ nama: "", tanggal: "", waktu: "", lokasi: "", alamat: "" });
+                    setForm({
+                      nama: "",
+                      tanggal: "",
+                      waktuMulai: "",
+                      waktuSelesai: "",
+                      lokasi: "",
+                      alamat: "",
+                    });
                     setEditIndex(-1);
                   }}
                 >
@@ -325,11 +393,7 @@ export default function Acara() {
 
             {acaraList.length === 0 && (
               <div className="alert alert-primary d-flex align-items-center p-5">
-                <i className="ki-duotone ki-information-5 fs-2hx text-primary me-4">
-                  <span className="path1"></span>
-                  <span className="path2"></span>
-                  <span className="path3"></span>
-                </i>
+                <i className="ki-duotone ki-information-5 fs-2hx text-primary me-4" />
                 <div className="d-flex flex-column">
                   <h4 className="mb-1 text-primary">Belum Ada Acara</h4>
                   <span>Silakan tambahkan acara menggunakan form di atas</span>
@@ -343,15 +407,21 @@ export default function Acara() {
                   <div className="d-flex flex-column flex-md-row align-items-md-center">
                     <div className="flex-grow-1">
                       <div className="d-flex align-items-center mb-2">
-                        <span className="fs-3 fw-bold text-gray-900 me-3">{ac.nama}</span>
+                        <span className="fs-3 fw-bold text-gray-900 me-3">
+                          {ac.nama}
+                        </span>
                         {acaraUtama && acaraUtama.tanggal === ac.tanggal && (
                           <span className="badge badge-light-primary">Acara Utama</span>
                         )}
                       </div>
                       <div className="d-flex flex-wrap">
                         <div className="border border-dashed border-gray-300 rounded min-w-125px py-3 px-4 me-3 mb-3">
-                          <div className="fs-6 text-gray-800 fw-bold">{formatDate(ac.tanggal)}</div>
-                          <div className="fw-semibold text-gray-500">{ac.waktu}</div>
+                          <div className="fs-6 text-gray-800 fw-bold">
+                            {formatDate(ac.tanggal)}
+                          </div>
+                          <div className="fw-semibold text-gray-500">
+                            {waktuDisplay(ac)}
+                          </div>
                         </div>
                         <div className="border border-dashed border-gray-300 rounded py-3 px-4 mb-3 flex-grow-1">
                           <div className="fs-6 text-gray-800 fw-bold">{ac.lokasi}</div>
@@ -360,55 +430,42 @@ export default function Acara() {
                       </div>
                     </div>
                     <div className="d-flex gap-2 mt-3 mt-md-0">
-                      <button 
+                      <button
                         type="button"
                         className="btn btn-icon btn-light-primary btn-sm"
                         onClick={() => handleEdit(i)}
                         title="Edit"
                       >
-                        <i className="ki-duotone ki-pencil fs-2">
-                          <span className="path1"></span>
-                          <span className="path2"></span>
-                        </i>
+                        <i className="ki-duotone ki-pencil fs-2" />
                       </button>
-                      <button 
+                      <button
                         type="button"
                         className="btn btn-icon btn-light-danger btn-sm"
                         onClick={() => handleDelete(i)}
                         title="Hapus"
                       >
-                        <i className="ki-duotone ki-trash fs-2">
-                          <span className="path1"></span>
-                          <span className="path2"></span>
-                          <span className="path3"></span>
-                          <span className="path4"></span>
-                          <span className="path5"></span>
-                        </i>
+                        <i className="ki-duotone ki-trash fs-2" />
                       </button>
                       <button
                         type="button"
                         className={`btn btn-sm ${
-                          acaraUtama && acaraUtama.tanggal === ac.tanggal 
-                            ? 'btn-secondary' 
-                            : 'btn-light-success'
+                          acaraUtama && acaraUtama.tanggal === ac.tanggal
+                            ? "btn-secondary"
+                            : "btn-light-success"
                         }`}
                         onClick={() => handleSetUtama(ac)}
-                        disabled={loading || (acaraUtama && acaraUtama.tanggal === ac.tanggal)}
+                        disabled={
+                          loading || (acaraUtama && acaraUtama.tanggal === ac.tanggal)
+                        }
                       >
                         {acaraUtama && acaraUtama.tanggal === ac.tanggal ? (
                           <>
-                            <i className="ki-duotone ki-check fs-2 me-2">
-                              <span className="path1"></span>
-                              <span className="path2"></span>
-                            </i>
+                            <i className="ki-duotone ki-check fs-2 me-2" />
                             Acara Utama
                           </>
                         ) : (
                           <>
-                            <i className="ki-duotone ki-star fs-2 me-2">
-                              <span className="path1"></span>
-                              <span className="path2"></span>
-                            </i>
+                            <i className="ki-duotone ki-star fs-2 me-2" />
                             Jadikan Utama
                           </>
                         )}

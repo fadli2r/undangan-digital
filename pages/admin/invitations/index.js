@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import AdminLayout from "../../../components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function InvitationManagement() {
   const router = useRouter();
@@ -153,6 +154,12 @@ export default function InvitationManagement() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Manajemen Undangan - Dreamslink"
+        description="Halaman untuk mengelola undangan digital di panel admin."
+        noindex
+        canonical="/admin/invitations"
+      />
       {/* begin::Container */}
         {/* begin::Card */}
         <div className="card">

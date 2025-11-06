@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import SeoHead from '@/components/SeoHead'
 
 export default function CreateCouponPage() {
   const router = useRouter();
@@ -144,7 +145,14 @@ export default function CreateCouponPage() {
   }
 
   return (
-    <AdminLayout>
+    <>
+      <SeoHead
+        title="Buat Kupon Baru - Dreamslink"
+        description="Halaman untuk membuat kupon baru di panel admin."
+        noindex
+        canonical="/admin/coupons/create"
+      />
+      <AdminLayout>
 
 
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -450,5 +458,6 @@ export default function CreateCouponPage() {
         </div>
       </div>
     </AdminLayout>
+    </>
   );
 }

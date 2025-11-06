@@ -3,6 +3,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
+import SeoHead from '@/components/SeoHead'
 
 export default function AdminLogin() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -64,7 +65,6 @@ export default function AdminLogin() {
   return (
     <div className="d-flex flex-column min-vh-100">
       <Head>
-        <title>Admin Login - Digital Invitation</title>
         <link
           href="/metronic/assets/plugins/global/plugins.bundle.css"
           rel="stylesheet"
@@ -76,6 +76,12 @@ export default function AdminLogin() {
           type="text/css"
         />
       </Head>
+      <SeoHead
+        title="Login Admin - Dreamslink"
+        description="Halaman login untuk masuk ke panel admin."
+        noindex
+        canonical="/admin/login"
+      />
 
       <div className="d-flex flex-column flex-root min-vh-100" id="kt_body">
         {/* Theme mode */}

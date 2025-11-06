@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import AdminLayout from "../../../components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function UserManagement() {
   const router = useRouter();
@@ -139,6 +140,12 @@ export default function UserManagement() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Manajemen Pengguna - Dreamslink"
+        description="Halaman untuk mengelola pengguna di panel admin."
+        noindex
+        canonical="/admin/users"
+      />
       {/* begin::Container */}
         {/* begin::Card */}
         <div className="card">

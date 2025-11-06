@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import AdminLayout from "../../../components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function PackageManagement() {
   const router = useRouter();
@@ -114,6 +115,12 @@ export default function PackageManagement() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Manajemen Paket - Dreamslink"
+        description="Halaman untuk mengelola paket undangan di panel admin."
+        noindex
+        canonical="/admin/packages"
+      />
       <div className="card">
         {/* Begin::Card header */}
         <div className="card-header border-0 pt-6">

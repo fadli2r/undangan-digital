@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import AdminLayout from '../../../components/layouts/AdminLayout';
+import SeoHead from '@/components/SeoHead';
 
 const INITIAL = { key: '', name: '', description: '', price: 0, sort: 0, active: true };
 
@@ -149,7 +150,12 @@ export default function AdminFeaturesPage() {
 
   return (
     <AdminLayout>
-      <Head><title>Admin • Features</title></Head>
+      <SeoHead
+        title="Manajemen Fitur - Dreamslink"
+        description="Halaman untuk mengelola fitur undangan di panel admin."
+        noindex
+        canonical="/admin/features"
+      />
 
       {/* Page Title (meniru packages) */}
       <div className="d-flex flex-wrap flex-stack mb-6">

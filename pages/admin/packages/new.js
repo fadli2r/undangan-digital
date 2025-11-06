@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import AdminLayout from "../../../components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 const INITIAL_FORM = {
   // basic
@@ -149,6 +150,12 @@ export default function NewPackage() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Tambah Paket Baru - Dreamslink"
+        description="Halaman untuk menambahkan paket undangan baru di panel admin."
+        noindex
+        canonical="/admin/packages/new"
+      />
       <div className="d-flex flex-column gap-5">
         {/* Header */}
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">

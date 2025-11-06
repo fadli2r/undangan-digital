@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import Head from 'next/head';
 import UserLayout from "../../components/layouts/UserLayout";
 import ProfileHeader from "../../components/profile/ProfileHeader"; // Import komponen header
+import SeoHead from '@/components/SeoHead';
 
 export default function ProfileSettingsPage() {
   const router = useRouter();
@@ -94,9 +95,11 @@ export default function ProfileSettingsPage() {
   
   return (
     <UserLayout>
-      <Head>
-        <title>Pengaturan Profil</title>
-      </Head>
+      <SeoHead
+        title="Pengaturan Profil - Dreamslink"
+        description="Kelola pengaturan profil Anda di Dreamslink."
+        canonical="/profile/settings"
+      />
 
       <div className="content d-flex flex-column flex-column-fluid">
           {/* Gunakan komponen ProfileHeader di sini */}

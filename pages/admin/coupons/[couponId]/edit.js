@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import SeoHead from '@/components/SeoHead'
 
 function toLocalDateTimeValue(d) {
   if (!d) return '';
@@ -222,8 +223,12 @@ export default function EditCouponPage() {
 
   return (
     <AdminLayout>
-      <Head><title>Edit Kupon - Digital Invitation</title></Head>
-
+<SeoHead
+        title="Edit Kupon - Dreamslink"
+        description="Halaman untuk mengedit kupon di panel admin."
+        noindex
+        canonical="/admin/coupons/edit"
+      />
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
         <div className="container-xxl" id="kt_content_container">
 

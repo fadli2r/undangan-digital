@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import OrderDetailsModal from "@/components/admin/OrderDetailsModal";
+import SeoHead from '@/components/SeoHead';
 
 export default function Orders() {
   const { data: session, status } = useSession();
@@ -146,6 +147,12 @@ export default function Orders() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Manajemen Pesanan - Dreamslink"
+        description="Halaman untuk mengelola pesanan di panel admin."
+        noindex
+        canonical="/admin/orders"
+      />
       <div className="card">
         {/* Begin::Card header */}
         <div className="card-header border-0 pt-6">

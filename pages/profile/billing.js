@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import UserLayout from "@/components/layouts/UserLayout";
 import ProfileHeader from "@/components/profile/ProfileHeader";
+import SeoHead from '@/components/SeoHead';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "-";
@@ -68,6 +69,11 @@ export default function BillingHistoryPage() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Riwayat Transaksi - Dreamslink"
+        description="Lihat riwayat transaksi dan pembelian Anda di Dreamslink."
+        canonical="/profile/billing"
+      />
       <div className="content d-flex flex-column flex-column-fluid">
         <ProfileHeader user={user} activeTab="billing" />
 

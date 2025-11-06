@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import UserLayout from "../../components/layouts/UserLayout";
 import Swal from "sweetalert2";
+import SeoHead from '@/components/SeoHead';
 
 export default function PaketSummary() {
   const router = useRouter();
@@ -295,6 +296,11 @@ const handlePayNow = async () => {
 
   return (
     <LayoutComponent {...layoutProps}>
+      <SeoHead
+        title="Ringkasan Pembelian - Dreamslink"
+        description="Review detail paket dan selesaikan pembayaran Anda."
+        canonical="/paket/summary"
+      />
       {/* Add container for non-authenticated users */}
       {status !== "authenticated" && (
         <div className="container py-5">

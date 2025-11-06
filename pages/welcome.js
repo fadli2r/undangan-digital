@@ -1,17 +1,49 @@
-import { useEffect } from "react";
+// pages/welcome.jsx
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import { useSession } from "next-auth/react";
 
 export default function WelcomePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const redirectedRef = useRef(false);
 
-  // Otomatis redirect ke dashboard setelah 4 detik
+  // Jika belum login, arahkan ke login (sekali saja)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/dashboard");
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [router]);
+    if (status === "unauthenticated" && !redirectedRef.current) {
+      redirectedRef.current = true;
+      // kasih callbackUrl supaya setelah login balik ke /welcome
+      router.replace(`/login?callbackUrl=${encodeURIComponent("/welcome")}`);
+    }
+  }, [status, router]);
+
+  // Jika sudah login, timer ke dashboard
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const t = setTimeout(() => {
+      router.replace("/dashboard");
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [status, router]);
+
+  // Loading state saat cek session
+  if (status === "loading") {
+    return (
+      <div className="d-flex flex-column flex-root">
+        <div className="d-flex flex-column flex-center min-vh-100">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading…</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Kalau belum authenticated, biarkan kosong sebentar—router.replace akan bekerja
+  if (status !== "authenticated") return null;
+
+  const name = session?.user?.name || "Teman";
 
   return (
     <div className="d-flex flex-column flex-root">
@@ -19,7 +51,7 @@ export default function WelcomePage() {
         <title>Welcome - Digital Wedding Invitation</title>
       </Head>
 
-      {/* ✅ Background Image (Light & Dark Theme Support) */}
+      {/* ✅ Background Image with Dark Mode fix */}
       <style jsx global>{`
         body {
           background-image: url('/metronic/assets/media/auth/bg8.jpg');
@@ -27,42 +59,38 @@ export default function WelcomePage() {
           background-repeat: no-repeat;
           background-position: center;
         }
-        [data-bs-theme="dark"] body {
+        :root[data-bs-theme="dark"] body {
           background-image: url('/metronic/assets/media/auth/bg8-dark.jpg');
         }
       `}</style>
 
-      {/* ✅ Main Wrapper */}
       <div className="d-flex flex-column flex-center flex-column-fluid">
-        {/* ✅ Content */}
         <div className="d-flex flex-column flex-center text-center p-10">
-          {/* ✅ Card Wrapper */}
           <div className="card card-flush w-md-650px py-5 shadow-lg">
             <div className="card-body py-15 py-lg-20">
-              {/* ✅ Logo */}
+              {/* Logo */}
               <div className="mb-7">
-                <a href="/" className="">
+                <a href="/" aria-label="Dreamslink Home">
                   <img
-                    alt="Logo"
-                    src="/images/DreamsWhite.png"
+                    alt="Dreamslink"
+                    src="/images/dreamslink-w.png"
                     className="h-50px"
                   />
                 </a>
               </div>
 
-              {/* ✅ Title */}
+              {/* Title */}
               <h1 className="fw-bolder text-gray-900 mb-5">
-                Selamat Datang di Undangan Digital 🎉
+                Selamat Datang, {name}! 🎉
               </h1>
 
-              {/* ✅ Subtitle Text */}
               <div className="fw-semibold fs-6 text-gray-600 mb-7">
-                Akun Anda berhasil dibuat!
+                Akun kamu berhasil dibuat.
                 <br />
-                Anda akan diarahkan ke dashboard sebentar lagi...
+                Kamu akan diarahkan ke dashboard sebentar lagi…
               </div>
 
-              {/* ✅ Illustration */}
+              {/* Illustration */}
               <div className="mb-10">
                 <img
                   src="/metronic/assets/media/auth/welcome.png"
@@ -76,14 +104,19 @@ export default function WelcomePage() {
                 />
               </div>
 
-              {/* ✅ Button Manual Redirect */}
+              {/* Manual Redirect */}
               <div className="mb-0">
                 <button
                   className="btn btn-sm btn-primary"
-                  onClick={() => router.push("/dashboard")}
+                  onClick={() => router.replace("/dashboard")}
                 >
                   Go To Dashboard
                 </button>
+              </div>
+
+              {/* Info kecil */}
+              <div className="text-gray-500 fs-7 mt-4">
+                Tidak dialihkan? Pastikan cookie diizinkan lalu klik tombol di atas.
               </div>
             </div>
           </div>

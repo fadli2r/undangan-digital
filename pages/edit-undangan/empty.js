@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import { defaultTemplateList as templateList } from '../../data/templates';
+import SeoHead from '@/components/SeoHead';
 
 export default function EditUndangan({ undangan }) {
   const { data: session, status } = useSession();
@@ -61,7 +62,13 @@ export default function EditUndangan({ undangan }) {
   if (status === "loading") return <div className="p-10">Loading...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto mt-16 p-4 md:p-6 bg-white rounded shadow grid grid-cols-1 md:grid-cols-2 gap-12">
+    <>
+      <SeoHead
+        title="Edit Undangan - Dreamslink"
+        description="Edit undangan digital Anda dengan mudah."
+        canonical="/edit-undangan/empty"
+      />
+      <div className="max-w-5xl mx-auto mt-16 p-4 md:p-6 bg-white rounded shadow grid grid-cols-1 md:grid-cols-2 gap-12">
       {/* FORM EDIT (KIRI) */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Edit Undangan</h2>
@@ -119,6 +126,7 @@ export default function EditUndangan({ undangan }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

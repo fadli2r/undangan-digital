@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import Head from 'next/head';
+import SeoHead from "@/components/SeoHead";
 import AdminLayout from '@/components/layouts/AdminLayout';
 
 export default function CouponsPage() {
@@ -110,6 +111,12 @@ export default function CouponsPage() {
       <Head>
         <title>Manajemen Kupon - Digital Invitation</title>
       </Head>
+      <SeoHead
+        title="Manajemen Kupon - Dreamslink"
+        description="Halaman untuk menambahkan kupon undangan baru di panel admin."
+        noindex // penting biar admin tidak keindex Google
+        canonical="/admin/coupons/index"
+      />
 
       {/* Begin::Content */}
         {/* Begin::Container */}

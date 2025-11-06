@@ -71,7 +71,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login - Digital Wedding Invitation</title>
+        <title>Login - Dreamslink Invitation</title>
         <link rel="stylesheet" href="/metronic/assets/plugins/global/plugins.bundle.css" />
         <link rel="stylesheet" href="/metronic/assets/css/style.bundle.css" />
       </Head>

@@ -53,6 +53,8 @@ export default async function handler(req, res) {
       email: email.toLowerCase(),
       phone,
       password: hashedPassword,
+            isActive: true,                 // ✅ penting agar authorize() bisa nemu user
+
       role: "user",
       isOAuthUser: false,
     });

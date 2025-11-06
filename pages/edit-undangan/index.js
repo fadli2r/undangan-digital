@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import UserLayout from '@/components/layouts/UserLayout';
 import { showAlert, showToast } from '@/utils/sweetAlert';
+import SeoHead from '@/components/SeoHead';
 
 export default function EditUndangan() {
   const router = useRouter();
@@ -154,6 +155,11 @@ export default function EditUndangan() {
 
   return (
     <UserLayout>
+      <SeoHead
+        title="Edit Undangan - Dreamslink"
+        description="Kelola semua undangan digital Anda. Edit konten, lihat statistik, dan bagikan kepada tamu."
+        canonical="/edit-undangan"
+      />
       <div className="row g-5 g-xl-8">
         <div className="col-xl-12">
           {/* Header */}

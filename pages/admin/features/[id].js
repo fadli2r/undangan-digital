@@ -1,6 +1,7 @@
 // pages/admin/features/[id].js
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import SeoHead from '@/components/SeoHead';
 
 const emptyFeature = {
   name: "",
@@ -101,7 +102,14 @@ export default function AdminFeatureEdit() {
   }
 
   return (
-    <div className="container py-10">
+    <>
+      <SeoHead
+        title="Edit Fitur - Dreamslink"
+        description="Halaman untuk mengedit fitur undangan di panel admin."
+        noindex
+        canonical="/admin/features/edit"
+      />
+      <div className="container py-10">
       <div className="d-flex align-items-center justify-content-between mb-6">
         <h1 className="fw-bold">Edit Feature</h1>
         <div className="d-flex gap-3">
@@ -174,5 +182,6 @@ export default function AdminFeatureEdit() {
         </div>
       )}
     </div>
+    </>
   );
 }

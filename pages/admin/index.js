@@ -1,8 +1,16 @@
 import AdminLayout from '../../components/layouts/AdminLayout'
+import SeoHead from '@/components/SeoHead'
 
 export default function AdminDashboardPage() {
   return (
-    <AdminLayout>
+    <>
+      <SeoHead
+        title="Dashboard Admin - Dreamslink"
+        description="Halaman dashboard panel admin untuk mengelola undangan digital."
+        noindex
+        canonical="/admin"
+      />
+      <AdminLayout>
       <div className="row gy-5 g-xl-10">
         <div className="col-xl-4">
           <div className="card card-xl-stretch mb-xl-10" style={{ backgroundColor: '#F7D9E3' }}>
@@ -20,5 +28,6 @@ export default function AdminDashboardPage() {
         {/* Tambahkan widget lain sesuai template */}
       </div>
     </AdminLayout>
+    </>
   )
 }

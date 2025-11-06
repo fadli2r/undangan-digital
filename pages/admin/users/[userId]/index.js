@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import AdminLayout from '../../../../components/layouts/AdminLayout';
+import SeoHead from '@/components/SeoHead';
 
 export default function UserDetails() {
   const router = useRouter();
@@ -65,6 +66,12 @@ export default function UserDetails() {
 
   return (
     <AdminLayout>
+      <SeoHead
+        title="Detail Pengguna - Dreamslink"
+        description="Halaman detail pengguna di panel admin."
+        noindex
+        canonical="/admin/users/detail"
+      />
       {/* Begin::User Info Card */}
       <div className="card mb-5 mb-xl-10">
         <div className="card-body pt-9 pb-0">

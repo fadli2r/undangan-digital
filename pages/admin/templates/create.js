@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import Swal from "sweetalert2";
 import AdminLayout from "@/components/layouts/AdminLayout";
+import SeoHead from '@/components/SeoHead';
 
 export default function CreateTemplatePage() {
   const router = useRouter();
@@ -126,9 +127,12 @@ export default function CreateTemplatePage() {
 
   return (
     <AdminLayout>
-      <Head>
-        <title>Tambah Template - Digital Invitation</title>
-      </Head>
+      <SeoHead
+        title="Buat Template Baru - Dreamslink"
+        description="Halaman untuk membuat template undangan baru di panel admin."
+        noindex
+        canonical="/admin/templates/create"
+      />
 
       <div className="card">
         <div className="card-header border-0 pt-6">

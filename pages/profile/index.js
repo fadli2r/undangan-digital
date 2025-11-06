@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import Link from 'next/link';
 import Head from 'next/head';
 import UserLayout from "../../components/layouts/UserLayout"; // Path disesuaikan
+import SeoHead from '@/components/SeoHead';
 
 export default function ProfileOverviewPage() {
   const router = useRouter();
@@ -78,9 +79,11 @@ export default function ProfileOverviewPage() {
   // Tampilan utama setelah data profil berhasil didapatkan
   return (
     <UserLayout>
-      <Head>
-        <title>Profil Saya - {user.name}</title>
-      </Head>
+      <SeoHead
+        title={`Profil Saya - ${user.name} - Dreamslink`}
+        description="Lihat dan kelola profil Anda di Dreamslink."
+        canonical="/profile"
+      />
 
       <div className="content d-flex flex-column flex-column-fluid" id="kt_content">
           {/*begin::Navbar*/}
