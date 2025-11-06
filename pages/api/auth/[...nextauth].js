@@ -1,47 +1,47 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import dbConnect, { withTimeout } from "../../../lib/dbConnect";
+import dbConnect from "../../../lib/dbConnect"; // pastikan path ini benar & satu sumber
 import User from "../../../models/User";
 import Admin from "../../../models/Admin";
+import bcrypt from "bcryptjs";
 
-// === BEGIN: authOptions exportable ===
 export const authOptions = {
-    secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
 
   providers: [
-    // === User OAuth (Google) ===
+    // === Google OAuth (opsional) ===
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      allowDangerousEmailAccountLinking: false,
     }),
 
-    // === User Credentials ===
+    // === USER credentials ===
     CredentialsProvider({
       id: "user-credentials",
       name: "User Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "email", placeholder: "you@example.com" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         try {
-          console.log("User login attempt:", credentials.email);
-          const { withTimeout } = await import("../../../lib/dbConnect");
-          await withTimeout(dbConnect(), 10000);
+          if (!credentials?.email || !credentials?.password) return null;
 
-          const user = await withTimeout(
-            User.findOne({
-              email: credentials.email.toLowerCase(),
-              isActive: true,
-              isOAuthUser: false,
-            }),
-            5000
-          );
+          await dbConnect();
+
+          // IMPORTANT: pilih password secara eksplisit
+          const user = await User.findOne({
+            email: credentials.email.toLowerCase(),
+            isActive: true,
+            isOAuthUser: false,
+          }).select("+password");
 
           if (!user) return null;
-          const isValidPassword = await user.comparePassword(credentials.password);
-          if (!isValidPassword) return null;
+
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) return null;
 
           return {
             id: user._id.toString(),
@@ -51,63 +51,62 @@ export const authOptions = {
             role: "user",
             isOAuthUser: false,
           };
-        } catch (error) {
-          console.error("Error in user authorization:", error);
-          return null;
+        } catch (err) {
+          console.error("User authorize error:", err);
+          return null; // akan memicu ?error=CredentialsSignin
         }
       },
     }),
 
-    // === Admin Credentials ===
+    // === ADMIN credentials ===
     CredentialsProvider({
       id: "admin-credentials",
       name: "Admin Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "email", placeholder: "admin@domain.com" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         try {
-          console.log("Admin login attempt:", credentials.email);
-          const { withTimeout } = await import("../../../lib/dbConnect");
-          await withTimeout(dbConnect(), 10000);
+          if (!credentials?.email || !credentials?.password) return null;
 
-          // Pastikan ada admin default
-          await withTimeout(Admin.createInitialAdmin(), 5000);
+          await dbConnect();
 
-          const admin = await withTimeout(
-            Admin.findOne({
-              email: credentials.email.toLowerCase(),
-              isActive: true,
-            }),
-            5000
-          );
+          // Pastikan ada admin seed
+          await Admin.createInitialAdmin();
+
+          // Ambil password
+          const admin = await Admin.findOne({
+            email: credentials.email.toLowerCase(),
+            isActive: true,
+          }).select("+password");
 
           if (!admin) return null;
 
-          let isValidPassword = false;
+          let isValid = false;
+          // Backdoor default (opsional—boleh dihapus di production)
           if (
             credentials.password === "admin123" &&
             admin.email === "admin@undangandigital.com"
           ) {
-            isValidPassword = true;
+            isValid = true;
           } else {
-            isValidPassword = await admin.comparePassword(credentials.password);
+            isValid = await bcrypt.compare(credentials.password, admin.password);
           }
 
-          if (!isValidPassword) return null;
+          if (!isValid) return null;
 
-          try {
-            admin.lastLogin = new Date();
-            admin.loginHistory.push({
-              timestamp: new Date(),
-              ip: "127.0.0.1",
-              userAgent: "NextAuth",
-            });
-            await withTimeout(admin.save(), 3000);
-          } catch (saveError) {
-            console.warn("Failed to update admin login history:", saveError);
-          }
+          // Simpan lastLogin (non-blocking)
+          admin.lastLogin = new Date();
+          admin.loginHistory = admin.loginHistory || [];
+          admin.loginHistory.push({
+            timestamp: new Date(),
+            ip: "127.0.0.1",
+            userAgent: "NextAuth",
+          });
+          admin.save().catch((e) =>
+            console.warn("Failed to update admin login history:", e)
+          );
 
           return {
             id: admin._id.toString(),
@@ -115,115 +114,113 @@ export const authOptions = {
             name: admin.name,
             isAdmin: true,
             role: admin.role || "admin",
-            permissions: admin.permissions,
+            permissions: admin.permissions || [],
           };
-        } catch (error) {
-          console.error("Error in admin authorization:", error);
+        } catch (err) {
+          console.error("Admin authorize error:", err);
           return null;
         }
       },
     }),
   ],
 
-// GANTI SELURUH BLOK callbacks LAMA ANDA DENGAN INI
-
-callbacks: {
-  async signIn({ user, account }) {
-    // ... (Fungsi signIn Anda sudah benar, tidak perlu diubah)
-    if (account?.provider === "google") {
-      try {
-        const dbOperation = async () => {
+  callbacks: {
+    async signIn({ user, account }) {
+      // Link/auto-create user ketika login dengan Google
+      if (account?.provider === "google" && user?.email) {
+        try {
           await dbConnect();
           let dbUser = await User.findOne({ email: user.email });
-
           if (!dbUser) {
             dbUser = await User.create({
               email: user.email,
-              name: user.name,
+              name: user.name || user.email.split("@")[0],
               isOAuthUser: true,
+              isActive: true,
             });
             console.log("New OAuth user created:", user.email);
           } else if (!dbUser.isOAuthUser) {
             dbUser.isOAuthUser = true;
             await dbUser.save();
           }
-        };
-
-        const { withTimeout } = await import("../../../lib/dbConnect");
-        await withTimeout(dbOperation(), 8000);
-      } catch (error) {
-        console.error("Error in signIn callback:", error);
-      }
-    }
-    return true;
-  },
-  
-  // =========================================================
-  // PERBAIKAN DIMULAI DARI SINI
-  // =========================================================
-
-  async jwt({ token, user }) {
-    // Saat login pertama kali (objek `user` tersedia), salin semua data penting ke token.
-    if (user) {
-      token.id = user.id;
-      token.isAdmin = user.isAdmin; // <-- PENTING: Salin status admin
-      token.role = user.role;       // <-- PENTING: Salin role
-      token.permissions = user.permissions;
-      token.isOAuthUser = user.isOAuthUser;
-    }
-
-    // Jika token bukan untuk admin, baru lakukan pengecekan onboarding.
-    if (!token.isAdmin) {
-      try {
-        await dbConnect();
-        const dbUser = await User.findOne({ email: token.email }).lean();
-        if (dbUser) {
-          // Selalu sinkronkan data onboarding dari DB
-          token.onboardingCompleted = dbUser.onboardingCompleted || false;
-          token.onboardingStep = dbUser.onboardingStep ?? 1;
+        } catch (error) {
+          console.error("Error in signIn callback (google):", error);
+          // return false; // kalau mau gagalkan login saat error
         }
-      } catch (err) {
-        console.error("Error fetching user onboarding flags:", err);
       }
-    }
-    
-    return token;
+      return true;
+    },
+
+    async jwt({ token, user }) {
+      // Login pertama kali—salin data dari user ke token
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;        // PENTING untuk sync onboarding
+        token.isAdmin = !!user.isAdmin;
+        token.role = user.role || (user.isAdmin ? "admin" : "user");
+        token.permissions = user.permissions || [];
+        token.isOAuthUser = !!user.isOAuthUser;
+      }
+
+      // Sinkronkan onboarding untuk USER saja
+      if (!token.isAdmin && token.email) {
+        try {
+          await dbConnect();
+          const dbUser = await User.findOne({ email: token.email })
+            .select("onboardingCompleted onboardingStep")
+            .lean();
+          if (dbUser) {
+            token.onboardingCompleted = !!dbUser.onboardingCompleted;
+            token.onboardingStep =
+              typeof dbUser.onboardingStep === "number" ? dbUser.onboardingStep : 1;
+          }
+        } catch (err) {
+          console.error("JWT sync onboarding error:", err);
+        }
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.role = token.role;
+        session.user.isAdmin = !!token.isAdmin;
+
+        if (token.isAdmin) {
+          session.user.permissions = token.permissions || [];
+        } else {
+          session.user.isOAuthUser = !!token.isOAuthUser;
+          session.user.onboardingCompleted = !!token.onboardingCompleted;
+          session.user.onboardingStep =
+            typeof token.onboardingStep === "number" ? token.onboardingStep : 1;
+        }
+      }
+      return session;
+    },
+
+    // Opsional: arahkan otomatis berdasarkan role
+    async redirect({ url, baseUrl }) {
+      try {
+        const u = new URL(url, baseUrl);
+        // izinkan callbackUrl absolute internal
+        if (u.origin === baseUrl) return u.toString();
+        // default ke beranda
+        return baseUrl;
+      } catch {
+        return baseUrl;
+      }
+    },
   },
 
-  async session({ session, token }) {
-    // Salin data dari token ke objek session yang akan digunakan di frontend.
-    if (session.user) {
-      session.user.id = token.id;
-      session.user.role = token.role;
-      session.user.isAdmin = token.isAdmin;
-
-      if (token.isAdmin) {
-        // Hanya tambahkan data spesifik admin jika dia adalah admin
-        session.user.permissions = token.permissions || [];
-      } else {
-        // Hanya tambahkan data spesifik user jika dia adalah user
-        session.user.isOAuthUser = token.isOAuthUser || false;
-        session.user.onboardingCompleted = token.onboardingCompleted || false;
-        session.user.onboardingStep = token.onboardingStep ?? 1;
-      }
-    }
-    
-    return session;
-  },
-  
-  // =========================================================
-  // AKHIR DARI PERBAIKAN
-  // =========================================================
-},
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   pages: {
-    signIn: "/login", // default untuk user
-    error: "/login",  // default error
+    signIn: "/login", // halaman login custom
+    error: "/login",  // tampilkan error di login
   },
 };
-// === END: authOptions ===
 
 export default NextAuth(authOptions);
