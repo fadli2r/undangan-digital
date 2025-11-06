@@ -96,7 +96,7 @@ export default function ProfileSettingsPage() {
   return (
     <UserLayout>
       <SeoHead
-        title="Pengaturan Profil - Dreamslink"
+        title="Pengaturan Profil "
         description="Kelola pengaturan profil Anda di Dreamslink."
         canonical="/profile/settings"
       />

@@ -297,7 +297,7 @@ const handlePayNow = async () => {
   return (
     <LayoutComponent {...layoutProps}>
       <SeoHead
-        title="Ringkasan Pembelian - Dreamslink"
+        title="Ringkasan Pembelian "
         description="Review detail paket dan selesaikan pembayaran Anda."
         canonical="/paket/summary"
       />

@@ -142,7 +142,7 @@ export default function Paket() {
     return (
       <UserLayout>
       <SeoHead
-        title="Pilih Paket - Dreamslink"
+        title="Pilih Paket "
         description="Pilih paket undangan digital yang sesuai kebutuhan Anda."
         canonical="/paket"
       />

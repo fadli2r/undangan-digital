@@ -249,7 +249,7 @@ export default function Gift() {
     return (
       <UserLayout>
       <SeoHead
-        title="Amplop Digital - Dreamslink"
+        title="Amplop Digital "
         description="Kelola pengaturan amplop digital dan rekening."
         canonical="/edit-undangan/[slug]/gift"
       />

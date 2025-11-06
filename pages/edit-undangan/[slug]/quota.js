@@ -61,7 +61,7 @@ export default function QuotaPage() {
   return (
     <UserLayout>
       <SeoHead
-        title="Kuota WhatsApp - Dreamslink"
+        title="Kuota WhatsApp "
         description="Kelola kuota WhatsApp blast undangan."
         canonical="/edit-undangan/[slug]/quota"
       />

@@ -130,7 +130,7 @@ const uploadFile = async () => {
   return (
     <UserLayout>
       <SeoHead
-        title="Our Story - Dreamslink"
+        title="Our Story "
         description="Ceritakan kisah perjalanan cinta Anda."
         canonical="/edit-undangan/[slug]/ourstory"
       />

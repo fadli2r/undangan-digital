@@ -159,7 +159,7 @@ export default function EditTambahan() {
     return (
       <UserLayout>
       <SeoHead
-        title="Informasi Tambahan - Dreamslink"
+        title="Informasi Tambahan "
         description="Kelola informasi tambahan undangan Anda."
         canonical="/edit-undangan/[slug]/tambahan"
       />

@@ -70,7 +70,7 @@ export default function BillingHistoryPage() {
   return (
     <UserLayout>
       <SeoHead
-        title="Riwayat Transaksi - Dreamslink"
+        title="Riwayat Transaksi "
         description="Lihat riwayat transaksi dan pembelian Anda di Dreamslink."
         canonical="/profile/billing"
       />

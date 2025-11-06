@@ -111,7 +111,7 @@ export default function Dashboard() {
   return (
     <UserLayout>
       <SeoHead
-        title="Dashboard - Dreamslink"
+        title="Dashboard "
         description="Dashboard pengelolaan undangan digital Anda."
         canonical="/dashboard"
       />

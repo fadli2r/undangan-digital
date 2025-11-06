@@ -62,7 +62,7 @@ export default function EInvitationSettings() {
     return (
       <UserLayout>
       <SeoHead
-        title="E-Invitation Settings - Dreamslink"
+        title="E-Invitation Settings "
         description="Kelola pengaturan e-invitation undangan Anda."
         canonical="/edit-undangan/[slug]/einvitation"
       />

@@ -118,7 +118,7 @@ export default function UpgradeFiturPage() {
     return (
       <UserLayout>
       <SeoHead
-        title="Upgrade Fitur - Dreamslink"
+        title="Upgrade Fitur "
         description="Upgrade fitur undangan Anda."
         canonical="/edit-undangan/[slug]/upgrade"
       />

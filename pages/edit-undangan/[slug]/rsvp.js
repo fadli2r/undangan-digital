@@ -72,7 +72,7 @@ export default function ListRSVP() {
     return (
       <UserLayout>
       <SeoHead
-        title="Daftar RSVP - Dreamslink"
+        title="Daftar RSVP "
         description="Lihat dan kelola konfirmasi kehadiran tamu."
         canonical="/edit-undangan/[slug]/rsvp"
       />

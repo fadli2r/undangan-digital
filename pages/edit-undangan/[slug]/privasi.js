@@ -89,7 +89,7 @@ export default function PrivacySettings() {
   return (
     <UserLayout>
       <SeoHead
-        title="Pengaturan Privasi - Dreamslink"
+        title="Pengaturan Privasi "
         description="Kelola privasi dan keamanan undangan Anda."
         canonical="/edit-undangan/[slug]/privasi"
       />

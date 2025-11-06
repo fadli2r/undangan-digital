@@ -5,7 +5,7 @@ import { useSession, signIn } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 
-const REGISTER_ENDPOINT = "/api/auth/register"; // ubah jika endpoint kamu beda
+const REGISTER_ENDPOINT = "/api/register"; // ubah jika endpoint kamu beda
 
 export default function Register() {
   const [form, setForm] = useState({

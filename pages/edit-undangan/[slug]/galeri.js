@@ -142,7 +142,7 @@ export default function Galeri() {
     return (
       <UserLayout>
       <SeoHead
-        title="Kelola Galeri Foto - Dreamslink"
+        title="Kelola Galeri Foto "
         description="Upload dan kelola galeri foto undangan Anda."
         canonical="/edit-undangan/[slug]/galeri"
       />

@@ -253,7 +253,7 @@ export default function Acara() {
   return (
     <UserLayout>
       <SeoHead
-        title="Edit Informasi Acara - Dreamslink"
+        title="Edit Informasi Acara "
         description="Kelola informasi acara pernikahan Anda."
         canonical={`/edit-undangan/${slug}/acara`}
       />

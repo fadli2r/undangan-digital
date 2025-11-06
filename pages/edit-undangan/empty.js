@@ -64,7 +64,7 @@ export default function EditUndangan({ undangan }) {
   return (
     <>
       <SeoHead
-        title="Edit Undangan - Dreamslink"
+        title="Edit Undangan "
         description="Edit undangan digital Anda dengan mudah."
         canonical="/edit-undangan/empty"
       />

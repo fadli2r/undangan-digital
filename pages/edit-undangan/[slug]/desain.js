@@ -70,7 +70,7 @@ export default function Desain() {
     return (
       <UserLayout>
       <SeoHead
-        title="Ubah Desain Template - Dreamslink"
+        title="Ubah Desain Template "
         description="Ganti template dan desain undangan digital Anda."
         canonical="/edit-undangan/[slug]/desain"
       />

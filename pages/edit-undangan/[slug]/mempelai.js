@@ -149,7 +149,7 @@ const [error, setError] = useState("");
     return (
       <UserLayout>
       <SeoHead
-        title="Informasi Mempelai - Dreamslink"
+        title="Informasi Mempelai "
         description="Edit informasi mempelai pria dan wanita."
         canonical="/edit-undangan/[slug]/mempelai"
       />

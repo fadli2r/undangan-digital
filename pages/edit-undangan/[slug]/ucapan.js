@@ -40,7 +40,7 @@ export default function ListUcapan() {
     return (
       <UserLayout>
       <SeoHead
-        title="Daftar Ucapan - Dreamslink"
+        title="Daftar Ucapan "
         description="Lihat ucapan dan doa dari tamu."
         canonical="/edit-undangan/[slug]/ucapan"
       />

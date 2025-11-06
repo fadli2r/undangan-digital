@@ -37,7 +37,7 @@ export default function Download() {
     return (
       <UserLayout>
       <SeoHead
-        title="Download & Export - Dreamslink"
+        title="Download & Export "
         description="Download undangan dalam format PDF atau export data."
         canonical="/edit-undangan/[slug]/download"
       />

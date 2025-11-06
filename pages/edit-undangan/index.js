@@ -156,7 +156,7 @@ export default function EditUndangan() {
   return (
     <UserLayout>
       <SeoHead
-        title="Edit Undangan - Dreamslink"
+        title="Edit Undangan "
         description="Kelola semua undangan digital Anda. Edit konten, lihat statistik, dan bagikan kepada tamu."
         canonical="/edit-undangan"
       />

@@ -444,7 +444,7 @@ Wassalamu'alaikum Wr. Wb.`;
     return (
       <UserLayout>
       <SeoHead
-        title="Kelola Daftar Tamu - Dreamslink"
+        title="Kelola Daftar Tamu "
         description="Kelola daftar tamu undangan Anda."
         canonical="/edit-undangan/[slug]/tamu"
       />
