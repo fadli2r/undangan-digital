@@ -1,0 +1,203 @@
+/* Minimal, elegant, scoped styles for Modern template */
+
+/* ===== THEME SCOPE (wrap konten Modern dengan .vars) ===== */
+.vars {
+  --bg: #ffffff;
+  --text: #0f172a; /* slate-900 */
+  --subtle: #64748b; /* slate-500 */
+  --muted: #475569; /* slate-600 */
+  --border: #e2e8f0; /* slate-200 */
+  --card: #ffffff;
+  --light: #f8fafc; /* slate-50 */
+  --primary: #111827; /* neutral-900 */
+  --primary-acc: #2563eb; /* blue-600 */
+  --shadow: 0 10px 25px rgba(2, 6, 23, .08);
+  --radius: 1.25rem;
+  --hero-h: 100dvh;
+}
+.splash {
+  position: relative;
+  min-height: 100dvh;            /* full tinggi layar, aman untuk mobile (dynamic vh) */
+  background-size: cover;        /* full-bleed */
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;                 /* center vertikal & horizontal */
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+.splashShade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);   /* boleh kamu sesuaikan opacity nya */
+  backdrop-filter: blur(1px);
+}
+
+.splashInner {
+  position: relative;
+  width: min(1100px, 92vw);      /* lebar konten maksimum */
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2vw, 20px);
+}
+
+/* Judul rapi dan tidak ngegeser layout */
+.display { margin: 0; line-height: 1.1; }
+.names   { margin: 0; line-height: 1.1; }
+
+/* Tombol full width tapi tetap elegan (pill) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  background: rgba(7, 23, 49, .9);   /* navy gelap */
+  color: #fff;
+  width: 100%;                       /* FULL WIDTH */
+  max-width: min(980px, 92vw);       /* tetap ada batas di desktop besar */
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
+}
+.btnPrimary:hover { transform: translateY(-1px); }
+.btnPrimary:active { transform: translateY(0); }
+
+/* ==== HERO (setelah buka) juga full screen & center ==== */
+.hero {
+  position: relative;
+  min-height: 100dvh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: grid;                  /* center */
+  place-items: center;
+  padding: clamp(16px, 4vw, 32px);
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,.35) 0%,
+    rgba(0,0,0,.25) 40%,
+    rgba(0,0,0,.35) 100%
+  );
+}
+
+.heroInner {
+  position: relative;
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Scroll hint di bawah tengah */
+.scrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+}
+
+.scrollIcon { width: 28px; height: 28px; opacity: .9; }
+/* --- Globals (scoped via .vars) --- */
+.vars .display { font-family: ui-serif, Georgia, 'Times New Roman', Times, serif; font-size: clamp(2rem, 1rem + 3vw, 3.25rem); color: #fff; letter-spacing: .02em; }
+.vars .names { font-family: ui-serif, Georgia, 'Times New Roman', Times, serif; font-size: clamp(2.5rem, 1.6rem + 4vw, 4rem); color: #fff; font-weight: 700; margin-top: .25rem }
+.vars .h2 { font-family: ui-serif, Georgia, 'Times New Roman', Times, serif; font-size: clamp(1.75rem, 1.1rem + 2vw, 2.25rem); color: var(--text); text-align: center; margin-bottom: 1.25rem; }
+.vars .h3 { font-size: 1.25rem; font-weight: 700; color: var(--text); text-align: center; margin: .5rem 0 1rem; }
+.vars .lead { font-size: 1.125rem; color: var(--text); margin: .25rem 0 .75rem; text-align: center; }
+.vars .date { color: #fff; opacity: .95; margin-top: .75rem; font-size: 1.125rem }
+.vars .muted { color: var(--muted); }
+.vars .center { text-align: center; }
+.vars .block { display: block; margin-top: .5rem }
+.vars .bold { font-weight: 700 }
+.vars .mb4 { margin-bottom: .5rem }
+.vars .mb8 { margin-bottom: 1rem }
+.vars .mb12 { margin-bottom: 3rem }
+.vars .mt12 { margin-top: 3rem }
+
+.vars .container { width: 100%; max-width: 72rem; margin-inline: auto; padding: 0 1rem; }
+.vars .section { padding: 4rem 0; background: var(--bg); }
+.vars .sectionLight { background: var(--light); }
+
+.vars .grid2 { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+@media (min-width: 768px) { .vars .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; } }
+
+.vars .card { background: var(--card); ; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); text-align: center; }
+.vars .cardSolid { background: #fff; }
+.vars .cardGradient { color: #0b1220; background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%); border: 1px solid rgba(148,163,184,.35); }
+.vars .cardTitle { margin-bottom: .75rem }
+
+.vars .avatar { width: 10rem; height: 10rem; border-radius: 9999px; object-fit: cover; border: 4px solid rgba(37, 99, 235, .65); margin: 0 auto 1rem; }
+.vars .bankLogo { width: 4rem; height: 4rem; margin: 0 auto 1rem; object-fit: contain; }
+
+/* Buttons */
+.vars .btn { --_bg: #fff; --_fg: var(--text); display: inline-flex; align-items: center; justify-content: center; gap: .5rem; padding: .7rem 1.25rem; border-radius: 9999px; border: 1px solid var(--border); background: var(--_bg); color: var(--_fg); box-shadow: var(--shadow); transition: transform .15s ease, box-shadow .2s ease, background .2s ease; text-decoration: none; font-weight: 600; }
+.vars .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(2,6,23,.12); }
+.vars .btn:active { transform: translateY(0); }
+.vars .btnPrimary { --_bg: linear-gradient(135deg, #111827 0%, #0b1220 100%); --_fg: #fff; border: 1px solid rgba(255,255,255,.12); }
+.vars .btnLight { --_bg: #fff; --_fg: var(--primary-acc); border-color: rgba(37,99,235,.35); }
+
+/* Skeleton */
+.vars .skeleton { width: 100%; min-height: 200px; border-radius: var(--radius); background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%); background-size: 400% 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0% { background-position: 100% 0 } 100% { background-position: 0 0 } }
+
+/* Splash */
+.vars .splash {
+  position: relative;
+  min-height: 100dvh;            /* full tinggi layar, aman untuk mobile (dynamic vh) */
+  background-size: cover;        /* full-bleed */
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;                 /* center vertikal & horizontal */
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 32px);
+}
+.vars .splashShade { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+.vars .splashInner {
+  position: relative;
+  width: min(1100px, 92vw);      /* lebar konten maksimum */
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2vw, 20px);
+}
+
+
+/* Hero */
+.vars .hero { position: relative; width: 100%; min-height: 100vh; background-size: cover;  background-position: center; overflow: hidden; }
+.vars .heroShade { position: absolute; justify-content: center;     /* ✅ penting untuk vertikal center */ inset: 0; background: rgba(0,0,0,.25); }
+.vars .heroInner { position: relative; z-index: 1; padding: 4rem 1rem; text-align: center; }
+.vars .heroTo { margin-top: 1.25rem }
+.vars .heroGuest { color: #fff; opacity: .9; font-size: 1.125rem; margin-top: .25rem }
+.vars .qrImage { border-radius: .75rem; box-shadow: var(--shadow); }
+.vars .heroQR { display: grid; place-items: center; gap: .5rem; margin-top: .75rem }
+.vars .scrollHint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 1.75rem; color: #fff; opacity: .9 }
+.vars .scrollIcon { width: 2rem; height: 2rem; animation: bounce 1.5s infinite; }
+@keyframes bounce { 0%,100% { transform: translate(-50%, 0) } 50% { transform: translate(-50%, -8px) } }
+
+/* Decorative Flower */
+.vars .flower { position: absolute; right: 1rem; bottom: 1rem; width: 6rem; height: 6rem; opacity: .9; }
+@media (min-width: 768px) { .vars .flower { right: 1.5rem; bottom: 1.5rem; width: 7rem; height: 7rem; } }
+
+/* Map wrapper */
+.vars .mapWrap { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); }
+
+/* Social */
+.vars .social { display: flex; align-items: center; justify-content: center; gap: .75rem; margin-top: 1rem }
+.vars .social a { color: var(--muted); font-size: 1.25rem; }
+.vars .social a:hover { color: var(--text); }
