@@ -30,7 +30,8 @@ export default function Document() {
   />
         {/* Meta tags */}
         <meta charSet="utf-8" />
-        
+        <meta name="google-site-verification" content="Jz-Z3QpjRa4i73zI8WxWNyG33OP0sbkl1mgDQnsXL6Q" />
+
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
         

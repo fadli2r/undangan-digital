@@ -60,6 +60,9 @@ export async function generateMetadata(): Promise<Metadata> {
       default: titleDefault,
       template: `%s | ${siteName}`,
     },
+    verification: {
+    google: 'Jz-Z3QpjRa4i73zI8WxWNyG33OP0sbkl1mgDQnsXL6Q', // ✅ verifikasi Google di sini
+  },
     description: descriptionDefault,
     keywords: seo.metaKeywords || "undangan digital, undangan pernikahan",
     openGraph: {
