@@ -3,29 +3,19 @@
 import { useState, useEffect } from 'react';
 
 export default function WeddingWishes({ slug }) {
-  const [form, setForm] = useState({
-    nama: '',
-    pesan: ''
-  });
+  const [form, setForm] = useState({ nama: '', pesan: '' });
   const [ucapan, setUcapan] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  // Fetch ucapan yang sudah ada
-  useEffect(() => {
-    if (slug) {
-      fetchUcapan();
-    }
-  }, [slug]);
+  useEffect(() => { if (slug) fetchUcapan(); }, [slug]);
 
   const fetchUcapan = async () => {
     try {
       const res = await fetch(`/api/invitation/ucapan?slug=${slug}`);
       const data = await res.json();
-      if (res.ok) {
-        setUcapan(data.ucapan || []);
-      }
+      if (res.ok) setUcapan(data.ucapan || []);
     } catch (err) {
       console.error('Error fetching ucapan:', err);
     }
@@ -58,7 +48,6 @@ export default function WeddingWishes({ slug }) {
       if (res.ok) {
         setSuccess('Terima kasih atas ucapan Anda!');
         setForm({ nama: '', pesan: '' });
-        // Refresh ucapan list
         fetchUcapan();
         setTimeout(() => setSuccess(''), 3000);
       } else {
@@ -83,75 +72,80 @@ export default function WeddingWishes({ slug }) {
     });
   };
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      {/* Form Ucapan */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h3 className="text-xl font-semibold mb-4">Kirim Ucapan</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nama</label>
-            <input
-              type="text"
-              required
-              className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={form.nama}
-              onChange={(e) => setForm({ ...form, nama: e.target.value })}
-              placeholder="Masukkan nama Anda"
-            />
-          </div>
+return (
+  <div className="vars space-y-10">
+    {/* 💌 Form Ucapan */}
+    <div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Ucapan & Harapan</label>
-            <textarea
-              required
-              className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows="4"
-              value={form.pesan}
-              onChange={(e) => setForm({ ...form, pesan: e.target.value })}
-              placeholder="Tulis ucapan dan harapan terbaik Anda untuk kedua mempelai..."
-            ></textarea>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block font-medium text-slate-700 mb-1">
+            Nama <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            required
+            className="w-full border border-slate-300 rounded-lg px-4 py-2"
+            value={form.nama}
+            onChange={(e) => setForm({ ...form, nama: e.target.value })}
+            placeholder="Masukkan nama Anda"
+          />
+        </div>
 
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-          {success && <div className="text-green-500 text-sm">{success}</div>}
+        <div>
+          <label className="block font-medium text-slate-700 mb-1">
+            Ucapan & Harapan <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            required
+            className="w-full border border-slate-300 rounded-lg px-4 py-2"
+            rows="4"
+            value={form.pesan}
+            onChange={(e) => setForm({ ...form, pesan: e.target.value })}
+            placeholder="Tulis ucapan terbaik Anda untuk kedua mempelai..."
+          />
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Mengirim...' : 'Kirim Ucapan'}
-          </button>
-        </form>
-      </div>
+        {error && <div className="text-red-500 text-sm">{error}</div>}
+        {success && <div className="text-green-600 text-sm font-medium">{success}</div>}
 
-      {/* Daftar Ucapan */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-4">
-          Ucapan & Harapan ({ucapan.length})
-        </h3>
-        
-        {ucapan.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            Belum ada ucapan. Jadilah yang pertama memberikan ucapan!
-          </p>
-        ) : (
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {ucapan.map((item, index) => (
-              <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-semibold text-gray-800">{item.nama}</h4>
-                  <span className="text-xs text-gray-500">
-                    {formatDate(item.waktu)}
-                  </span>
-                </div>
-                <p className="text-gray-600 leading-relaxed">{item.pesan}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition ${
+            loading ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
+        >
+          {loading ? 'Mengirim...' : 'Kirim Ucapan'}
+        </button>
+      </form>
     </div>
-  );
+
+    {/* ✨ Daftar Ucapan */}
+    <div>
+      <h3 className="text-xl font-semibold mb-5 text-slate-800">
+        Ucapan & Harapan ({ucapan.length})
+      </h3>
+
+      {ucapan.length === 0 ? (
+        <p className="text-slate-500 text-center py-10">
+          Belum ada ucapan. Jadilah yang pertama memberikan ucapan!
+        </p>
+      ) : (
+        <div className="space-y-5 max-h-[420px] overflow-y-auto pr-1">
+          {ucapan.map((item, idx) => (
+            <div key={idx} className="bg-slate-50 rounded-lg p-4 shadow-sm border border-slate-100">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="font-semibold text-slate-800">{item.nama}</h4>
+                <span className="text-xs text-slate-500">{formatDate(item.waktu)}</span>
+              </div>
+              <p className="text-slate-700 leading-relaxed">{item.pesan}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 }

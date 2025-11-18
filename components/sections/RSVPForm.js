@@ -5,23 +5,21 @@ import { useEffect, useState } from 'react';
 export default function RSVPForm({ slug, namaTamu }) {
   const [form, setForm] = useState({
     nama: namaTamu || '',
-    kehadiran: 'hadir', // hadir | tidak_hadir | ragu
+    kehadiran: 'hadir',
     jumlah_tamu: 1,
     pesan: ''
   });
-  const [tamuList, setTamuList] = useState([]); // ✅ daftar tamu dari undangan
+  const [tamuList, setTamuList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  // Prefill kalau namaTamu dari URL
   useEffect(() => {
     if (namaTamu) {
       setForm((f) => ({ ...f, nama: namaTamu }));
     }
   }, [namaTamu]);
 
-  // ✅ Fetch daftar tamu untuk validasi
   useEffect(() => {
     if (!slug) return;
     fetch(`/api/invitation/detail?slug=${slug}`)
@@ -41,7 +39,6 @@ export default function RSVPForm({ slug, namaTamu }) {
     setSuccess('');
 
     try {
-      // ✅ validasi nama ada di daftar tamu
       const norm = (s) => String(s || '').trim().toLowerCase();
       const isInvited = tamuList.some((t) => norm(t.nama) === norm(form.nama));
 
@@ -79,32 +76,37 @@ export default function RSVPForm({ slug, namaTamu }) {
   };
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="vars space-y-6">
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nama */}
         <div>
-          <label className="block text-sm font-medium mb-1">Nama</label>
+          <label className="block font-medium text-slate-700 mb-1">
+            Nama <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             required
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-slate-300 rounded-lg px-4 py-2"
             value={form.nama}
             onChange={(e) => setForm({ ...form, nama: e.target.value })}
             placeholder="Masukkan nama Anda"
             readOnly={!!namaTamu}
           />
           {namaTamu && (
-            <p className="text-xs text-gray-500 mt-1">
-              Nama terisi otomatis dari link undangan.
+            <p className="text-xs text-slate-500 mt-1">
+              Nama diisi otomatis dari link undangan.
             </p>
           )}
         </div>
 
         {/* Kehadiran */}
         <div>
-          <label className="block text-sm font-medium mb-1">Konfirmasi Kehadiran</label>
+          <label className="block font-medium text-slate-700 mb-1">
+            Kehadiran <span className="text-red-500">*</span>
+          </label>
           <select
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-slate-300 rounded-lg px-4 py-2"
             value={form.kehadiran}
             onChange={(e) => setForm({ ...form, kehadiran: e.target.value })}
           >
@@ -114,15 +116,17 @@ export default function RSVPForm({ slug, namaTamu }) {
           </select>
         </div>
 
-        {/* Jumlah tamu hanya kalau hadir */}
+        {/* Jumlah Tamu */}
         {form.kehadiran === 'hadir' && (
           <div>
-            <label className="block text-sm font-medium mb-1">Jumlah Tamu</label>
+            <label className="block font-medium text-slate-700 mb-1">
+              Jumlah Tamu <span className="text-red-500">*</span>
+            </label>
             <input
               type="number"
               min="1"
               max="5"
-              className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-2"
               value={form.jumlah_tamu}
               onChange={(e) =>
                 setForm({
@@ -131,15 +135,15 @@ export default function RSVPForm({ slug, namaTamu }) {
                 })
               }
             />
-            <p className="text-sm text-gray-500 mt-1">Maksimal 5 orang</p>
+            <p className="text-sm text-slate-500 mt-1">Maksimal 5 orang</p>
           </div>
         )}
 
         {/* Pesan */}
         <div>
-          <label className="block text-sm font-medium mb-1">Pesan/Ucapan</label>
+          <label className="block font-medium text-slate-700 mb-1">Pesan / Ucapan</label>
           <textarea
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-slate-300 rounded-lg px-4 py-2"
             rows={3}
             value={form.pesan}
             onChange={(e) => setForm({ ...form, pesan: e.target.value })}
@@ -148,12 +152,14 @@ export default function RSVPForm({ slug, namaTamu }) {
         </div>
 
         {error && <div className="text-red-500 text-sm">{error}</div>}
-        {success && <div className="text-green-500 text-sm">{success}</div>}
+        {success && <div className="text-green-600 text-sm font-medium">{success}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition ${
+            loading ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
           {loading ? 'Mengirim...' : 'Kirim Konfirmasi'}
         </button>

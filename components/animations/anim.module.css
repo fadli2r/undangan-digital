@@ -4,15 +4,14 @@
 /* Pasang .anim di elemen yg dianimasi — sekaligus jadi scope variabelnya */
 .anim {
   /* smoother ease */
-  --anim-ease: cubic-bezier(.16,1,.3,1);
+--anim-ease: cubic-bezier(0.25, 1, 0.5, 1);
   /* durations */
-  --anim-dur-300: 350ms;
-  --anim-dur-500: 650ms;
-  --anim-dur-700: 900ms;
-  --anim-dur-900: 1200ms;
-  --anim-dur-1200: 1400ms;
-  /* stagger default */
-  --anim-stagger: 180ms;
+ --anim-dur-300: 1000ms;
+  --anim-dur-500: 1800ms;
+  --anim-dur-700: 2400ms;
+  --anim-dur-900: 3000ms;
+  --anim-dur-1200: 3500ms;
+  --anim-stagger: 300ms;
 
   will-change: transform, opacity;
   backface-visibility: hidden;
@@ -31,8 +30,14 @@
 }
 
 /* Fades */
-.fadeIn { animation: fadeIn var(--anim-dur-500) var(--anim-ease) both; }
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.fadeIn {
+  animation: fadeIn var(--anim-dur-900) var(--anim-ease) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
 
 /* Slides */
 .inUp    { animation: inUp    var(--anim-dur-700) var(--anim-ease) both; }
@@ -40,16 +45,36 @@
 .inLeft  { animation: inLeft  var(--anim-dur-700) var(--anim-ease) both; }
 .inRight { animation: inRight var(--anim-dur-700) var(--anim-ease) both; }
 
-@keyframes inUp    { from { opacity:0; transform: translate3d(0,24px,0) } to { opacity:1; transform: none } }
-@keyframes inDown  { from { opacity:0; transform: translate3d(0,-24px,0)} to { opacity:1; transform: none } }
-@keyframes inLeft  { from { opacity:0; transform: translate3d(-24px,0,0)} to { opacity:1; transform: none } }
-@keyframes inRight { from { opacity:0; transform: translate3d(24px,0,0) } to { opacity:1; transform: none } }
+@keyframes inUp {
+  from { opacity:0; transform: translate3d(0, 12px, 0) }
+  to   { opacity:1; transform: none }
+}
+@keyframes inDown {
+  from { opacity:0; transform: translate3d(0, -12px, 0) }
+  to   { opacity:1; transform: none }
+}
+@keyframes inLeft {
+  from { opacity:0; transform: translate3d(-12px, 0, 0) }
+  to   { opacity:1; transform: none }
+}
+@keyframes inRight {
+  from { opacity:0; transform: translate3d(12px, 0, 0) }
+  to   { opacity:1; transform: none }
+}
+
 
 /* Zooms */
 .zoomIn  { animation: zoomIn  var(--anim-dur-700) var(--anim-ease) both; }
 .zoomOut { animation: zoomOut var(--anim-dur-700) var(--anim-ease) both; }
-@keyframes zoomIn  { from { opacity:0; transform: scale(.94) } to { opacity:1; transform: scale(1) } }
-@keyframes zoomOut { from { opacity:0; transform: scale(1.05) } to { opacity:1; transform: scale(1) } }
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.98) }
+  to   { opacity: 1; transform: scale(1) }
+}
+@keyframes zoomOut {
+  from { opacity: 0; transform: scale(1.02) }
+  to   { opacity: 1; transform: scale(1) }
+}
+
 
 /* Durasi util */
 .dur-300  { animation-duration: var(--anim-dur-300) }
@@ -72,11 +97,12 @@
 /* Reveal (kalau mau tanpa Framer, toggle class .show di elemen yg sama) */
 .sectionReveal {
   opacity: 0;
-  transform: translate3d(0,24px,0);
+  transform: translate3d(0, 12px, 0);
   transition:
-    opacity var(--anim-dur-700) var(--anim-ease),
-    transform var(--anim-dur-700) var(--anim-ease);
+    opacity var(--anim-dur-900) var(--anim-ease),
+    transform var(--anim-dur-900) var(--anim-ease);
 }
+
 .sectionReveal.show { opacity: 1; transform: none; }
 
 /* Waving flower */

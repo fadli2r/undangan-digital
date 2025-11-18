@@ -128,13 +128,23 @@
 .vars .mt12 { margin-top: 3rem }
 
 .vars .container { width: 100%; max-width: 72rem; margin-inline: auto; padding: 0 1rem; }
-.vars .section { padding: 4rem 0; background: var(--bg); }
+.vars .section { padding: 4rem 0 0 0; background: var(--bg); }
 .vars .sectionLight { background: var(--light); }
+.vars .section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s ease-out;
+}
+
+.vars .section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 .vars .grid2 { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
 @media (min-width: 768px) { .vars .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; } }
 
-.vars .card { background: var(--card); ; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); text-align: center; }
+.vars .card { background: var(--card); ; border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem;box-shadow: var(--shadow); text-align: center; }
 .vars .cardSolid { background: #fff; }
 .vars .cardGradient { color: #0b1220; background: linear-gradient(135deg, #e2e8f0 0%, #f8fafc 100%); border: 1px solid rgba(148,163,184,.35); }
 .vars .cardTitle { margin-bottom: .75rem }
@@ -201,3 +211,128 @@
 .vars .social { display: flex; align-items: center; justify-content: center; gap: .75rem; margin-top: 1rem }
 .vars .social a { color: var(--muted); font-size: 1.25rem; }
 .vars .social a:hover { color: var(--text); }
+
+/* ========== GAYA TAMBAHAN ALA Viding ========== */
+.vars {
+  --accent: #c49a6c;
+  --font-wedding: 'Playfair Display', serif;
+  --text-light: #f5f5f5;
+}
+
+/* Typography Custom */
+.vars .display {
+  font-family: var(--font-wedding);
+  font-size: clamp(2.5rem, 1rem + 4vw, 3.5rem);
+  color: var(--text-light);
+  font-weight: 400;
+  letter-spacing: .03em;
+}
+
+.vars .names {
+  font-family: var(--font-wedding);
+  font-size: clamp(3rem, 1rem + 5vw, 4.5rem);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: .5rem;
+}
+
+.vars .h2 {
+  font-family: var(--font-wedding);
+  font-size: clamp(1.8rem, 1.2rem + 2vw, 2.5rem);
+  color: var(--text);
+}
+
+.vars .h3 {
+  font-family: var(--font-wedding);
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+/* Tombol utama */
+.vars .btnPrimary {
+  --_bg: linear-gradient(135deg, #8f6b45 0%, #c49a6c 100%);
+  --_fg: #fff;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+}
+
+/* Avatar mewah */
+.vars .avatar {
+  border: 5px solid var(--accent);
+  box-shadow: 0 6px 16px rgba(0,0,0,.15);
+}
+
+/* QR Code Image */
+.vars .qrImage {
+  border: 3px solid var(--accent);
+  border-radius: 1rem;
+  padding: .3rem;
+}
+
+/* Gallery Styling (jika pakai masonry) */
+.vars .galleryImage {
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Countdown */
+.vars .countdown {
+  font-family: var(--font-wedding);
+  font-size: 2rem;
+  color: var(--accent);
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* Section Style Light */
+.vars .sectionLight {
+  background: linear-gradient(to bottom, #f8f8f8, #ffffff);
+}
+
+/* Save The Date CTA */
+.vars .mt12 > * {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Social icons */
+.vars .social a {
+  color: var(--accent);
+}
+
+.vars .social a:hover {
+  color: #000;
+}
+
+/* === GALLERY MASONRY STYLE === */
+.vars .galleryGrid {
+  column-count: 2;
+  column-gap: 1rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .vars .galleryGrid {
+    column-count: 3;
+  }
+}
+
+.vars .galleryItem {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+.vars .galleryImage {
+  width: 100%;
+  border-radius: 1rem;
+  display: block;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.vars .galleryImage:hover {
+  transform: scale(1.02);
+}

@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Gallery({ images }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+useEffect(() => {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowRight') nextImage();
+    else if (e.key === 'ArrowLeft') prevImage();
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [currentIndex]);
 
   if (!images || images.length === 0) return null;
 
@@ -47,6 +56,8 @@ export default function Gallery({ images }) {
               alt={`Gallery ${idx + 1}`}
               width={400}
               height={400}
+                onError={(e) => (e.target.src = '/images/fallback.jpg')}
+
               className="w-full h-full object-cover aspect-square"
             />
           </motion.div>
@@ -105,6 +116,8 @@ export default function Gallery({ images }) {
                 alt={`Gallery ${currentIndex + 1}`}
               width={800}
               height={800}
+                onError={(e) => (e.target.src = '/images/fallback.jpg')}
+
               className="w-auto h-auto max-w-full max-h-[80vh] object-contain"
               />
             </motion.div>

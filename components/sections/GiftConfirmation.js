@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { showAlert } from '@/utils/sweetAlert'; // pastikan util ini ada
+import { showAlert } from '@/utils/sweetAlert';
 
 export default function GiftConfirmation({ slug }) {
   const [form, setForm] = useState({
@@ -12,7 +12,6 @@ export default function GiftConfirmation({ slug }) {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Format IDR tampilan (read-only helper)
   const nominalDisplay = useMemo(() => {
     const n = Number(String(form.nominal).replace(/\D/g, '')) || 0;
     return n ? `Rp${n.toLocaleString('id-ID')}` : '';
@@ -20,19 +19,14 @@ export default function GiftConfirmation({ slug }) {
 
   const onChange = (field) => (e) => {
     let v = e.target.value;
-
-    if (field === 'nominal') {
-      // hanya angka, tanpa minus
-      v = v.replace(/\D/g, '');
-    }
+    if (field === 'nominal') v = v.replace(/\D/g, '');
     setForm((p) => ({ ...p, [field]: v }));
   };
 
   const validate = () => {
     if (!slug) return 'Data undangan tidak valid.';
     if (!form.nama.trim()) return 'Nama wajib diisi.';
-    const nominalNum = Number(form.nominal);
-    if (!nominalNum || nominalNum < 1) return 'Nominal harus lebih dari 0.';
+    if (!Number(form.nominal)) return 'Nominal harus lebih dari 0.';
     if (!form.bank.trim()) return 'Bank/E-Wallet wajib diisi.';
     return null;
   };
@@ -40,10 +34,7 @@ export default function GiftConfirmation({ slug }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const err = validate();
-    if (err) {
-      showAlert.error('Tidak valid', err);
-      return;
-    }
+    if (err) return showAlert.error('Tidak valid', err);
 
     setSubmitting(true);
     try {
@@ -62,7 +53,6 @@ export default function GiftConfirmation({ slug }) {
       });
 
       const data = await res.json().catch(() => ({}));
-
       if (res.ok) {
         showAlert.success('Terima kasih!', 'Konfirmasi hadiah Anda telah terkirim.');
         setForm({ nama: '', nominal: '', bank: '', pesan: '' });
@@ -77,85 +67,84 @@ export default function GiftConfirmation({ slug }) {
   };
 
   return (
-    <div className="card shadow-sm">
-      <div className="card-header">
-        <div className="card-title">
-          <h3 className="fw-bold">Konfirmasi Hadiah</h3>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+
+      {/* Nama */}
+      <div>
+        <label className="block font-medium text-slate-700 mb-1">
+          Nama <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Nama Anda"
+          className="w-full border border-slate-300 rounded-lg px-4 py-2"
+          value={form.nama}
+          onChange={onChange('nama')}
+          required
+        />
+      </div>
+
+      {/* Nominal */}
+      <div>
+        <div className="flex justify-between items-center mb-1">
+          <label className="font-medium text-slate-700">
+            Nominal <span className="text-red-500">*</span>
+          </label>
+          {nominalDisplay && <span className="text-sm text-slate-500">{nominalDisplay}</span>}
         </div>
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Contoh: 200000"
+          className="w-full border border-slate-300 rounded-lg px-4 py-2"
+          value={form.nominal}
+          onChange={onChange('nominal')}
+          required
+        />
+        <p className="text-xs text-slate-500 mt-1">Masukkan angka saja (tanpa titik/koma).</p>
       </div>
 
-      <div className="card-body">
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Nama */}
-          <div className="mb-6">
-            <label className="form-label required">Nama</label>
-            <input
-              type="text"
-              className="form-control form-control-solid"
-              placeholder="Nama Anda"
-              value={form.nama}
-              onChange={onChange('nama')}
-              required
-            />
-          </div>
-
-          {/* Nominal */}
-          <div className="mb-6">
-            <div className="d-flex align-items-center justify-content-between">
-              <label className="form-label required mb-0">Nominal</label>
-              <small className="text-muted">{nominalDisplay}</small>
-            </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              className="form-control form-control-solid"
-              placeholder="Contoh: 200000"
-              value={form.nominal}
-              onChange={onChange('nominal')}
-              required
-            />
-            <div className="form-text">Masukkan angka saja (tanpa titik/koma).</div>
-          </div>
-
-          {/* Bank / E-Wallet */}
-          <div className="mb-6">
-            <label className="form-label required">Bank / E-Wallet</label>
-            <input
-              type="text"
-              className="form-control form-control-solid"
-              placeholder="Contoh: BCA, OVO, DANA"
-              value={form.bank}
-              onChange={onChange('bank')}
-              required
-            />
-          </div>
-
-          {/* Pesan (opsional) */}
-          <div className="mb-6">
-            <label className="form-label">Pesan / Ucapan (Opsional)</label>
-            <textarea
-              className="form-control form-control-solid"
-              rows={3}
-              placeholder="Tulis pesan singkat..."
-              value={form.pesan}
-              onChange={onChange('pesan')}
-            />
-          </div>
-
-          <div className="d-grid">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting && (
-                <span className="spinner-border spinner-border-sm me-2" />
-              )}
-              {submitting ? 'Mengirim...' : 'Kirim Konfirmasi'}
-            </button>
-          </div>
-        </form>
+      {/* Bank */}
+      <div>
+        <label className="block font-medium text-slate-700 mb-1">
+          Bank / E-Wallet <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Contoh: BCA, OVO, DANA"
+          className="w-full border border-slate-300 rounded-lg px-4 py-2"
+          value={form.bank}
+          onChange={onChange('bank')}
+          required
+        />
       </div>
-    </div>
+
+      {/* Pesan */}
+      <div>
+        <label className="block font-medium text-slate-700 mb-1">
+          Pesan / Ucapan (Opsional)
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Tulis pesan singkat..."
+          className="w-full border border-slate-300 rounded-lg px-4 py-2"
+          value={form.pesan}
+          onChange={onChange('pesan')}
+        />
+      </div>
+
+      {/* Submit */}
+      <div>
+        <button
+          type="submit"
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 ${
+            submitting ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
+          disabled={submitting}
+        >
+          {submitting ? 'Mengirim...' : 'Kirim Konfirmasi'}
+        </button>
+      </div>
+    </form>
   );
 }
