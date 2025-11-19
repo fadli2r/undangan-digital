@@ -167,6 +167,8 @@ const InvitationSchema = new mongoose.Schema({
     password: { type: String, default: "" },
     hideGuestbook: { type: Boolean, default: false },
     hideRSVP: { type: Boolean, default: false },
+      autoScroll: { type: Boolean, default: false }  // ← tambahkan ini
+
   },
 
   // RSVP & Ucapan

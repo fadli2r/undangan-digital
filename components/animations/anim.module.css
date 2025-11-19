@@ -116,3 +116,4 @@
 
 /* Matikan anim di elemen tertentu bila perlu (manual) */
 .noMotion { animation: none !important; transition: none !important; }
+

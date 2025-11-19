@@ -196,9 +196,27 @@
 .vars .heroGuest { color: #fff; opacity: .9; font-size: 1.125rem; margin-top: .25rem }
 .vars .qrImage { border-radius: .75rem; box-shadow: var(--shadow); }
 .vars .heroQR { display: grid; place-items: center; gap: .5rem; margin-top: .75rem }
-.vars .scrollHint { position: absolute; left: 50%; transform: translateX(-50%); bottom: 1.75rem; color: #fff; opacity: .9 }
-.vars .scrollIcon { width: 2rem; height: 2rem; animation: bounce 1.5s infinite; }
-@keyframes bounce { 0%,100% { transform: translate(-50%, 0) } 50% { transform: translate(-50%, -8px) } }
+/* Pastikan posisi horizontal tetap */
+.vars .scrollHint {
+  position: absolute;
+  left: 50%;
+  bottom: 1.75rem;
+  transform: translateX(-50%);
+  color: #fff;
+  opacity: 0.9;
+}
+
+/* Animasi hanya vertikal (Y axis) */
+.vars .scrollIcon {
+  width: 2rem;
+  height: 2rem;
+  animation: bounce 1.5s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
 
 /* Decorative Flower */
 .vars .flower { position: absolute; right: 1rem; bottom: 1rem; width: 6rem; height: 6rem; opacity: .9; }
@@ -335,4 +353,15 @@
 
 .vars .galleryImage:hover {
   transform: scale(1.02);
+}
+
+.scrollHint {
+  cursor: pointer;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(6px); }
+  60% { transform: translateY(3px); }
 }

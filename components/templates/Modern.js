@@ -129,41 +129,89 @@ export default function ModernTemplate({ data }) {
 if (!showHero) {
   return (
     <section
-            className={`${styles.vars} ${styles.splash}`}
-            style={{ backgroundImage: `url(${bgImageUrl})` }}
-          >
-            <div className={styles.splashShade} />
-            <div className={styles.splashInner}>
-              <h1 className={`${styles.display} ${anim.anim} ${anim.inDown} ${anim['delay-1']}`}>
-                The Wedding of
-              </h1>
-              <h2 className={`${styles.names} ${anim.anim} ${anim.zoomIn} ${anim['delay-2']}`}>
-                {mempelai?.pria} &amp; {mempelai?.wanita}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowHero(true);
-                   const audio = document.getElementById('audio-player');
-    if (audio && audio.paused) {
-      audio.play().catch(() => {}); // abaikan error autoplay
-    }
+      className={`${styles.vars} ${styles.splash}`}
+      style={{ backgroundImage: `url(${bgImageUrl})` }}
+    >
+      <div className={styles.splashShade} />
+      <div className={styles.splashInner}>
+        <h1 className={`${styles.display} ${anim.anim} ${anim.inDown} ${anim['delay-1']}`}>
+          The Wedding of
+        </h1>
+        <h2 className={`${styles.names} ${anim.anim} ${anim.zoomIn} ${anim['delay-2']}`}>
+          {mempelai?.pria} &amp; {mempelai?.wanita}
+        </h2>
+        <button
+          onClick={() => {
+            setShowHero(true);
+
+            const audio = document.getElementById('audio-player');
+            if (audio && audio.paused) {
+              audio.play().catch(() => {});
+            }
+
+            setTimeout(() => {
+              try {
+                window.dispatchEvent(new CustomEvent('invite-opened'));
+              } catch {}
+              try {
+                localStorage.setItem('invite_opened', '1');
+              } catch {}
+
+              // Hanya jika autoScroll aktif dan mobile
+              if (data?.privacy?.autoScroll && window.innerWidth <= 768) {
+                let autoScrolling = true;
+
+                // Deteksi interaksi manual → stop scroll otomatis
+                const cancelAutoScroll = () => {
+                  autoScrolling = false;
+                  window.removeEventListener('wheel', cancelAutoScroll);
+                  window.removeEventListener('touchstart', cancelAutoScroll);
+                  window.removeEventListener('scroll', cancelAutoScroll);
+                };
+                window.addEventListener('wheel', cancelAutoScroll, { once: true });
+                window.addEventListener('touchstart', cancelAutoScroll, { once: true });
+                window.addEventListener('scroll', cancelAutoScroll, { once: true });
+
+                const sections = [
+                  'hero',
+                  'quote',
+                  'bride‑groom',
+                  'save‑the‑date',
+                  'events',
+                  'maps',
+                  'our‑story',
+                  'gallery',
+                  'live',
+                  'gift',
+                  'gift‑confirm',
+                  'wishes',
+                  'rsvp',
+                  'footer'
+                ];
+                const delay = 3000;
+
+                sections.forEach((id, index) => {
                   setTimeout(() => {
-                    try {
-                      window.dispatchEvent(new CustomEvent('invite-opened'));
-                    } catch {}
-                    try {
-                      localStorage.setItem('invite_opened', '1');
-                    } catch {}
-                  }, 300);
-                }}
-                className={`${styles.btn} ${styles.btnPrimary} ${anim.anim} ${anim.inUp} ${anim['delay-3']}`}
-              >
-                Buka Undangan
-              </button>
-            </div>
-          </section>
+                    if (!autoScrolling) return;
+                    const el = document.getElementById(id);
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }, delay * index);
+                });
+              }
+            }, 300);
+          }}
+          className={`${styles.btn} ${styles.btnPrimary} ${anim.anim} ${anim.inUp} ${anim['delay-3']}`}
+        >
+          Buka Undangan
+        </button>
+      </div>
+    </section>
   );
 }
+
+
+
+
   return (
     <TwoColumnLayout leftBackgroundUrl={bgImageUrl} leftTitle={leftTitle}>
       <div className={styles.vars}>
@@ -184,7 +232,7 @@ if (!showHero) {
                   The Wedding of
                 </motion.h1>
                 <motion.h2 className={styles.names} variants={zoomIn}>
-                  {mempelai?.pria} &amp; {mempelai?.wanita}
+                  {mempelai?.pria} &amp;<br/> {mempelai?.wanita}
                 </motion.h2>
                 {tanggalUtama && (
                   <motion.p className={styles.date} variants={vItem}>
@@ -214,12 +262,9 @@ if (!showHero) {
                   </>
                 )}
               </div>
+              
               <WavingFlower className={styles.flower} />
-              <div className={styles.scrollHint}>
-                <svg xmlns="http://www.w3.org/2000/svg" className={styles.scrollIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l‑7 7‑7‑7" />
-                </svg>
-              </div>
+
             </motion.section>
 
             {/* QUOTE */}

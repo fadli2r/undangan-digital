@@ -13,7 +13,9 @@ export default function PrivacySettings() {
     isPasswordProtected: false,
     password: '',
     hideGuestbook: false,
-    hideRSVP: false
+    hideRSVP: false,
+      autoScroll: false,
+
   });
   
   const [loading, setLoading] = useState(false);
@@ -36,7 +38,9 @@ export default function PrivacySettings() {
           isPasswordProtected: data.undangan.privacy.isPasswordProtected || false,
           password: data.undangan.privacy.password || '',
           hideGuestbook: data.undangan.privacy.hideGuestbook || false,
-          hideRSVP: data.undangan.privacy.hideRSVP || false
+          hideRSVP: data.undangan.privacy.hideRSVP || false,
+          autoScroll: data.undangan.privacy.autoScroll || false
+
         });
       }
     } catch (error) {
@@ -221,6 +225,29 @@ export default function PrivacySettings() {
                 </div>
               </div>
             </div>
+{/* Auto Scroll */}
+<div className="card card-flush shadow-sm mb-8">
+  <div className="card-body">
+    <div className="d-flex align-items-center justify-content-between">
+      <div className="flex-grow-1">
+        <h3 className="fs-4 fw-bold text-gray-900 mb-1">
+          Aktifkan Auto Scroll
+        </h3>
+        <p className="text-muted fs-6 mb-0">
+          Scroll otomatis setelah undangan dibuka (hanya di mobile)
+        </p>
+      </div>
+      <div className="form-check form-switch form-check-custom form-check-solid">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          checked={settings.autoScroll}
+          onChange={(e) => handleInputChange('autoScroll', e.target.checked)}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Submit Button */}
             <div className="text-center">
