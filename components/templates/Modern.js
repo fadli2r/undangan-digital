@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import GlassButton from '@/components/GlassButton';
 
 // Layout & sections
 import TwoColumnLayout from '../sections/TwoColumnLayout';
@@ -16,7 +17,7 @@ import AddToCalendar from '../sections/AddToCalendar';
 import QRCodeGuest from '../sections/QRCodeGuest';
 import GiftConfirmation from '../sections/GiftConfirmation';
 
-// Animations (variants + css module utils)
+// Animations
 import {
   section as vSection,
   item as vItem,
@@ -28,10 +29,10 @@ import {
 import anim from '../animations/anim.module.css';
 import WavingFlower from '../animations/WavingFlower';
 
-// Local styles for this template only
+// Styles
 import styles from './ModernTemplate.module.css';
 
-// Heavy / browser‑only → dynamic import (code‑splitting)
+// Lazy components
 const Gallery = dynamic(() => import('../sections/Gallery'), {
   ssr: false,
   loading: () => <div className={styles.skeleton} />,
@@ -40,10 +41,42 @@ const LiveStreaming = dynamic(() => import('../sections/LiveStreaming'), { ssr: 
 const Maps = dynamic(() => import('../sections/Maps'), { ssr: false });
 const MusicPlayer = dynamic(() => import('../sections/MusicPlayer'), { ssr: false });
 
-// utils
-const toDateSafe = (v) => {
-  try { return v ? new Date(v) : null; } catch { return null; }
+/* SPLASH → MAIN (Fade + Blur Only) */
+const splashVariant = {
+  hidden: { opacity: 0, filter: "blur(12px)" },
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    transition: { duration: 1.1, ease: "easeOut" }
+  },
+  exit: {
+    opacity: 0,
+    filter: "blur(14px)",
+    transition: { duration: 0.9, ease: "easeInOut" }
+  }
 };
+
+/* MAIN CONTENT Fade-in */
+const layoutVariant = {
+  hidden: { opacity: 0, filter: "blur(18px)" },
+  visible: {
+    opacity: 1,
+    filter: "blur(0px)",
+    transition: { duration: 1.2, ease: "easeOut" }
+  }
+};
+
+
+
+// Utility
+const toDateSafe = (v) => {
+  try {
+    return v ? new Date(v) : null;
+  } catch {
+    return null;
+  }
+};
+
 const fmtTanggalLocale = (date, locale = 'id-ID') =>
   date?.toLocaleDateString?.(locale, {
     weekday: 'long',
@@ -51,11 +84,15 @@ const fmtTanggalLocale = (date, locale = 'id-ID') =>
     month: 'long',
     year: 'numeric',
   });
-  
+
 const buildGuestUrl = (slug, guestName) => {
   try {
-    const base = typeof window !== 'undefined' ? `${window.location.origin}/${slug}` : `/${slug}`;
+    const base =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/${slug}`
+        : `/${slug}`;
     if (!guestName) return base;
+
     const params = new URLSearchParams({ tamu: guestName });
     return `${base}?${params.toString()}`;
   } catch {
@@ -64,22 +101,24 @@ const buildGuestUrl = (slug, guestName) => {
 };
 
 export default function ModernTemplate({ data }) {
+  /* DATA PREP */
   const mempelai = data?.mempelai || {};
   const acaraUtama = data?.acara_utama || {};
   const acara = Array.isArray(data?.acara) ? data.acara : [];
 
   const [showHero, setShowHero] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(!data?.privacy?.isPasswordProtected);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !data?.privacy?.isPasswordProtected
+  );
   const [guestName, setGuestName] = useState('');
 
+  /* EXTRACT TAMU DARI QUERY */
   useEffect(() => {
     try {
       const qs = new URLSearchParams(window.location.search);
       const tamu = qs.get('tamu') || '';
       setGuestName(tamu.trim());
-    } catch {
-      setGuestName('');
-    }
+    } catch {}
   }, []);
 
   const bgImageUrl = useMemo(
@@ -91,6 +130,7 @@ export default function ModernTemplate({ data }) {
     [data]
   );
 
+  /* PASSWORD PROTECTION */
   if (!isAuthenticated) {
     return (
       <PasswordProtection
@@ -100,124 +140,151 @@ export default function ModernTemplate({ data }) {
     );
   }
 
+  /* BODY SCROLL LOCK SAAT SPLASH */
   useEffect(() => {
     const prev = document.body.style.overflow;
-    if (!showHero) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = prev;
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    document.body.style.overflow = showHero ? prev : 'hidden';
+    return () => (document.body.style.overflow = prev);
   }, [showHero]);
 
   const leftTitle = `${mempelai?.pria || ''} & ${mempelai?.wanita || ''}`;
   const tanggalUtama = toDateSafe(acaraUtama?.tanggal);
+
   const guestUrl = buildGuestUrl(
     data?.slug,
-    guestName || data?.tambahan?.guestName || ''
+    guestName || data?.tambahan?.guestName
   );
 
-  const QRView = data?.slug ? (
-    <div className={styles.heroQR}>
-      {guestName && (
-        <p className={styles.heroGuest}>
-          Yth. <span className={styles.bold}>{guestName}</span>
-        </p>
-      )}
-      <QRCodeGuest slug={data.slug} guestName={guestName} urlOverride={guestUrl} />
-    </div>
-  ) : null;
-if (!showHero) {
-  return (
-    <section
-      className={`${styles.vars} ${styles.splash}`}
-      style={{ backgroundImage: `url(${bgImageUrl})` }}
-    >
-      <div className={styles.splashShade} />
-      <div className={styles.splashInner}>
-        <h1 className={`${styles.display} ${anim.anim} ${anim.inDown} ${anim['delay-1']}`}>
-          The Wedding of
-        </h1>
-        <h2 className={`${styles.names} ${anim.anim} ${anim.zoomIn} ${anim['delay-2']}`}>
-          {mempelai?.pria} &amp; {mempelai?.wanita}
-        </h2>
-        <button
-          onClick={() => {
-            setShowHero(true);
-
-            const audio = document.getElementById('audio-player');
-            if (audio && audio.paused) {
-              audio.play().catch(() => {});
-            }
-
-            setTimeout(() => {
-              try {
-                window.dispatchEvent(new CustomEvent('invite-opened'));
-              } catch {}
-              try {
-                localStorage.setItem('invite_opened', '1');
-              } catch {}
-
-              // Hanya jika autoScroll aktif dan mobile
-              if (data?.privacy?.autoScroll && window.innerWidth <= 768) {
-                let autoScrolling = true;
-
-                // Deteksi interaksi manual → stop scroll otomatis
-                const cancelAutoScroll = () => {
-                  autoScrolling = false;
-                  window.removeEventListener('wheel', cancelAutoScroll);
-                  window.removeEventListener('touchstart', cancelAutoScroll);
-                  window.removeEventListener('scroll', cancelAutoScroll);
-                };
-                window.addEventListener('wheel', cancelAutoScroll, { once: true });
-                window.addEventListener('touchstart', cancelAutoScroll, { once: true });
-                window.addEventListener('scroll', cancelAutoScroll, { once: true });
-
-                const sections = [
-                  'hero',
-                  'quote',
-                  'bride‑groom',
-                  'save‑the‑date',
-                  'events',
-                  'maps',
-                  'our‑story',
-                  'gallery',
-                  'live',
-                  'gift',
-                  'gift‑confirm',
-                  'wishes',
-                  'rsvp',
-                  'footer'
-                ];
-                const delay = 3000;
-
-                sections.forEach((id, index) => {
-                  setTimeout(() => {
-                    if (!autoScrolling) return;
-                    const el = document.getElementById(id);
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }, delay * index);
-                });
-              }
-            }, 300);
-          }}
-          className={`${styles.btn} ${styles.btnPrimary} ${anim.anim} ${anim.inUp} ${anim['delay-3']}`}
-        >
-          Buka Undangan
-        </button>
+  const QRView =
+    data?.slug &&
+    (guestName || data?.tambahan?.guestName) && (
+      <div className={styles.heroQR}>
+        {guestName && (
+          <p className={styles.heroGuest}>
+            Yth. <span className={styles.bold}>{guestName}</span>
+          </p>
+        )}
+        <QRCodeGuest slug={data.slug} guestName={guestName} urlOverride={guestUrl} />
       </div>
-    </section>
-  );
-}
+    );
 
+  /* =============================
+     SPLASH SCREEN
+     ============================= */
+  if (!showHero) {
+    return (
+      <AnimatePresence>
+        <motion.section
+          key="splash"
+          className={`${styles.vars} ${styles.splash}`}
+          style={{ backgroundImage: `url(${bgImageUrl})` }}
+          variants={splashVariant}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <div className={styles.splashShade} />
+          <div className={styles.splashInner}>
+            <h1
+              className={`${styles.display} ${anim.anim} ${anim.inDown} ${anim['delay-1']}`}
+            >
+              The Wedding of
+            </h1>
+            <h2
+              className={`${styles.names} ${anim.anim} ${anim.zoomIn} ${anim['delay-2']}`}
+            >
+              {mempelai?.pria} &amp; {mempelai?.wanita}
+            </h2>
 
+            <GlassButton
+              label="Buka Undangan"
+              onClick={() => {
+                setShowHero(true);
 
+                /* Try autoplay audio (jika ada) */
+                const audio = document.getElementById('audio-player');
+                if (audio && audio.paused) audio.play().catch(() => {});
+
+                /* Dispatch event utk MusicPlayer dan AutoScroll */
+                setTimeout(() => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('invite-opened'));
+                    localStorage.setItem('invite_opened', '1');
+                  } catch {}
+
+                  /* AutoScroll logic */
+                  const isMobile = window.innerWidth <= 768;
+                  if (data?.privacy?.autoScroll && isMobile) {
+                    let autoScrolling = true;
+
+                    const stop = () => {
+                      autoScrolling = false;
+                      window.removeEventListener('wheel', stop);
+                      window.removeEventListener('touchstart', stop);
+                      window.removeEventListener('scroll', stop);
+                    };
+
+                    window.addEventListener('wheel', stop, { once: true });
+                    window.addEventListener('touchstart', stop, { once: true });
+                    window.addEventListener('scroll', stop, { once: true });
+
+                    const sections = [
+                      'hero',
+                      'quote',
+                      'bride‑groom',
+                      'save‑the‑date',
+                      'events',
+                      'maps',
+                      'our‑story',
+                      'gallery',
+                      'live',
+                      'gift',
+                      'gift‑confirm',
+                      'wishes',
+                      'rsvp',
+                      'footer',
+                    ];
+
+                    const delay = 3000;
+
+                    sections.forEach((id, idx) => {
+                      setTimeout(() => {
+                        if (!autoScrolling) return;
+                        const el = document.getElementById(id);
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }, delay * idx);
+                    });
+                  }
+                }, 300);
+              }}
+            />
+          </div>
+        </motion.section>
+      </AnimatePresence>
+    );
+  }
+
+  /* =============================
+     MAIN CONTENT
+     ============================= */
 
   return (
-    <TwoColumnLayout leftBackgroundUrl={bgImageUrl} leftTitle={leftTitle}>
-      <div className={styles.vars}>
-        {data?.tambahan?.musik?.url && <MusicPlayer musik={data.tambahan.musik} />}
-          <>
-            {/* HERO section */}
+    <AnimatePresence>
+      <motion.div
+        key="layout"
+        variants={layoutVariant}
+        initial="hidden"
+        animate="visible"
+          exit={{ opacity: 0, y: 40 }}
+
+      >
+        <TwoColumnLayout leftBackgroundUrl={bgImageUrl} leftTitle={leftTitle}>
+          <div className={styles.vars}>
+            {data?.tambahan?.musik?.url && (
+              <MusicPlayer musik={data.tambahan.musik} />
+            )}
+
+            {/* HERO */}
             <motion.section
               id="hero"
               className={styles.hero}
@@ -232,13 +299,18 @@ if (!showHero) {
                   The Wedding of
                 </motion.h1>
                 <motion.h2 className={styles.names} variants={zoomIn}>
-                  {mempelai?.pria} &amp;<br/> {mempelai?.wanita}
+                  {mempelai?.pria} &amp;<br /> {mempelai?.wanita}
                 </motion.h2>
+
                 {tanggalUtama && (
                   <motion.p className={styles.date} variants={vItem}>
-                    {fmtTanggalLocale(tanggalUtama, data?.i18n?.locale || 'id-ID')}
+                    {fmtTanggalLocale(
+                      tanggalUtama,
+                      data?.i18n?.locale || 'id-ID'
+                    )}
                   </motion.p>
                 )}
+
                 {(guestName || data?.tambahan?.guestName) && (
                   <>
                     <motion.div className={styles.heroTo} variants={vItem}>
@@ -248,24 +320,16 @@ if (!showHero) {
                       </p>
                       {QRView}
                     </motion.div>
-                    {data?.tambahan?.qr_code_url && (
-                      <motion.div className={styles.heroQR} variants={vItem}>
-                        <Image
-                          src={data.tambahan.qr_code_url}
-                          alt="QR Code Undangan"
-                          width={150}
-                          height={150}
-                          className={styles.qrImage}
-                        />
-                      </motion.div>
-                    )}
                   </>
                 )}
               </div>
-              
-              <WavingFlower className={styles.flower} />
 
+              <WavingFlower className={styles.flower} />
             </motion.section>
+
+            {/* ============================== */}
+            {/* SEMUA SECTION LAINNYA SAMA PERSIS */}
+            {/* ============================== */}
 
             {/* QUOTE */}
             <motion.section
@@ -279,12 +343,15 @@ if (!showHero) {
               <motion.h2 className={styles.h2} variants={vItem}>
                 We Found Love
               </motion.h2>
-              <motion.p className={`${styles.muted} ${styles.center}`} variants={fadeRight}>
-                “Dan di antara tanda‑tanda (kebesaran)‑Nya ialah Dia menciptakan pasangan‑pasangan untukmu …”
+              <motion.p
+                className={`${styles.muted} ${styles.center}`}
+                variants={fadeRight}
+              >
+                “Dan di antara tanda‑tanda (kebesaran)‑Nya ialah Dia menciptakan
+                pasangan‑pasangan untukmu …”
                 <span className={styles.block}>(QS. Ar‑Rum: 21)</span>
               </motion.p>
             </motion.section>
-
             {/* BRIDE & GROOM */}
             <motion.section
               id="bride‑groom"
@@ -640,9 +707,12 @@ if (!showHero) {
               whileInView="visible"
               viewport={viewportOnce}
             >
-              <motion.p className={`${styles.muted} ${styles.center} ${styles.mb12}`} variants={vItem}>
-                Merupakan suatu kebahagiaan apabila Bapak/Ibu/Saudara/i berkenan hadir dan
-                memberikan doa restu
+              <motion.p
+                className={`${styles.muted} ${styles.center} ${styles.mb12}`}
+                variants={vItem}
+              >
+                Merupakan suatu kebahagiaan apabila Bapak/Ibu/Saudara/i berkenan
+                hadir dan memberikan doa restu
               </motion.p>
               <motion.h3 className={styles.h3} variants={vItem}>
                 Kami Yang Berbahagia,
@@ -650,25 +720,16 @@ if (!showHero) {
               <motion.h4 className={styles.h2} variants={vItem}>
                 {mempelai?.pria} &amp; {mempelai?.wanita}
               </motion.h4>
-              <motion.div className={styles.social} variants={vItem}>
-                {data?.tambahan?.instagram && (
-                  <a href={data.tambahan.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                    <i className="fab fa-instagram" />
-                  </a>
-                )}
-                {data?.tambahan?.whatsapp && (
-                  <a href={data.tambahan.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                    <i className="fab fa-whatsapp" />
-                  </a>
-                )}
-              </motion.div>
-              <motion.p className={`${styles.muted} ${styles.center}`} variants={vItem}>
+              <motion.p
+                className={`${styles.muted} ${styles.center}`}
+                variants={vItem}
+              >
                 © {new Date().getFullYear()} {data?.tambahan?.credit || 'Dreamslink'}. All Rights Reserved.
               </motion.p>
             </motion.footer>
-          </>
-        
-      </div>
-    </TwoColumnLayout>
+          </div>
+        </TwoColumnLayout>
+      </motion.div>
+    </AnimatePresence>
   );
 }

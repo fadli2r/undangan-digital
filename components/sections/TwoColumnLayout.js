@@ -17,8 +17,8 @@ export default function TwoColumnLayout({
       <div
         className="
           hidden                /* sembunyi di < md */
-          md:block              /* tampil di ≥ md */
-          md:w-[61%]            /* 61% lebar */
+          xl:block              /* tampil di ≥ md */
+          xl:w-[61%]            /* 61% lebar */
           bg-cover bg-center    /* gambar cover + center */
           relative
         "
@@ -39,7 +39,7 @@ export default function TwoColumnLayout({
           KOLOM KANAN (Desktop: 39%, Mobile: 100%)
           • scrollable jika konten tinggi
       ─────────────────────────────────────────────── */}
-      <div className="w-full md:w-[39%] h-screen overflow-y-auto bg-white">
+      <div className="w-full xl:w-[39%] h-screen overflow-y-auto bg-white">
         {children}
       </div>
     </div>
