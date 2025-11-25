@@ -85,36 +85,40 @@ export default function KatalogClient({ initialCategory }: { initialCategory: st
       <Header />
 
       {/* 🌄 HERO */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/bg_wave.svg')] bg-cover opacity-10" />
-        <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
-            Jelajahi Template Undangan Digital
-          </h1>
-          <p className="text-lg md:text-xl text-blue-100 mb-10">
-            Pilih gaya undangan impianmu, lihat preview langsung, dan buat undanganmu dalam hitungan menit.
-          </p>
+     <section
+  className="relative text-white pt-32 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>
+  <div className="absolute inset-0 bg-black opacity-40" />
+  <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
+    <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+      Jelajahi Template Undangan Digital
+    </h1>
+    <p className="text-lg md:text-xl text-blue-100 mb-10">
+      Pilih gaya undangan impianmu, lihat preview langsung, dan buat undanganmu dalam hitungan menit.
+    </p>
 
-          {/* 🔍 Search */}
-          <div className="max-w-xl mx-auto relative">
-            <input
-              type="text"
-              className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white rounded-full shadow focus:ring-4 focus:ring-blue-300 focus:outline-none"
-              placeholder="Cari template berdasarkan nama, kategori, atau gaya..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
-      </section>
+    {/* 🔍 Search */}
+    <div className="max-w-xl mx-auto relative">
+      <input
+        type="text"
+        className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white rounded-full shadow focus:ring-4 focus:ring-blue-300 focus:outline-none"
+        placeholder="Cari template berdasarkan nama, kategori, atau gaya..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+      <svg
+        className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+  </div>
+</section>
+
 
       {/* 🧭 FILTERS */}
       <section className="bg-white py-10 border-b border-gray-100">
@@ -258,8 +262,10 @@ export default function KatalogClient({ initialCategory }: { initialCategory: st
       </section>
 
       {/* ✨ CTA */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center">
-        <div className="max-w-3xl mx-auto px-4">
+<section
+  className="relative text-white pt-32 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>        <div className="max-w-3xl mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-6">
             Siap Buat Undangan Digital Impianmu?
           </h2>

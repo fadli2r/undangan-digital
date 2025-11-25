@@ -70,8 +70,10 @@ export default function PortofolioClient({
 
       <div className="min-h-screen bg-gray-50">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 text-white">
-          <div className="absolute inset-0 bg-black opacity-10" />
+<section
+  className="relative text-white pt-32 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>          <div className="absolute inset-0 bg-black opacity-10" />
           <div className="max-w-7xl mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Portofolio Undangan

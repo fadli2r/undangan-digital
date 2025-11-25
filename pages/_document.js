@@ -33,7 +33,7 @@ export default function Document() {
         <meta name="google-site-verification" content="Jz-Z3QpjRa4i73zI8WxWNyG33OP0sbkl1mgDQnsXL6Q" />
 
         {/* Favicon */}
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/Dreamslink.ico" />
         
         {/* Fonts - Load first for better performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -134,8 +134,10 @@ export default function ProdukPage() {
       <Header />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-16 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 text-white">
-        <div className="max-w-6xl mx-auto px-4">
+<section
+  className="relative text-white pt-32 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>        <div className="max-w-6xl mx-auto px-4">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">Paket & Harga</h1>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
@@ -344,8 +346,10 @@ export default function ProdukPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+<section
+  className="relative text-white py-20 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>        <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Siap Memulai?
           </h2>

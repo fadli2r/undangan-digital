@@ -288,8 +288,10 @@ export default function Home() {
         </section>
 
         {/* Pricing Section */}
-        <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: "1200px" }}>
+<section
+  className="relative text-white py-20 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>          <div className="max-w-7xl mx-auto px-4" style={{ maxWidth: "1200px" }}>
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Paket Spesial</h2>
               <p className="text-lg text-blue-100 max-w-2xl mx-auto">

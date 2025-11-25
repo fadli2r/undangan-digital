@@ -1,4 +1,3 @@
-// app/kontak/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -10,18 +9,15 @@ import Footer from "../../components/Footer";
 const faqs = [
   {
     question: "Berapa lama proses pembuatan undangan digital?",
-    answer:
-      "Proses pembuatan undangan digital membutuhkan waktu 1-2 hari kerja setelah semua informasi dan materi lengkap.",
+    answer: "Proses pembuatan undangan digital membutuhkan waktu 1-2 hari kerja setelah semua informasi dan materi lengkap.",
   },
   {
     question: "Apakah bisa request desain khusus?",
-    answer:
-      "Ya, kami menerima request desain khusus. Silakan hubungi tim kami untuk konsultasi lebih lanjut.",
+    answer: "Ya, kami menerima request desain khusus. Silakan hubungi tim kami untuk konsultasi lebih lanjut.",
   },
   {
     question: "Bagaimana cara melakukan pembayaran?",
-    answer:
-      "Kami menerima pembayaran melalui transfer bank dan e-wallet (GoPay, OVO, DANA).",
+    answer: "Kami menerima pembayaran melalui transfer bank dan e-wallet (GoPay, OVO, DANA).",
   },
 ];
 
@@ -36,7 +32,6 @@ const categories = [
 
 type FormData = {
   name: string;
-  email: string;
   category: string;
   message: string;
 };
@@ -44,34 +39,39 @@ type FormData = {
 export default function Contact() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    email: "",
     category: categories[0],
     message: "",
   });
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted:", formData);
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const { name, category, message } = formData;
+
+    if (!name.trim() || !message.trim()) {
+      alert("Mohon isi semua kolom yang wajib.");
+      return;
+    }
+
+    const text = `Halo, saya ${name}.\nJenis Pertanyaan: ${category}\n\n${message}`;
+    const encodedMessage = encodeURIComponent(text);
+    window.open(`https://wa.me/6281234567890?text=${encodedMessage}`, "_blank"); // Ganti dengan nomor WA kamu
+  };
   return (
     <>
       <Header />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
+<section
+  className="relative text-white pt-32 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>        <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">Hubungi Kami</h1>
             <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
@@ -104,7 +104,7 @@ export default function Contact() {
                 {/* Google Maps */}
                 <div className="aspect-w-16 aspect-h-9">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.2904349844674!2d106.82704841476885!3d-6.175392395527934!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f5d2e764b12d%3A0x3d2ad6e1e0e9bcc8!2sMonumen%20Nasional!5e0!3m2!1sen!2sid!4v1647887574171!5m2!1sen!2sid"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d247.37279509046115!2d112.71806296078073!3d-7.244854836891367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7f9066d95c891%3A0x920e3617478de8dd!2sFamous%20Studio!5e0!3m2!1sid!2sid!4v1763833113219!5m2!1sid!2sid"
                     className="w-full h-[300px] rounded-lg"
                     style={{ border: 0 }}
                     allowFullScreen
@@ -121,7 +121,7 @@ export default function Contact() {
                     href="tel:+6281779900078"
                     className="text-blue-600 hover:text-blue-800 block mb-2"
                   >
-                    +62 812-3456-7890
+                    +62 8177-9900-078
                   </a>
                   <a
                     href="https://wa.me/6281779900078"
@@ -183,83 +183,68 @@ export default function Contact() {
                 </div>
               </div>
             </div>
-
             {/* Contact Form */}
-            <div>
-              <h2 className="text-2xl font-bold mb-8">Kirim Pesan</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Lengkap
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+      <div>
+        <h2 className="text-2xl font-bold mb-8">Kirim Pesan</h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Nama Lengkap
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+              Jenis Pertanyaan
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                    Jenis Pertanyaan
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div>
+            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+              Pesan
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              required
+              rows={5}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
 
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Pesan
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
-                    rows={5}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors duration-300"
+          >
+            Kirim via WhatsApp
+          </button>
+        </form>
+      </div>            
 
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300"
-                >
-                  Kirim Pesan
-                </button>
-              </form>
-            </div>
           </div>
         </div>
       </section>
@@ -285,8 +270,11 @@ export default function Contact() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+<section
+  className="relative text-white py-20 pb-20 overflow-hidden bg-cover bg-center"
+  style={{ backgroundImage: "url('/bg-theme.jpg')" }}
+>        
+<div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-8">Siap Membuat Undangan Digital?</h2>
           <p className="text-xl text-blue-100 mb-12">
             Pilih template premium dan mulai buat undangan pernikahan impian Anda sekarang

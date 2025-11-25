@@ -77,7 +77,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: titleDefault,
       description: descriptionDefault,
     },
-    icons: { icon: [{ url: "/favicon.ico" }] },
+    icons: { icon: [{ url: "/Dreamslink.ico" }] },
     robots: {
       index: true,
       follow: true,
